@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1442</width>
-    <height>940</height>
+    <width>1456</width>
+    <height>951</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -299,8 +299,8 @@
     <rect>
      <x>1180</x>
      <y>0</y>
-     <width>161</width>
-     <height>91</height>
+     <width>171</width>
+     <height>113</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout_6">
@@ -987,7 +987,7 @@
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
    </property>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <layout class="QGridLayout" name="gridLayout_2">
      <item row="0" column="0">
       <widget class="QLabel" name="label_product">
@@ -4694,7 +4694,7 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <layout class="QGridLayout" name="gridLayout_3">
      <item row="0" column="2">
       <widget class="QLabel" name="label_single_price">
@@ -6181,7 +6181,7 @@
    <property name="orientation">
     <enum>Qt::Vertical</enum>
    </property>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <layout class="QGridLayout" name="gridLayout_8">
      <item row="0" column="0">
       <widget class="QLabel" name="label_tmpprice">
@@ -6347,7 +6347,7 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <layout class="QGridLayout" name="gridLayout_9">
      <item row="0" column="0">
       <widget class="QTextEdit" name="textEdit_remark">
