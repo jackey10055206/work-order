@@ -13,7 +13,7 @@ import pymysql
 
 # import openpyxl
 
-connection = pymysql.connect(host='192.168.101.59',
+connection = pymysql.connect(host='192.168.1.2',
                              port=3306,
                              user='root',
                              passwd='root',
