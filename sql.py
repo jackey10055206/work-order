@@ -1,4 +1,6 @@
 import sys
+
+from numpy import full
 from project import Ui_Form as ui
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import *
@@ -20,15 +22,8 @@ connection = pymysql.connect(host='192.168.1.2',
 #print(bool(connection))
 cursor = connection.cursor()
 
-
-class SQL(QMainWindow, ui.Ui_Form):
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
-
-    def add_client():
-
-        SQL = """INSERT INTO client(name,full_name,phone,address,taxID)
+def add_client():
+    SQL = """INSERT INTO client(name,full_name,phone,address,taxID)
                 VALUES('6636','陸陸參拾陸有限公司','66368606','10694台北市忠孝東路四段320號10樓','27541768'),
                 ('KING','誠全整合行銷有限公司','0938616260','10049台北市中正區北平東路30-2號4樓','83231490'),
                 ('Eric','','0935888727','',''),
@@ -88,35 +83,50 @@ class SQL(QMainWindow, ui.Ui_Form):
                 ('資廚','資廚管理顧問(股)公司','27130120','106465台北市大安區仁愛路三段136號15樓 1501室','53750585'),
                 ('龍骨王','龍骨王股份有限公司','77236027','11577台北市南港區八德路四段768巷1弄20號B1樓A02室','54158175')
             """
-        cursor.execute(SQL)
-        connection.commit()
+    cursor.execute(SQL)
+    connection.commit()
         
-    def company_name():
-        SQL = """SELECT name FROM client"""
+        
+def company_name():
+    SQL = """SELECT name FROM client"""
 
-        cursor.execute(SQL)
-        data = cursor.fetchall()
-        connection.commit()
+    cursor.execute(SQL)
+    data = cursor.fetchall()
+    connection.commit()
 
-        Cname = []
+    Cname = []
 
-        def store(name_in):
-            Cname.append(name_in)
+    def store(name_in):
+        Cname.append(name_in)
 
-        for row in data:
-            name_in = row['name']
-            store(name_in)    
-            return Cname
+    for row in data:
+        name_in = row['name']
+        store(name_in)    
+    
+    return Cname
 
-    def company_name_change():
-        #SQL="""SELECT * FROM client WHERE name = '%s'""" % ui.comboBox_company_name.currentText()
-        SQL="""SELECT * FROM client WHERE name = '%s'""" % ui.comboBox_company_name.currentText()
-        print(SQL)
-        cursor.execute(SQL)
-        connection.commit()
-        data = cursor.fetchall()        
-        print(data)
-        #print("abcd")
+
+full_name=[]
+phone = []
+address = []
+taxID = []
+
+def company_name_change(Cname):
+    
+    #print(Cname)
+    SQL="""SELECT * FROM client WHERE name = '%s'""" % Cname
+    #print(SQL)
+    cursor.execute(SQL)
+    connection.commit()
+    data = cursor.fetchall()
+
+    for row in data:
+        full_name = row['full_name']
+        phone = row['phone']
+        address = row['address']
+        taxID = row['taxID']       
+    return full_name,phone,address,taxID
+    
 
 
 

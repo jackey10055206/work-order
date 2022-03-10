@@ -1,3 +1,4 @@
+from audioop import add
 import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import *
@@ -23,15 +24,22 @@ connection = pymysql.connect(host='192.168.1.2',
 #print(bool(connection))
 cursor = connection.cursor()
 
+
+
 class Main(QMainWindow, ui.Ui_Form):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
 
-        self.comboBox_company_name.addItems(sql.company_name())
-        self.comboBox_company_name.currentIndexChanged.connect(sql.company_name_change)
+        self.comboBox_company_name.addItems(company_name())
+        
+        def index_change():
+            full_name,phone,address,taxID = company_name_change(self.comboBox_company_name.currentText())
+            #print(full_name,phone,address,taxID)
+            self.lineEdit_phone.setText(phone)
+        self.comboBox_company_name.currentIndexChanged.connect(index_change)
+        
 
-    
 
 
 
