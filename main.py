@@ -1,5 +1,6 @@
 from audioop import add
 import sys
+from venv import create
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -14,7 +15,7 @@ import pymysql
 
 # import openpyxl
 
-connection = pymysql.connect(host='192.168.1.2',
+connection = pymysql.connect(host='192.168.101.59',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -39,9 +40,16 @@ class Main(QMainWindow, ui.Ui_Form):
             self.lineEdit_phone.setText(phone)
         self.comboBox_company_name.currentIndexChanged.connect(index_change)
         
+        self.comboBox_employee_1.addItems(employee_name())
+        self.comboBox_employee_2.addItems(employee_name())
+        self.comboBox_employee_3.addItems(employee_name())
+        self.comboBox_employee_4.addItems(employee_name())
+        self.comboBox_employee_5.addItems(employee_name())
+        
+        self.comboBox_pack.addItems(pack_name())
+        self.comboBox_transport.addItems(transport_name())
 
-
-
+        
 
 if __name__ == '__main__':
     import sys
