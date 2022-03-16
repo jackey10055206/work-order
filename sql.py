@@ -22,12 +22,14 @@ connection = pymysql.connect(host='192.168.101.59',
 cursor = connection.cursor()
 
 def create_table():
-    SQL="""CREATE TABLE client(
-           `name` char(50) NOT NULL,
-            `full_name` char(50),
-            `phone` char(50),
-            `address` char(50),
-            `taxID` char(50))"""
+    SQL="""CREATE TABLE central_data(
+        `product` char(50),
+        `material` char(50),
+        `process` char(50),
+        `plate` char(50),
+        `plate_thickness` char(50),
+        `others` char(50)
+    )"""
     cursor.execute(SQL)
     connection.commit()
 
@@ -53,7 +55,46 @@ def add_pack_transport():
     cursor.execute(SQL)
     connection.commit()
 
-
+def add_central_data():
+    SQL = """INSERT INTO central_data (product,material,process,plate,plate_thickness,others)
+             VALUES('','','','','',''),
+             ('舞台背板','PP','亮面冷錶','合成板','5mm','150cm直角鐵腳架'),
+             ('接待背板','PVC','霧面冷錶','豪卡板','1cm','180cm直角鐵角架'),
+             ('展示背板','燈片','亮面+正面雙面膠','黑合成','1.5cm','150cm斜角鐵角架'),
+             ('攤位背板','弱黏PVC','地板膠','瓦楞板','2cm','180cm斜角鐵角架'),
+             ('媒體背板','弱黏導氣PVC','地板膠','黑瓦楞','1mm','橫桿'),
+             ('報到處板','單透布300D','特殊加工','發泡板','2mm','貼條'),
+             ('講台背板','雙透布150D','厚磅紙板','','','機台切型'),
+             ('桌前背板','油畫布600D','','','','易拉展'),
+             ('議程背板','油畫布900D','','','','X展架'),
+             ('人型立牌','半透PVC','','','','紙腳架'),
+             ('橫幅背板','全透PVC','','','','組合框租用'),
+             ('三角桌牌','單向透視','','','','TRUSS'),
+             ('桌上立牌','膠膜','','','','燈光'),
+             ('指引牌','帆布','','','','吊工'),
+             ('箭頭','壓克力','','','','鷹架搭設'),
+             ('名牌','保麗龍','','','',''),
+             ('桌次表','全透PET','','','',''),
+             ('摸彩箱','','','','',''),
+             ('手舉牌','','','','',''),
+             ('易拉展','','','','',''),
+             ('X展架','','','','',''),
+             ('MIC牌','','','','',''),
+             ('海報','','','','',''),
+             ('簽名綢','','','','',''),
+             ('掛軸','','','','',''),
+             ('旗幟','','','','',''),
+             ('帆布','','','','',''),
+             ('關東旗','','','','',''),
+             ('地貼','','','','',''),
+             ('窗貼','','','','',''),
+             ('道具','','','','',''),
+             ('包裝','','','','',''),
+             ('外發','','','','',''),
+             ('其他','','','','','')
+    """
+    cursor.execute(SQL)
+    connection.commit()
 
 def add_client():
     SQL = """INSERT INTO client(name,full_name,phone,address,taxID)
@@ -194,6 +235,7 @@ def pack_name():
         name_in = row['pack']
         store(name_in)
     return Pname
+
 def transport_name():
     SQL = """SELECT transport FROM pack_transport"""
     cursor.execute(SQL)
@@ -209,10 +251,97 @@ def transport_name():
         store(name_in)
     return Tname
 
+def product_name():
+    SQL = """SELECT product FROM central_data"""
+    cursor.execute(SQL)
+    connection.commit()
+    data = cursor.fetchall()
+
+    Pname = []
+    def store(name_in):
+        Pname.append(name_in)
+
+    for row in data:
+        name_in = row['product']
+        store(name_in)
+    return Pname
+
+def material_name():
+    SQL = """SELECT material FROM central_data"""
+    cursor.execute(SQL)
+    connection.commit()
+    data = cursor.fetchall()
+
+    Mname = []
+    def store(name_in):
+        Mname.append(name_in)
+
+    for row in data:
+        name_in = row['material']
+        store(name_in)
+    return Mname
+
+def process_name():
+    SQL = """SELECT process FROM central_data"""
+    cursor.execute(SQL)
+    connection.commit()
+    data = cursor.fetchall()
+
+    Pname = []
+    def store(name_in):
+        Pname.append(name_in)
+
+    for row in data:
+        name_in = row['process']
+        store(name_in)
+    return Pname
+
+def plate_name():
+    SQL = """SELECT plate FROM central_data"""
+    cursor.execute(SQL)
+    connection.commit()
+    data = cursor.fetchall()
+
+    Pname = []
+    def store(name_in):
+        Pname.append(name_in)
+
+    for row in data:
+        name_in = row['plate']
+        store(name_in)
+    return Pname
+
+def thickness_name():
+    SQL = """SELECT plate_thickness FROM central_data"""
+    cursor.execute(SQL)
+    connection.commit()
+    data = cursor.fetchall()
+
+    Pname = []
+    def store(name_in):
+        Pname.append(name_in)
+
+    for row in data:
+        name_in = row['plate_thickness']
+        store(name_in)
+    return Pname
+
+def others_name():
+
+    SQL = """SELECT others FROM central_data"""
+    cursor.execute(SQL)
+    connection.commit()
+    data = cursor.fetchall()
+
+    Oname = []
+    def store(name_in):
+        Oname.append(name_in)
+
+    for row in data:
+        name_in = row['others']
+        store(name_in)
+    return Oname
 
 
 
 
-
-
-    
