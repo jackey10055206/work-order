@@ -15,7 +15,7 @@ import math
 
 # import openpyxl
 
-connection = pymysql.connect(host='192.168.101.59',
+connection = pymysql.connect(host='192.168.1.2',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -78,6 +78,15 @@ class Main(QMainWindow, ui.Ui_Form):
                 exec("if result == 0: result = '' ")
                 exec("self.lineEdit_single_price_"+str(i)+".setText(str(result))")
         self.pushButton_cal.clicked.connect(lambda:cal_price(self))
+
+        def cal_final_price(self):
+            for i in range(1,16):
+                exec("single_price = self.lineEdit_single_price_"+str(i)+".text()")
+                exec("if single_price == '':single_price = '0'")
+                exec("self.lineEdit_single_price_"+str(i)+".text() = single_price")
+            result = int(self.lineEdit_single_price_1.text())+int(self.lineEdit_single_price_2.text())+int(self.lineEdit_single_price_3.text())+int(self.lineEdit_single_price_4.text())+int(self.lineEdit_single_price_5.text())+int(self.lineEdit_single_price_6.text())+int(self.lineEdit_single_price_7.text())+int(self.lineEdit_single_price_8.text())+int(self.lineEdit_single_price_9.text())+int(self.lineEdit_single_price_10.text())+int(self.lineEdit_single_price_11.text())+int(self.lineEdit_single_price_12.text())+int(self.lineEdit_single_price_13.text())+int(self.lineEdit_single_price_14.text())+int(self.lineEdit_single_price_15.text())
+            print(result)
+        self.pushButton_finalcal.clicked.connect(lambda:cal_final_price(self))
         
 if __name__ == '__main__':
     import sys

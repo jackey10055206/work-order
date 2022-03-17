@@ -12,7 +12,7 @@ import pymysql
 import project as ui
 import main as m
 
-connection = pymysql.connect(host='192.168.101.59',
+connection = pymysql.connect(host='192.168.1.2',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -22,17 +22,26 @@ connection = pymysql.connect(host='192.168.101.59',
 #print(bool(connection))
 cursor = connection.cursor()
 
+# def create_table():
+#     SQL="""CREATE TABLE central_data(
+#         `product` char(50),
+#         `material` char(50),
+#         `process` char(50),
+#         `plate` char(50),
+#         `plate_thickness` char(50),
+#         `others` char(50)
+#     )"""
+#     cursor.execute(SQL)
+#     connection.commit()
+
 def create_table():
-    SQL="""CREATE TABLE central_data(
-        `product` char(50),
-        `material` char(50),
-        `process` char(50),
-        `plate` char(50),
-        `plate_thickness` char(50),
-        `others` char(50)
+    SQL="""CREATE TABLE pack_transport(
+        `pack` char(50),
+        `transport` char(50)       
     )"""
     cursor.execute(SQL)
     connection.commit()
+
 
 def add_employee():
     SQL = """INSERT INTO employee(name)
