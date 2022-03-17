@@ -1,5 +1,5 @@
 import sys
-
+import math
 from project import Ui_Form as ui
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import *
@@ -10,6 +10,7 @@ from tkinter import *
 
 import pymysql
 import project as ui
+import main as m
 
 connection = pymysql.connect(host='192.168.101.59',
                              port=3306,
@@ -344,4 +345,5 @@ def others_name():
 
 
 
+            
 

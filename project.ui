@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1639</width>
-    <height>992</height>
+    <width>1645</width>
+    <height>1008</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -170,7 +170,7 @@
            <widget class="QLineEdit" name="lineEdit_worknum">
             <property name="font">
              <font>
-              <pointsize>12</pointsize>
+              <pointsize>11</pointsize>
              </font>
             </property>
            </widget>
@@ -199,7 +199,7 @@
            <widget class="QLineEdit" name="lineEdit_client_name">
             <property name="font">
              <font>
-              <pointsize>14</pointsize>
+              <pointsize>12</pointsize>
              </font>
             </property>
            </widget>
@@ -312,7 +312,13 @@
      </widget>
     </item>
     <item row="2" column="1">
-     <widget class="QComboBox" name="comboBox_pack"/>
+     <widget class="QComboBox" name="comboBox_pack">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+     </widget>
     </item>
     <item row="0" column="0" colspan="2">
      <widget class="QLabel" name="label_pack_transport">
@@ -377,7 +383,13 @@
      </widget>
     </item>
     <item row="3" column="1">
-     <widget class="QComboBox" name="comboBox_transport"/>
+     <widget class="QComboBox" name="comboBox_transport">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -1174,7 +1186,7 @@
      <item row="1" column="0">
       <layout class="QGridLayout" name="gridLayout_10">
        <item row="0" column="4">
-        <widget class="QPushButton" name="pushButton_new">
+        <widget class="QPushButton" name="pushButton_finalcal">
          <property name="minimumSize">
           <size>
            <width>100</width>
@@ -1188,12 +1200,12 @@
           </size>
          </property>
          <property name="text">
-          <string>新增</string>
+          <string>計算</string>
          </property>
         </widget>
        </item>
        <item row="0" column="2">
-        <widget class="QPushButton" name="pushButton_output">
+        <widget class="QPushButton" name="pushButton_export">
          <property name="minimumSize">
           <size>
            <width>150</width>
@@ -1212,7 +1224,7 @@
         </widget>
        </item>
        <item row="0" column="3">
-        <widget class="QPushButton" name="pushButton_del">
+        <widget class="QPushButton" name="pushButton_cal">
          <property name="minimumSize">
           <size>
            <width>100</width>
@@ -1226,12 +1238,12 @@
           </size>
          </property>
          <property name="text">
-          <string>刪除</string>
+          <string>小計</string>
          </property>
         </widget>
        </item>
        <item row="0" column="0">
-        <widget class="QPushButton" name="pushButton_change">
+        <widget class="QPushButton" name="pushButton_open">
          <property name="minimumSize">
           <size>
            <width>100</width>
@@ -1245,7 +1257,7 @@
           </size>
          </property>
          <property name="text">
-          <string>修改</string>
+          <string>開啟</string>
          </property>
         </widget>
        </item>
@@ -5009,8 +5021,8 @@
      </font>
     </property>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_CBM">
+     <item row="13" column="1">
+      <widget class="QLineEdit" name="lineEdit_CBMprice_13">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -5025,22 +5037,13 @@
        </property>
        <property name="font">
         <font>
-         <pointsize>16</pointsize>
+         <pointsize>12</pointsize>
         </font>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">background-color:rgb(255, 170, 255)</string>
-       </property>
-       <property name="text">
-        <string>才數</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QLabel" name="label_CBMprice">
+     <item row="14" column="0">
+      <widget class="QLineEdit" name="lineEdit_CBM_14">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -5055,17 +5058,302 @@
        </property>
        <property name="font">
         <font>
-         <pointsize>16</pointsize>
+         <pointsize>12</pointsize>
         </font>
        </property>
-       <property name="styleSheet">
-        <string notr="true">background-color:rgb(255, 170, 255)</string>
+       <property name="readOnly">
+        <bool>true</bool>
        </property>
-       <property name="text">
-        <string>單價</string>
+      </widget>
+     </item>
+     <item row="13" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_13">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
        </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="1">
+      <widget class="QLineEdit" name="lineEdit_CBMprice_14">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="1">
+      <widget class="QLineEdit" name="lineEdit_CBMprice_15">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_15">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="0">
+      <widget class="QLineEdit" name="lineEdit_CBM_15">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_14">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="3">
+      <widget class="QLineEdit" name="lineEdit_single_price_30">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="3">
+      <widget class="QLineEdit" name="lineEdit_single_price_25">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="3">
+      <widget class="QLineEdit" name="lineEdit_single_price_28">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_4">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLineEdit" name="lineEdit_CBM_7">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="3">
+      <widget class="QLineEdit" name="lineEdit_single_price_23">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <widget class="QLineEdit" name="lineEdit_single_price_19">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
        </property>
       </widget>
      </item>
@@ -5099,8 +5387,8 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="3">
-      <widget class="QLabel" name="label_other_price">
+     <item row="5" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_5">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5115,22 +5403,16 @@
        </property>
        <property name="font">
         <font>
-         <pointsize>11</pointsize>
+         <pointsize>12</pointsize>
         </font>
        </property>
-       <property name="styleSheet">
-        <string notr="true">background-color:rgb(255, 170, 255)</string>
-       </property>
-       <property name="text">
-        <string>特殊計價</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
+       <property name="readOnly">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLineEdit" name="lineEdit_CBM_1">
+     <item row="6" column="0">
+      <widget class="QLineEdit" name="lineEdit_CBM_6">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -5150,6 +5432,60 @@
        </property>
        <property name="readOnly">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_6">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="label_CBMprice">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color:rgb(255, 170, 255)</string>
+       </property>
+       <property name="text">
+        <string>單價</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
        </property>
       </widget>
      </item>
@@ -5198,27 +5534,6 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_19">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="0">
       <widget class="QLineEdit" name="lineEdit_CBM_2">
        <property name="minimumSize">
@@ -5243,72 +5558,6 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_2">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_2">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_29">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
      <item row="3" column="0">
       <widget class="QLineEdit" name="lineEdit_CBM_3">
        <property name="minimumSize">
@@ -5330,6 +5579,57 @@
        </property>
        <property name="readOnly">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_CBM">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color:rgb(255, 170, 255)</string>
+       </property>
+       <property name="text">
+        <string>才數</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <widget class="QLineEdit" name="lineEdit_single_price_29">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
        </property>
       </widget>
      </item>
@@ -5444,8 +5744,8 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_4">
+     <item row="0" column="3">
+      <widget class="QLabel" name="label_other_price">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5460,11 +5760,38 @@
        </property>
        <property name="font">
         <font>
-         <pointsize>12</pointsize>
+         <pointsize>11</pointsize>
         </font>
        </property>
-       <property name="readOnly">
-        <bool>true</bool>
+       <property name="styleSheet">
+        <string notr="true">background-color:rgb(255, 170, 255)</string>
+       </property>
+       <property name="text">
+        <string>特殊計價</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="lineEdit_CBMprice_2">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
        </property>
       </widget>
      </item>
@@ -5534,75 +5861,6 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_5">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_23">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0">
-      <widget class="QLineEdit" name="lineEdit_CBM_6">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
      <item row="6" column="1">
       <widget class="QLineEdit" name="lineEdit_CBMprice_6">
        <property name="minimumSize">
@@ -5621,30 +5879,6 @@
         <font>
          <pointsize>12</pointsize>
         </font>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_6">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -5669,143 +5903,8 @@
        </property>
       </widget>
      </item>
-     <item row="7" column="0">
-      <widget class="QLineEdit" name="lineEdit_CBM_7">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="1">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_7">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_7">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_20">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="0">
-      <widget class="QLineEdit" name="lineEdit_CBM_8">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="1">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_8">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_8">
+     <item row="2" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_2">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5849,8 +5948,8 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="0">
-      <widget class="QLineEdit" name="lineEdit_CBM_9">
+     <item row="11" column="0">
+      <widget class="QLineEdit" name="lineEdit_CBM_11">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -5873,29 +5972,8 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="1">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_9">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_9">
+     <item row="7" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_7">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5915,27 +5993,6 @@
        </property>
        <property name="readOnly">
         <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_17">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
        </property>
       </widget>
      </item>
@@ -5950,51 +6007,6 @@
        <property name="maximumSize">
         <size>
          <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="1">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_10">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_10">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
          <height>30</height>
         </size>
        </property>
@@ -6029,17 +6041,17 @@
        </property>
       </widget>
      </item>
-     <item row="11" column="0">
-      <widget class="QLineEdit" name="lineEdit_CBM_11">
+     <item row="9" column="3">
+      <widget class="QLineEdit" name="lineEdit_single_price_17">
        <property name="minimumSize">
         <size>
-         <width>60</width>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>60</width>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
@@ -6047,9 +6059,6 @@
         <font>
          <pointsize>12</pointsize>
         </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -6074,8 +6083,29 @@
        </property>
       </widget>
      </item>
-     <item row="11" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_11">
+     <item row="7" column="3">
+      <widget class="QLineEdit" name="lineEdit_single_price_20">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_8">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -6095,6 +6125,27 @@
        </property>
        <property name="readOnly">
         <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="1">
+      <widget class="QLineEdit" name="lineEdit_CBMprice_9">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
        </property>
       </widget>
      </item>
@@ -6209,6 +6260,96 @@
        </property>
       </widget>
      </item>
+     <item row="9" column="0">
+      <widget class="QLineEdit" name="lineEdit_CBM_9">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1">
+      <widget class="QLineEdit" name="lineEdit_CBMprice_7">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_9">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="1">
+      <widget class="QLineEdit" name="lineEdit_CBMprice_8">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
      <item row="13" column="0">
       <widget class="QLineEdit" name="lineEdit_CBM_13">
        <property name="minimumSize">
@@ -6233,8 +6374,8 @@
        </property>
       </widget>
      </item>
-     <item row="13" column="1">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_13">
+     <item row="10" column="1">
+      <widget class="QLineEdit" name="lineEdit_CBMprice_10">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -6254,8 +6395,8 @@
        </property>
       </widget>
      </item>
-     <item row="13" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_13">
+     <item row="10" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_10">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -6278,74 +6419,8 @@
        </property>
       </widget>
      </item>
-     <item row="13" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_25">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="14" column="0">
-      <widget class="QLineEdit" name="lineEdit_CBM_14">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="14" column="1">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_14">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="14" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_14">
+     <item row="11" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_11">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -6368,29 +6443,8 @@
        </property>
       </widget>
      </item>
-     <item row="14" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_30">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="15" column="0">
-      <widget class="QLineEdit" name="lineEdit_CBM_15">
+     <item row="8" column="0">
+      <widget class="QLineEdit" name="lineEdit_CBM_8">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -6413,8 +6467,8 @@
        </property>
       </widget>
      </item>
-     <item row="15" column="1">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_15">
+     <item row="1" column="0">
+      <widget class="QLineEdit" name="lineEdit_CBM_1">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -6424,27 +6478,6 @@
        <property name="maximumSize">
         <size>
          <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="15" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_15">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
          <height>30</height>
         </size>
        </property>
@@ -6455,27 +6488,6 @@
        </property>
        <property name="readOnly">
         <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="15" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_28">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
        </property>
       </widget>
      </item>
