@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1645</width>
-    <height>1008</height>
+    <width>1639</width>
+    <height>992</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -5021,6 +5021,30 @@
      </font>
     </property>
     <layout class="QGridLayout" name="gridLayout">
+     <item row="1" column="0">
+      <widget class="QLineEdit" name="lineEdit_CBM_1">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
      <item row="13" column="1">
       <widget class="QLineEdit" name="lineEdit_CBMprice_13">
        <property name="minimumSize">
@@ -5205,7 +5229,7 @@
       </widget>
      </item>
      <item row="14" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_30">
+      <widget class="QLineEdit" name="lineEdit_single_price_29">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5226,7 +5250,7 @@
       </widget>
      </item>
      <item row="13" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_25">
+      <widget class="QLineEdit" name="lineEdit_single_price_28">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5247,7 +5271,7 @@
       </widget>
      </item>
      <item row="15" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_28">
+      <widget class="QLineEdit" name="lineEdit_single_price_30">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5316,7 +5340,7 @@
       </widget>
      </item>
      <item row="5" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_23">
+      <widget class="QLineEdit" name="lineEdit_single_price_20">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5337,7 +5361,7 @@
       </widget>
      </item>
      <item row="1" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_19">
+      <widget class="QLineEdit" name="lineEdit_single_price_16">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5510,30 +5534,6 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="2">
-      <widget class="QLineEdit" name="lineEdit_single_price_1">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="0">
       <widget class="QLineEdit" name="lineEdit_CBM_2">
        <property name="minimumSize">
@@ -5613,7 +5613,7 @@
       </widget>
      </item>
      <item row="2" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_29">
+      <widget class="QLineEdit" name="lineEdit_single_price_17">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5679,7 +5679,7 @@
       </widget>
      </item>
      <item row="3" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_27">
+      <widget class="QLineEdit" name="lineEdit_single_price_18">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5796,7 +5796,7 @@
       </widget>
      </item>
      <item row="4" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_26">
+      <widget class="QLineEdit" name="lineEdit_single_price_19">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5883,7 +5883,7 @@
       </widget>
      </item>
      <item row="6" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_16">
+      <widget class="QLineEdit" name="lineEdit_single_price_21">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -5928,7 +5928,7 @@
       </widget>
      </item>
      <item row="8" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_21">
+      <widget class="QLineEdit" name="lineEdit_single_price_23">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -6021,7 +6021,7 @@
       </widget>
      </item>
      <item row="10" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_22">
+      <widget class="QLineEdit" name="lineEdit_single_price_25">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -6042,7 +6042,7 @@
       </widget>
      </item>
      <item row="9" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_17">
+      <widget class="QLineEdit" name="lineEdit_single_price_24">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -6084,7 +6084,7 @@
       </widget>
      </item>
      <item row="7" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_20">
+      <widget class="QLineEdit" name="lineEdit_single_price_22">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -6150,7 +6150,7 @@
       </widget>
      </item>
      <item row="11" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_24">
+      <widget class="QLineEdit" name="lineEdit_single_price_26">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -6240,7 +6240,7 @@
       </widget>
      </item>
      <item row="12" column="3">
-      <widget class="QLineEdit" name="lineEdit_single_price_18">
+      <widget class="QLineEdit" name="lineEdit_single_price_27">
        <property name="minimumSize">
         <size>
          <width>80</width>
@@ -6467,17 +6467,17 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLineEdit" name="lineEdit_CBM_1">
+     <item row="1" column="2">
+      <widget class="QLineEdit" name="lineEdit_single_price_1">
        <property name="minimumSize">
         <size>
-         <width>60</width>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>60</width>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
