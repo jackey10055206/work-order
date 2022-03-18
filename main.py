@@ -13,10 +13,10 @@ import sql
 import project as ui
 import pymysql
 import math
-
+import numpy as np
 # import openpyxl
 
-connection = pymysql.connect(host='192.168.101.59',
+connection = pymysql.connect(host='192.168.1.2',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -89,10 +89,12 @@ class Main(QMainWindow, ui.Ui_Form):
                 exec("final_price.append(single_price)")               
             final_price = list(map(int,final_price))
             result = sum(final_price)
+            
             tax = result*0.05
-            tax += 0.5
+            tax = 0.55
             print(tax)
-            tax = round(tax)
+            tax = int(tax+0.5)
+            #tax = np.round(tax)
             print(tax)
             # tax = round(tax,0)
             # print(tax)
