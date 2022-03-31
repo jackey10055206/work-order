@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 from decimal import ROUND_HALF_UP, Decimal
 import sys
 
@@ -13,10 +14,9 @@ import sql
 import project as ui
 import pymysql
 import math
-import numpy as np
 # import openpyxl
 
-connection = pymysql.connect(host='192.168.1.2',
+connection = pymysql.connect(host='192.168.101.59',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -33,6 +33,7 @@ class Main(QMainWindow, ui.Ui_Form):
         super().__init__()
         self.setupUi(self)
 
+         
         ###增加下拉式選單客戶
         self.comboBox_company_name.addItems(company_name())
 
@@ -94,16 +95,21 @@ class Main(QMainWindow, ui.Ui_Form):
             tax = 0.55
             print(tax)
             tax = int(tax+0.5)
-            #tax = np.round(tax)
             print(tax)
-            # tax = round(tax,0)
-            # print(tax)
             answer = result + tax
             self.lineEdit_tmpprice.setText(str(result))
             self.lineEdit_tax.setText(str(tax))
             self.lineEdit_final_price.setText(str(answer))
         self.pushButton_finalcal.clicked.connect(lambda:cal_final_price(self))
-        
+       
+
+        ###點擊儲存，把東西分別放進對應的資料庫
+        def save_data():
+            check = check_database(self.lineEdit_worknum.text())
+        self.pushButton_save.clicked.connect(save_data)
+
+
+
 if __name__ == '__main__':
     import sys
     app = QtWidgets.QApplication(sys.argv)

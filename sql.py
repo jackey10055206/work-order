@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 import sys
 import math
 from project import Ui_Form as ui
@@ -12,7 +13,7 @@ import pymysql
 import project as ui
 import main as m
 
-connection = pymysql.connect(host='192.168.1.2',
+connection = pymysql.connect(host='192.168.101.59',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -35,9 +36,40 @@ cursor = connection.cursor()
 #     connection.commit()
 
 def create_table():
-    SQL="""CREATE TABLE pack_transport(
+    SQL="""CREATE TABLE save_basic_data(
+        `worknum` char(50) NOT NULL,
+        `case_name`char(50),
+        `company_name` char(50),
+        `phone` char(50),
+        `client_name` char(50),
+        `worktime` char(50),
+        `cleanuptime` char(50),
+        `workaddress` char(50),
         `pack` char(50),
-        `transport` char(50)       
+        `transport` char(50),
+        `cemployee1` char(50),
+        `cemployee2` char(50),
+        `cemployee3` char(50),
+        `cemployee4` char(50),
+        `cemployee5` char(50),
+        `crossbar_width` char(50),
+        `crossbar_amount` char(50),
+        `crossbar_remark` char(50),
+        `150shelter` boolean,
+        `180shelter` boolean,
+        `iron_Shelter_amount` char(50),
+        `iron_Shelter_remark` char(50),
+        `paper_Shelter_height` char(50),
+        `paper_Shelter_amount` char(50),
+        `paper_Shelter_remark` char(50),
+        `stand_style` char(50),
+        `stand_amount` char(50),
+        `stand_remark` char(50),
+        `rent1` char(50),
+        `rent2` char(50),
+        `remark` char(255),
+        PRIMARY KEY(worknum)
+
     )"""
     cursor.execute(SQL)
     connection.commit()
@@ -352,7 +384,13 @@ def others_name():
         store(name_in)
     return Oname
 
-
-
+def check_database(Wnum):
+    SQL = """SELECT * FROM save_basic_data WHERE worknum = '%s'""" % Wnum
+    cursor.execute(SQL)
+    connection.commit()
+    data = cursor.fetchall()
+    print(type(data))
+    if data == '':
+        print("123456")
             
 
