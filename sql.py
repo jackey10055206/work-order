@@ -389,8 +389,33 @@ def check_database(Wnum):
     cursor.execute(SQL)
     connection.commit()
     data = cursor.fetchall()
-    print(type(data))
-    if data == '':
-        print("123456")
-            
+    if data == ():
+        return True
+    else:
+        return False
 
+def Insert_data(data):
+    SQL = """INSERT INTO save_basic_data (worknum,case_name,company_name,phone,client_name,worktime,cleanuptime,workaddress,pack,transport,cemployee1,cemployee2,cemployee3,cemployee4,cemployee5,crossbar_width,crossbar_amount,crossbar_remark,150shelter,180shelter,iron_Shelter_amount,iron_Shelter_remark,paper_Shelter_height,paper_Shelter_amount,paper_Shelter_remark,stand_style,stand_amount,stand_remark,rent1,rent2,remark)
+             VALUES('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')""" % (data['worknum']  , data['case_name'] , data['company_name'] , data['phone'] ,data['client_name'] , data['worktime'] , data['cleanuptime'] , data['workaddress'] , data['pack'] , data['transport'] , data['cemployee1'] , data['cemployee2'] , data['cemployee3'] , data['cemployee4'] , data['cemployee5'] , data['crossbar_width'] , data['crossbar_amount'] , data['crossbar_remark'] , str(data['150shelter']) , str(data['180shelter']) , data['iron_Shelter_amount'] , data['iron_Shelter_remark'] , data['paper_Shelter_height'] , data['paper_Shelter_amount'] , data['paper_Shelter_remark'] , data['stand_style'] , data['stand_amount'] , data['stand_remark'] , data['rent1'] , data['rent2'] , data['remark'])
+
+    cursor.execute(SQL)
+    connection.commit()
+
+def Updata_data(data):
+    pass
+
+
+def call__basic_data(Wnum):
+    SQL = """SELECT * FROM save_basic_data WHERE worknum = '%s'""" % Wnum
+    cursor.execute(SQL)
+    connection.commit()
+    data = cursor.fetchall()
+    print(data)
+
+
+
+def del_data():
+    SQL = """DELETE FROM save_basic_data WHERE worknum = '001'"""
+    cursor.execute(SQL)
+    connection.commit()
+#worknum,case_name,company_namerrentText,phoneclient_namext,worktime,cleanuptimeext,workaddressxt,pack,transport,cemployee1,cemployee2,cemployee3,cemployee4,cemployee5,crossbar_width,crossbar_amount,crossbar_remark,150shelter,180shelter,iron_Shelter_amount,iron_Shelter_remark,paper_Shelter_height,paper_Shelter_amount,paper_Shelter_remark,stand_style,stand_amount,stand_remark,rent1,rent2,remark

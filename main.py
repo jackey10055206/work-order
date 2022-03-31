@@ -33,7 +33,7 @@ class Main(QMainWindow, ui.Ui_Form):
         super().__init__()
         self.setupUi(self)
 
-         
+        
         ###增加下拉式選單客戶
         self.comboBox_company_name.addItems(company_name())
 
@@ -102,13 +102,56 @@ class Main(QMainWindow, ui.Ui_Form):
             self.lineEdit_final_price.setText(str(answer))
         self.pushButton_finalcal.clicked.connect(lambda:cal_final_price(self))
        
-
+        def save_central_data():
+            pass
         ###點擊儲存，把東西分別放進對應的資料庫
-        def save_data():
+        def save_basic_data():
+            save_central_data
+            dict_data = {
+                'worknum' : self.lineEdit_worknum.text(),
+                'case_name' : self.lineEdit_case_name.text(),
+                'company_name' :self.comboBox_company_name.currentText(),
+                'phone' : self.lineEdit_phone.text(),
+                'client_name' : self.lineEdit_client_name.text(),
+                'worktime' : self.lineEdit_worktime.text(),
+                'cleanuptime' : self.lineEdit_cleanup_time.text(),
+                'workaddress' : self.lineEdit_workaddress.text(),
+                'pack' : self.comboBox_pack.currentText(),
+                'transport' : self.comboBox_transport.currentText(),
+                'cemployee1' : self.comboBox_employee_1.currentText(),
+                'cemployee2' : self.comboBox_employee_2.currentText(),
+                'cemployee3' : self.comboBox_employee_3.currentText(),
+                'cemployee4' : self.comboBox_employee_4.currentText(),
+                'cemployee5' : self.comboBox_employee_5.currentText(),
+                'crossbar_width' : self.lineEdit_crossbar_width.text(),
+                'crossbar_amount': self.lineEdit_crossbar_amount.text(),
+                'crossbar_remark': self.lineEdit_crossbar_remark.text(),
+                '150shelter':self.checkBox_150iron_shelter.isChecked(),
+                '180shelter':self.checkBox_180iron_shelter.isChecked(),
+                'iron_Shelter_amount':self.lineEdit_iron_shelter_amount.text(),
+                'iron_Shelter_remark':self.lineEdit_iron_shelter_remark.text(),
+                'paper_Shelter_height':self.lineEdit_paper_shelter_height.text(),
+                'paper_Shelter_amount':self.lineEdit_paper_shelter_amount.text(),
+                'paper_Shelter_remark':self.lineEdit_paper_shelter_remark.text(),
+                'stand_style' : self.lineEdit_stand_style.text(),
+                'stand_amount' : self.lineEdit_stand_amount.text(),
+                'stand_remark' : self.lineEdit_stand_remark.text(),
+                'rent1' : self.lineEdit_rent_1.text(),
+                'rent2' : self.lineEdit_rent_2.text(),
+                'remark' : self.textEdit_remark.toPlainText()
+            }
             check = check_database(self.lineEdit_worknum.text())
-        self.pushButton_save.clicked.connect(save_data)
+            if check == True:
+                Insert_data(dict_data)
+            else:
+                Updata_data(dict_data)
+        self.pushButton_save.clicked.connect(save_basic_data)
 
 
+        ###點擊開啟
+        def call_data():
+            data = call__basic_data(self.lineEdit_worknum.text())
+        self.pushButton_open.clicked.connect(call_data)
 
 if __name__ == '__main__':
     import sys
