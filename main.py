@@ -31,7 +31,7 @@ class Main(QMainWindow, ui.Ui_Form):
         super().__init__()
         self.setupUi(self)
 
-        
+        #del_data()
         ###增加下拉式選單客戶
         self.comboBox_company_name.addItems(company_name())
 
@@ -136,11 +136,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 'rent2' : self.lineEdit_rent_2.text(),
                 'remark' : self.textEdit_remark.toPlainText()
             }
-            check = check_database(self.lineEdit_worknum.text())
-            if check == True:
-                Insert_basic_data(dict_data)
-            else:
-                Update_basic_data(dict_data)
+            Update_basic_data(dict_data)
 
 
         ###判斷是INSERT還是UPDATE 去存central_data
@@ -299,23 +295,19 @@ class Main(QMainWindow, ui.Ui_Form):
                 'others_amount_15':str(self.lineEdit_others_amount_15.text()),
 
             }
-            check = check_database(self.lineEdit_worknum.text())
-            if check == True:
-                Insert_central_data(dict_data)
-            else:
-                Update_central_data(dict_data)
+            Update_central_data(dict_data)
 
         ###判斷是INSERT還是UPDATE 去存price_data        
         def save_price_data():
-            pass
+            pass    
 
-
-
-        ###點擊儲存，檢查是INSERT還是UPDATE
+        ###點擊儲存
         def save_data():
+            create_work_order(self.lineEdit_worknum.text())
+
             save_basic_data()
             save_central_data()
-            save_price_data()
+            # save_price_data()
         self.pushButton_save.clicked.connect(save_data)
 
         ### 初始化視窗內所有表格
