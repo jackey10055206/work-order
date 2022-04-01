@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1639</width>
-    <height>992</height>
+    <width>1645</width>
+    <height>1010</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1302,46 +1302,13 @@
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
    </property>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="font">
      <font>
       <pointsize>12</pointsize>
      </font>
     </property>
     <layout class="QGridLayout" name="gridLayout_3">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_product">
-       <property name="minimumSize">
-        <size>
-         <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>16</pointsize>
-        </font>
-       </property>
-       <property name="layoutDirection">
-        <enum>Qt::LeftToRight</enum>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">background-color:rgb(255, 255, 127)</string>
-       </property>
-       <property name="text">
-        <string>製作項目</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="1" rowspan="16">
       <layout class="QGridLayout" name="gridLayout_2">
        <item row="0" column="0">
@@ -2312,6 +2279,225 @@
        </property>
       </widget>
      </item>
+     <item row="8" column="3">
+      <widget class="QComboBox" name="comboBox_material_8">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="4">
+      <widget class="QComboBox" name="comboBox_process_8">
+       <property name="minimumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="5">
+      <widget class="QComboBox" name="comboBox_plate_8">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="7">
+      <widget class="QComboBox" name="comboBox_others_8">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="8">
+      <widget class="QLineEdit" name="lineEdit_others_amount_8">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="6">
+      <widget class="QComboBox" name="comboBox_thicknes_8">
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>100</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="3">
+      <widget class="QComboBox" name="comboBox_material_9">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="2">
+      <widget class="QLineEdit" name="lineEdit_amount_9">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="0">
+      <widget class="QComboBox" name="comboBox_product_9">
+       <property name="minimumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="5">
+      <widget class="QLabel" name="label_plate">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color:rgb(255, 255, 127)</string>
+       </property>
+       <property name="text">
+        <string>板材種類</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="3">
       <widget class="QLabel" name="label_material">
        <property name="minimumSize">
@@ -2372,17 +2558,17 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="5">
-      <widget class="QLabel" name="label_plate">
+     <item row="0" column="8">
+      <widget class="QLabel" name="label_CBM_2">
        <property name="minimumSize">
         <size>
-         <width>150</width>
+         <width>60</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>150</width>
+         <width>60</width>
          <height>30</height>
         </size>
        </property>
@@ -2395,37 +2581,7 @@
         <string notr="true">background-color:rgb(255, 255, 127)</string>
        </property>
        <property name="text">
-        <string>板材種類</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="6">
-      <widget class="QLabel" name="label_thickness">
-       <property name="minimumSize">
-        <size>
-         <width>100</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>100</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>14</pointsize>
-        </font>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">background-color:rgb(255, 255, 127)</string>
-       </property>
-       <property name="text">
-        <string>板材厚度</string>
+        <string>數量</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -2462,30 +2618,30 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="8">
-      <widget class="QLabel" name="label_CBM_2">
+     <item row="0" column="6">
+      <widget class="QLabel" name="label_thickness">
        <property name="minimumSize">
         <size>
-         <width>60</width>
+         <width>100</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>60</width>
+         <width>100</width>
          <height>30</height>
         </size>
        </property>
        <property name="font">
         <font>
-         <pointsize>16</pointsize>
+         <pointsize>14</pointsize>
         </font>
        </property>
        <property name="styleSheet">
         <string notr="true">background-color:rgb(255, 255, 127)</string>
        </property>
        <property name="text">
-        <string>數量</string>
+        <string>板材厚度</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -2640,7 +2796,7 @@
       </widget>
      </item>
      <item row="1" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_16">
+      <widget class="QLineEdit" name="lineEdit_others_amount_1">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -2650,6 +2806,27 @@
        <property name="maximumSize">
         <size>
          <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <widget class="QComboBox" name="comboBox_material_2">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
          <height>30</height>
         </size>
        </property>
@@ -2702,27 +2879,6 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="3">
-      <widget class="QComboBox" name="comboBox_material_2">
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="4">
       <widget class="QComboBox" name="comboBox_process_2">
        <property name="minimumSize">
@@ -2734,27 +2890,6 @@
        <property name="maximumSize">
         <size>
          <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="5">
-      <widget class="QComboBox" name="comboBox_plate_2">
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>150</width>
          <height>30</height>
         </size>
        </property>
@@ -2786,8 +2921,8 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="7">
-      <widget class="QComboBox" name="comboBox_others_2">
+     <item row="2" column="5">
+      <widget class="QComboBox" name="comboBox_plate_2">
        <property name="minimumSize">
         <size>
          <width>150</width>
@@ -2807,17 +2942,17 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_17">
+     <item row="2" column="7">
+      <widget class="QComboBox" name="comboBox_others_2">
        <property name="minimumSize">
         <size>
-         <width>60</width>
+         <width>150</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>60</width>
+         <width>150</width>
          <height>30</height>
         </size>
        </property>
@@ -2849,17 +2984,17 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="2">
-      <widget class="QLineEdit" name="lineEdit_amount_3">
+     <item row="2" column="8">
+      <widget class="QLineEdit" name="lineEdit_others_amount_2">
        <property name="minimumSize">
         <size>
-         <width>80</width>
+         <width>60</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>80</width>
+         <width>60</width>
          <height>30</height>
         </size>
        </property>
@@ -2912,17 +3047,17 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="5">
-      <widget class="QComboBox" name="comboBox_plate_3">
+     <item row="3" column="2">
+      <widget class="QLineEdit" name="lineEdit_amount_3">
        <property name="minimumSize">
         <size>
-         <width>150</width>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>150</width>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
@@ -2954,8 +3089,8 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="7">
-      <widget class="QComboBox" name="comboBox_others_3">
+     <item row="3" column="5">
+      <widget class="QComboBox" name="comboBox_plate_3">
        <property name="minimumSize">
         <size>
          <width>150</width>
@@ -2965,27 +3100,6 @@
        <property name="maximumSize">
         <size>
          <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_18">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
          <height>30</height>
         </size>
        </property>
@@ -3038,6 +3152,48 @@
        </property>
       </widget>
      </item>
+     <item row="3" column="7">
+      <widget class="QComboBox" name="comboBox_others_3">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="8">
+      <widget class="QLineEdit" name="lineEdit_others_amount_3">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
      <item row="4" column="3">
       <widget class="QComboBox" name="comboBox_material_4">
        <property name="minimumSize">
@@ -3080,27 +3236,6 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="5">
-      <widget class="QComboBox" name="comboBox_plate_4">
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
      <item row="4" column="6">
       <widget class="QComboBox" name="comboBox_thicknes_4">
        <property name="minimumSize">
@@ -3112,6 +3247,27 @@
        <property name="maximumSize">
         <size>
          <width>100</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="5">
+      <widget class="QComboBox" name="comboBox_plate_4">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
          <height>30</height>
         </size>
        </property>
@@ -3144,7 +3300,7 @@
       </widget>
      </item>
      <item row="4" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_19">
+      <widget class="QLineEdit" name="lineEdit_others_amount_4">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -3206,8 +3362,8 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="3">
-      <widget class="QComboBox" name="comboBox_material_5">
+     <item row="5" column="5">
+      <widget class="QComboBox" name="comboBox_plate_5">
        <property name="minimumSize">
         <size>
          <width>150</width>
@@ -3248,8 +3404,8 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="5">
-      <widget class="QComboBox" name="comboBox_plate_5">
+     <item row="5" column="3">
+      <widget class="QComboBox" name="comboBox_material_5">
        <property name="minimumSize">
         <size>
          <width>150</width>
@@ -3290,6 +3446,27 @@
        </property>
       </widget>
      </item>
+     <item row="5" column="8">
+      <widget class="QLineEdit" name="lineEdit_others_amount_5">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
      <item row="5" column="7">
       <widget class="QComboBox" name="comboBox_others_5">
        <property name="minimumSize">
@@ -3301,48 +3478,6 @@
        <property name="maximumSize">
         <size>
          <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_20">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0">
-      <widget class="QComboBox" name="comboBox_product_6">
-       <property name="minimumSize">
-        <size>
-         <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>175</width>
          <height>30</height>
         </size>
        </property>
@@ -3395,8 +3530,8 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="4">
-      <widget class="QComboBox" name="comboBox_process_6">
+     <item row="6" column="0">
+      <widget class="QComboBox" name="comboBox_product_6">
        <property name="minimumSize">
         <size>
          <width>175</width>
@@ -3437,17 +3572,17 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="6">
-      <widget class="QComboBox" name="comboBox_thicknes_6">
+     <item row="6" column="4">
+      <widget class="QComboBox" name="comboBox_process_6">
        <property name="minimumSize">
         <size>
-         <width>100</width>
+         <width>175</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>100</width>
+         <width>175</width>
          <height>30</height>
         </size>
        </property>
@@ -3480,7 +3615,7 @@
       </widget>
      </item>
      <item row="6" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_21">
+      <widget class="QLineEdit" name="lineEdit_others_amount_6">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -3490,6 +3625,27 @@
        <property name="maximumSize">
         <size>
          <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="6">
+      <widget class="QComboBox" name="comboBox_thicknes_6">
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>100</width>
          <height>30</height>
         </size>
        </property>
@@ -3521,27 +3677,6 @@
        </property>
       </widget>
      </item>
-     <item row="7" column="2">
-      <widget class="QLineEdit" name="lineEdit_amount_7">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
      <item row="7" column="3">
       <widget class="QComboBox" name="comboBox_material_7">
        <property name="minimumSize">
@@ -3553,6 +3688,27 @@
        <property name="maximumSize">
         <size>
          <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="2">
+      <widget class="QLineEdit" name="lineEdit_amount_7">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
@@ -3626,6 +3782,27 @@
        </property>
       </widget>
      </item>
+     <item row="8" column="0">
+      <widget class="QComboBox" name="comboBox_product_8">
+       <property name="minimumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
      <item row="7" column="7">
       <widget class="QComboBox" name="comboBox_others_7">
        <property name="minimumSize">
@@ -3648,7 +3825,7 @@
       </widget>
      </item>
      <item row="7" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_23">
+      <widget class="QLineEdit" name="lineEdit_others_amount_7">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -3658,27 +3835,6 @@
        <property name="maximumSize">
         <size>
          <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="0">
-      <widget class="QComboBox" name="comboBox_product_8">
-       <property name="minimumSize">
-        <size>
-         <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>175</width>
          <height>30</height>
         </size>
        </property>
@@ -3700,195 +3856,6 @@
        <property name="maximumSize">
         <size>
          <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="3">
-      <widget class="QComboBox" name="comboBox_material_8">
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="4">
-      <widget class="QComboBox" name="comboBox_process_8">
-       <property name="minimumSize">
-        <size>
-         <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="5">
-      <widget class="QComboBox" name="comboBox_plate_8">
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="6">
-      <widget class="QComboBox" name="comboBox_thicknes_8">
-       <property name="minimumSize">
-        <size>
-         <width>100</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>100</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="7">
-      <widget class="QComboBox" name="comboBox_others_8">
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_22">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="0">
-      <widget class="QComboBox" name="comboBox_product_9">
-       <property name="minimumSize">
-        <size>
-         <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="2">
-      <widget class="QLineEdit" name="lineEdit_amount_9">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="3">
-      <widget class="QComboBox" name="comboBox_material_9">
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>150</width>
          <height>30</height>
         </size>
        </property>
@@ -3941,17 +3908,17 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="6">
-      <widget class="QComboBox" name="comboBox_thicknes_9">
+     <item row="9" column="8">
+      <widget class="QLineEdit" name="lineEdit_others_amount_9">
        <property name="minimumSize">
         <size>
-         <width>100</width>
+         <width>60</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>100</width>
+         <width>60</width>
          <height>30</height>
         </size>
        </property>
@@ -3983,38 +3950,17 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_24">
+     <item row="9" column="6">
+      <widget class="QComboBox" name="comboBox_thicknes_9">
        <property name="minimumSize">
         <size>
-         <width>60</width>
+         <width>100</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="0">
-      <widget class="QComboBox" name="comboBox_product_10">
-       <property name="minimumSize">
-        <size>
-         <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>175</width>
+         <width>100</width>
          <height>30</height>
         </size>
        </property>
@@ -4046,6 +3992,27 @@
        </property>
       </widget>
      </item>
+     <item row="10" column="0">
+      <widget class="QComboBox" name="comboBox_product_10">
+       <property name="minimumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
      <item row="10" column="3">
       <widget class="QComboBox" name="comboBox_material_10">
        <property name="minimumSize">
@@ -4057,27 +4024,6 @@
        <property name="maximumSize">
         <size>
          <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="4">
-      <widget class="QComboBox" name="comboBox_process_10">
-       <property name="minimumSize">
-        <size>
-         <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>175</width>
          <height>30</height>
         </size>
        </property>
@@ -4130,38 +4076,17 @@
        </property>
       </widget>
      </item>
-     <item row="10" column="7">
-      <widget class="QComboBox" name="comboBox_others_10">
+     <item row="10" column="4">
+      <widget class="QComboBox" name="comboBox_process_10">
        <property name="minimumSize">
         <size>
-         <width>150</width>
+         <width>175</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_25">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
+         <width>175</width>
          <height>30</height>
         </size>
        </property>
@@ -4193,17 +4118,38 @@
        </property>
       </widget>
      </item>
-     <item row="11" column="2">
-      <widget class="QLineEdit" name="lineEdit_amount_11">
+     <item row="10" column="7">
+      <widget class="QComboBox" name="comboBox_others_10">
        <property name="minimumSize">
         <size>
-         <width>80</width>
+         <width>150</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>80</width>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="8">
+      <widget class="QLineEdit" name="lineEdit_others_amount_10">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>60</width>
          <height>30</height>
         </size>
        </property>
@@ -4256,17 +4202,17 @@
        </property>
       </widget>
      </item>
-     <item row="11" column="5">
-      <widget class="QComboBox" name="comboBox_plate_11">
+     <item row="11" column="2">
+      <widget class="QLineEdit" name="lineEdit_amount_11">
        <property name="minimumSize">
         <size>
-         <width>150</width>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>150</width>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
@@ -4288,6 +4234,48 @@
        <property name="maximumSize">
         <size>
          <width>100</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="5">
+      <widget class="QComboBox" name="comboBox_plate_11">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="2">
+      <widget class="QLineEdit" name="lineEdit_amount_12">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
@@ -4320,7 +4308,7 @@
       </widget>
      </item>
      <item row="11" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_27">
+      <widget class="QLineEdit" name="lineEdit_others_amount_11">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -4351,27 +4339,6 @@
        <property name="maximumSize">
         <size>
          <width>175</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="12" column="2">
-      <widget class="QLineEdit" name="lineEdit_amount_12">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
          <height>30</height>
         </size>
        </property>
@@ -4487,17 +4454,17 @@
        </property>
       </widget>
      </item>
-     <item row="12" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_26">
+     <item row="13" column="2">
+      <widget class="QLineEdit" name="lineEdit_amount_13">
        <property name="minimumSize">
         <size>
-         <width>60</width>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>60</width>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
@@ -4529,38 +4496,17 @@
        </property>
       </widget>
      </item>
-     <item row="13" column="2">
-      <widget class="QLineEdit" name="lineEdit_amount_13">
+     <item row="12" column="8">
+      <widget class="QLineEdit" name="lineEdit_others_amount_12">
        <property name="minimumSize">
         <size>
-         <width>80</width>
+         <width>60</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="13" column="3">
-      <widget class="QComboBox" name="comboBox_material_13">
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>150</width>
+         <width>60</width>
          <height>30</height>
         </size>
        </property>
@@ -4594,6 +4540,27 @@
      </item>
      <item row="13" column="5">
       <widget class="QComboBox" name="comboBox_plate_13">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="3">
+      <widget class="QComboBox" name="comboBox_material_13">
        <property name="minimumSize">
         <size>
          <width>150</width>
@@ -4656,7 +4623,7 @@
       </widget>
      </item>
      <item row="13" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_28">
+      <widget class="QLineEdit" name="lineEdit_others_amount_13">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -4697,27 +4664,6 @@
        </property>
       </widget>
      </item>
-     <item row="14" column="2">
-      <widget class="QLineEdit" name="lineEdit_amount_14">
-       <property name="minimumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>80</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
      <item row="14" column="3">
       <widget class="QComboBox" name="comboBox_material_14">
        <property name="minimumSize">
@@ -4729,6 +4675,27 @@
        <property name="maximumSize">
         <size>
          <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="2">
+      <widget class="QLineEdit" name="lineEdit_amount_14">
+       <property name="minimumSize">
+        <size>
+         <width>80</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
          <height>30</height>
         </size>
        </property>
@@ -4781,27 +4748,6 @@
        </property>
       </widget>
      </item>
-     <item row="14" column="6">
-      <widget class="QComboBox" name="comboBox_thicknes_14">
-       <property name="minimumSize">
-        <size>
-         <width>100</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>100</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
      <item row="14" column="7">
       <widget class="QComboBox" name="comboBox_others_14">
        <property name="minimumSize">
@@ -4824,7 +4770,7 @@
       </widget>
      </item>
      <item row="14" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_29">
+      <widget class="QLineEdit" name="lineEdit_others_amount_14">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -4844,17 +4790,38 @@
        </property>
       </widget>
      </item>
-     <item row="15" column="0">
-      <widget class="QComboBox" name="comboBox_product_15">
+     <item row="14" column="6">
+      <widget class="QComboBox" name="comboBox_thicknes_14">
        <property name="minimumSize">
         <size>
-         <width>175</width>
+         <width>100</width>
          <height>30</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>175</width>
+         <width>100</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="3">
+      <widget class="QComboBox" name="comboBox_material_15">
+       <property name="minimumSize">
+        <size>
+         <width>150</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>150</width>
          <height>30</height>
         </size>
        </property>
@@ -4886,8 +4853,50 @@
        </property>
       </widget>
      </item>
-     <item row="15" column="3">
-      <widget class="QComboBox" name="comboBox_material_15">
+     <item row="15" column="0">
+      <widget class="QComboBox" name="comboBox_product_15">
+       <property name="minimumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="6">
+      <widget class="QComboBox" name="comboBox_thicknes_15">
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>100</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="5">
+      <widget class="QComboBox" name="comboBox_plate_15">
        <property name="minimumSize">
         <size>
          <width>150</width>
@@ -4928,48 +4937,6 @@
        </property>
       </widget>
      </item>
-     <item row="15" column="5">
-      <widget class="QComboBox" name="comboBox_plate_15">
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>150</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
-     <item row="15" column="6">
-      <widget class="QComboBox" name="comboBox_thicknes_15">
-       <property name="minimumSize">
-        <size>
-         <width>100</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>100</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-      </widget>
-     </item>
      <item row="15" column="7">
       <widget class="QComboBox" name="comboBox_others_15">
        <property name="minimumSize">
@@ -4992,7 +4959,7 @@
       </widget>
      </item>
      <item row="15" column="8">
-      <widget class="QLineEdit" name="lineEdit_CBMprice_30">
+      <widget class="QLineEdit" name="lineEdit_others_amount_15">
        <property name="minimumSize">
         <size>
          <width>60</width>
@@ -5012,9 +4979,42 @@
        </property>
       </widget>
      </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_product">
+       <property name="minimumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>175</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color:rgb(255, 255, 127)</string>
+       </property>
+       <property name="text">
+        <string>製作項目</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="font">
      <font>
       <pointsize>12</pointsize>

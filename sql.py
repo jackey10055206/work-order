@@ -20,9 +20,9 @@ connection = pymysql.connect(host='192.168.101.59',
                              database='work_order',
                              charset='utf8',
                              cursorclass=pymysql.cursors.DictCursor)
+
 #print(bool(connection))
 cursor = connection.cursor()
-
 # def create_table():
 #     SQL="""CREATE TABLE central_data(
 #         `product` char(50),
@@ -36,40 +36,72 @@ cursor = connection.cursor()
 #     connection.commit()
 
 def create_table():
-    SQL="""CREATE TABLE save_basic_data(
+    SQL="""CREATE TABLE save_price_data(
         `worknum` char(50) NOT NULL,
-        `case_name`char(50),
-        `company_name` char(50),
-        `phone` char(50),
-        `client_name` char(50),
-        `worktime` char(50),
-        `cleanuptime` char(50),
-        `workaddress` char(50),
-        `pack` char(50),
-        `transport` char(50),
-        `cemployee1` char(50),
-        `cemployee2` char(50),
-        `cemployee3` char(50),
-        `cemployee4` char(50),
-        `cemployee5` char(50),
-        `crossbar_width` char(50),
-        `crossbar_amount` char(50),
-        `crossbar_remark` char(50),
-        `150shelter` boolean,
-        `180shelter` boolean,
-        `iron_Shelter_amount` char(50),
-        `iron_Shelter_remark` char(50),
-        `paper_Shelter_height` char(50),
-        `paper_Shelter_amount` char(50),
-        `paper_Shelter_remark` char(50),
-        `stand_style` char(50),
-        `stand_amount` char(50),
-        `stand_remark` char(50),
-        `rent1` char(50),
-        `rent2` char(50),
-        `remark` char(255),
+        `lineEdit_CBM_1`char(50),
+        `lineEdit_CBM_2` char(50),
+        `lineEdit_CBM_3` char(50),
+        `lineEdit_CBM_4` char(50),
+        `lineEdit_CBM_5` char(50),
+        `lineEdit_CBM_6` char(50),
+        `lineEdit_CBM_7` char(50),
+        `lineEdit_CBM_8` char(50),
+        `lineEdit_CBM_9` char(50),
+        `lineEdit_CBM_10` char(50),
+        `lineEdit_CBM_11` char(50),
+        `lineEdit_CBM_12` char(50),
+        `lineEdit_CBM_13` char(50),
+        `lineEdit_CBM_14` char(50),
+        `lineEdit_CBM_15` char(50),
+        `lineEdit_CBMprice_1`char(50),
+        `lineEdit_CBMprice_2` char(50),
+        `lineEdit_CBMprice_3` char(50),
+        `lineEdit_CBMprice_4` char(50),
+        `lineEdit_CBMprice_5` char(50),
+        `lineEdit_CBMprice_6` char(50),
+        `lineEdit_CBMprice_7` char(50),
+        `lineEdit_CBMprice_8` char(50),
+        `lineEdit_CBMprice_9` char(50),
+        `lineEdit_CBMprice_10` char(50),
+        `lineEdit_CBMprice_11` char(50),
+        `lineEdit_CBMprice_12` char(50),
+        `lineEdit_CBMprice_13` char(50),
+        `lineEdit_CBMprice_14` char(50),
+        `lineEdit_CBMprice_15` char(50),
+        `lineEdit_single_price_1`char(50),
+        `lineEdit_single_price_2` char(50),
+        `lineEdit_single_price_3` char(50),
+        `lineEdit_single_price_4` char(50),
+        `lineEdit_single_price_5` char(50),
+        `lineEdit_single_price_6` char(50),
+        `lineEdit_single_price_7` char(50),
+        `lineEdit_single_price_8` char(50),
+        `lineEdit_single_price_9` char(50),
+        `lineEdit_single_price_10` char(50),
+        `lineEdit_single_price_11` char(50),
+        `lineEdit_single_price_12` char(50),
+        `lineEdit_single_price_13` char(50),
+        `lineEdit_single_price_14` char(50),
+        `lineEdit_single_price_15` char(50),
+        `lineEdit_single_price_16`char(50),
+        `lineEdit_single_price_17` char(50),
+        `lineEdit_single_price_18` char(50),
+        `lineEdit_single_price_19` char(50),
+        `lineEdit_single_price_20` char(50),
+        `lineEdit_single_price_21` char(50),
+        `lineEdit_single_price_22` char(50),
+        `lineEdit_single_price_23` char(50),
+        `lineEdit_single_price_24` char(50),
+        `lineEdit_single_price_25` char(50),
+        `lineEdit_single_price_26` char(50),
+        `lineEdit_single_price_27` char(50),
+        `lineEdit_single_price_28` char(50),
+        `lineEdit_single_price_29` char(50),
+        `lineEdit_single_price_30` char(50),
+        `lineEdit_tmpprice` char(50),
+        `lineEdit_tax` char(50),
+        `lineEdit_final_price` char(50),
         PRIMARY KEY(worknum)
-
     )"""
     cursor.execute(SQL)
     connection.commit()
@@ -384,6 +416,9 @@ def others_name():
         store(name_in)
     return Oname
 
+
+
+#######################################
 def check_database(Wnum):
     SQL = """SELECT * FROM save_basic_data WHERE worknum = '%s'""" % Wnum
     cursor.execute(SQL)
@@ -393,29 +428,88 @@ def check_database(Wnum):
         return True
     else:
         return False
-
-def Insert_data(data):
+#######################################
+def Insert_basic_data(data):
     SQL = """INSERT INTO save_basic_data (worknum,case_name,company_name,phone,client_name,worktime,cleanuptime,workaddress,pack,transport,cemployee1,cemployee2,cemployee3,cemployee4,cemployee5,crossbar_width,crossbar_amount,crossbar_remark,150shelter,180shelter,iron_Shelter_amount,iron_Shelter_remark,paper_Shelter_height,paper_Shelter_amount,paper_Shelter_remark,stand_style,stand_amount,stand_remark,rent1,rent2,remark)
              VALUES('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')""" % (data['worknum']  , data['case_name'] , data['company_name'] , data['phone'] ,data['client_name'] , data['worktime'] , data['cleanuptime'] , data['workaddress'] , data['pack'] , data['transport'] , data['cemployee1'] , data['cemployee2'] , data['cemployee3'] , data['cemployee4'] , data['cemployee5'] , data['crossbar_width'] , data['crossbar_amount'] , data['crossbar_remark'] , str(data['150shelter']) , str(data['180shelter']) , data['iron_Shelter_amount'] , data['iron_Shelter_remark'] , data['paper_Shelter_height'] , data['paper_Shelter_amount'] , data['paper_Shelter_remark'] , data['stand_style'] , data['stand_amount'] , data['stand_remark'] , data['rent1'] , data['rent2'] , data['remark'])
 
     cursor.execute(SQL)
     connection.commit()
 
-def Updata_data(data):
-    pass
-
+def Update_basic_data(data):
+    SQL ="""UPDATE save_basic_data 
+             SET worknum='%s',case_name='%s',company_name='%s',phone='%s',client_name='%s',worktime='%s',cleanuptime='%s',workaddress='%s',pack='%s',transport='%s',cemployee1='%s',cemployee2='%s',cemployee3='%s',cemployee4='%s',cemployee5='%s',crossbar_width='%s',crossbar_amount='%s',crossbar_remark='%s',150shelter='%s',180shelter='%s',iron_Shelter_amount='%s',iron_Shelter_remark='%s',paper_Shelter_height='%s',paper_Shelter_amount='%s',paper_Shelter_remark='%s',stand_style='%s',stand_amount='%s',stand_remark='%s',rent1='%s',rent2='%s',remark='%s'
+             WHERE worknum = '%s'
+         """ % (data['worknum']  , data['case_name'] , data['company_name'] , data['phone'] ,data['client_name'] , data['worktime'] , data['cleanuptime'] , data['workaddress'] , data['pack'] , data['transport'] , data['cemployee1'] , data['cemployee2'] , data['cemployee3'] , data['cemployee4'] , data['cemployee5'] , data['crossbar_width'] , data['crossbar_amount'] , data['crossbar_remark'] , str(data['150shelter']) , str(data['180shelter']) , data['iron_Shelter_amount'] , data['iron_Shelter_remark'] , data['paper_Shelter_height'] , data['paper_Shelter_amount'] , data['paper_Shelter_remark'] , data['stand_style'] , data['stand_amount'] , data['stand_remark'] , data['rent1'] , data['rent2'] , data['remark'],data['worknum'])
+    cursor.execute(SQL)
+    connection.commit
 
 def call__basic_data(Wnum):
     SQL = """SELECT * FROM save_basic_data WHERE worknum = '%s'""" % Wnum
+
     cursor.execute(SQL)
     connection.commit()
     data = cursor.fetchall()
-    print(data)
+    dict_data = data[0]
+    return dict_data
 
+#######################################
+def Insert_central_data(data):
+    SQL = """INSERT INTO save_central_data(worknum,
+    comboBox_product_1,comboBox_product_2,comboBox_product_3,comboBox_product_4,comboBox_product_5,comboBox_product_6,comboBox_product_7,comboBox_product_8,comboBox_product_9,comboBox_product_10,comboBox_product_11,comboBox_product_12,comboBox_product_13,comboBox_product_14,comboBox_product_15,
+    lineEdit_width_1,lineEdit_width_2,lineEdit_width_3,lineEdit_width_4,lineEdit_width_5,lineEdit_width_6,lineEdit_width_7,lineEdit_width_8,lineEdit_width_9,lineEdit_width_10,lineEdit_width_11,lineEdit_width_12,lineEdit_width_13,lineEdit_width_14,lineEdit_width_15,
+    lineEdit_height_1,lineEdit_height_2,lineEdit_height_3,lineEdit_height_4,lineEdit_height_5,lineEdit_height_6,lineEdit_height_7,lineEdit_height_8,lineEdit_height_9,lineEdit_height_10,lineEdit_height_11,lineEdit_height_12,lineEdit_height_13,lineEdit_height_14,lineEdit_height_15,
+    lineEdit_amount_1,lineEdit_amount_2,lineEdit_amount_3,lineEdit_amount_4,lineEdit_amount_5,lineEdit_amount_6,lineEdit_amount_7,lineEdit_amount_8,lineEdit_amount_9,lineEdit_amount_10,lineEdit_amount_11,lineEdit_amount_12,lineEdit_amount_13,lineEdit_amount_14,lineEdit_amount_15,
+    comboBox_material_1,comboBox_material_2,comboBox_material_3,comboBox_material_4,comboBox_material_5,comboBox_material_6,comboBox_material_7,comboBox_material_8,comboBox_material_9,comboBox_material_10,comboBox_material_11,comboBox_material_12,comboBox_material_13,comboBox_material_14,comboBox_material_15,
+    comboBox_process_1,comboBox_process_2,comboBox_process_3,comboBox_process_4,comboBox_process_5,comboBox_process_6,comboBox_process_7,comboBox_process_8,comboBox_process_9,comboBox_process_10,comboBox_process_11,comboBox_process_12,comboBox_process_13,comboBox_process_14,comboBox_process_15,
+    comboBox_plate_1,comboBox_plate_2,comboBox_plate_3,comboBox_plate_4,comboBox_plate_5,comboBox_plate_6,comboBox_plate_7,comboBox_plate_8,comboBox_plate_9,comboBox_plate_10,comboBox_plate_11,comboBox_plate_12,comboBox_plate_13,comboBox_plate_14,comboBox_plate_15,
+    comboBox_thicknes_1,comboBox_thicknes_2,comboBox_thicknes_3,comboBox_thicknes_4,comboBox_thicknes_5,comboBox_thicknes_6,comboBox_thicknes_7,comboBox_thicknes_8,comboBox_thicknes_9,comboBox_thicknes_10,comboBox_thicknes_11,comboBox_thicknes_12,comboBox_thicknes_13,comboBox_thicknes_14,comboBox_thicknes_15,
+    comboBox_others_1,comboBox_others_2,comboBox_others_3,comboBox_others_4,comboBox_others_5,comboBox_others_6,comboBox_others_7,comboBox_others_8,comboBox_others_9,comboBox_others_10,comboBox_others_11,comboBox_others_12,comboBox_others_13,comboBox_others_14,comboBox_others_15,
+    lineEdit_others_amount_1,lineEdit_others_amount_2,lineEdit_others_amount_3,lineEdit_others_amount_4,lineEdit_others_amount_5,lineEdit_others_amount_6,lineEdit_others_amount_7,lineEdit_others_amount_8,lineEdit_others_amount_9,lineEdit_others_amount_10,lineEdit_others_amount_11,lineEdit_others_amount_12,lineEdit_others_amount_13,lineEdit_others_amount_14,lineEdit_others_amount_15)
+    VALUES('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',)"""% (data['worknum'],
+    data['product_1'],data['product_2'],data['product_3'],data['product_4'],data['product_5'],data['product_6'],data['product_7'],data['product_8'],data['product_9'],data['product_10'],data['product_11'],data['product_12'],data['product_13'],data['product_14'],data['product_15'],
+    data['width_1'],data['width_2'],data['width_3'],data['width_4'],data['width_5'],data['width_6'],data['width_7'],data['width_8'],data['width_9'],data['width_10'],data['width_11'],data['width_12'],data['width_13'],data['width_14'],data['width_15'],
+    data['height_1'],data['height_2'],data['height_3'],data['height_4'],data['height_5'],data['height_6'],data['height_7'],data['height_8'],data['height_9'],data['height_10'],data['height_11'],data['height_12'],data['height_13'],data['height_14'],data['height_15'],
+    data['amount_1'],data['amount_2'],data['amount_3'],data['amount_4'],data['amount_5'],data['amount_6'],data['amount_7'],data['amount_8'],data['amount_9'],data['amount_10'],data['amount_11'],data['amount_12'],data['amount_13'],data['amount_14'],data['amount_15'],
+    data['material_1'],data['material_2'],data['material_3'],data['material_4'],data['material_5'],data['material_6'],data['material_7'],data['material_8'],data['material_9'],data['material_10'],data['material_11'],data['material_12'],data['material_13'],data['material_14'],data['material_15'],
+    data['process_1'],data['process_2'],data['process_3'],data['process_4'],data['process_5'],data['process_6'],data['process_7'],data['process_8'],data['process_9'],data['process_10'],data['process_11'],data['process_12'],data['process_13'],data['process_14'],data['process_15'],
+    data['plate_1'],data['plate_2'],data['plate_3'],data['plate_4'],data['plate_5'],data['plate_6'],data['plate_7'],data['plate_8'],data['plate_9'],data['plate_10'],data['plate_11'],data['plate_12'],data['plate_13'],data['plate_14'],data['plate_15'],
+    data['thicknes_1'],data['thicknes_2'],data['thicknes_3'],data['thicknes_4'],data['thicknes_5'],data['thicknes_6'],data['thicknes_7'],data['thicknes_8'],data['thicknes_9'],data['thicknes_10'],data['thicknes_11'],data['thicknes_12'],data['thicknes_13'],data['thicknes_14'],data['thicknes_15'],
+    data['others_1'],data['others_2'],data['others_3'],data['others_4'],data['others_5'],data['others_6'],data['others_7'],data['others_8'],data['others_9'],data['others_10'],data['others_11'],data['others_12'],data['others_13'],data['others_14'],data['others_15'],
+    data['others_amount_1'],data['others_amount_2'],data['others_amount_3'],data['others_amount_4'],data['others_amount_5'],data['others_amount_6'],data['others_amount_7'],data['others_amount_8'],data['others_amount_9'],data['others_amount_10'],data['others_amount_11'],data['others_amount_12'],data['others_amount_13'],data['others_amount_14'],data['others_amount_15'])
 
+    cursor.execute(SQL)
+    connection.commit
+    
+def Update_central_data():
+    pass
+def call_central_data():
+    pass
+#######################################
 
+def Insert_price_data():
+    pass
+
+def Update_price_data():
+    pass
+def call_central_data():
+    pass
+#######################################
 def del_data():
-    SQL = """DELETE FROM save_basic_data WHERE worknum = '001'"""
+    SQL = """DELETE FROM save_basic_data WHERE worknum = '22-04-002'"""
     cursor.execute(SQL)
     connection.commit()
-#worknum,case_name,company_namerrentText,phoneclient_namext,worktime,cleanuptimeext,workaddressxt,pack,transport,cemployee1,cemployee2,cemployee3,cemployee4,cemployee5,crossbar_width,crossbar_amount,crossbar_remark,150shelter,180shelter,iron_Shelter_amount,iron_Shelter_remark,paper_Shelter_height,paper_Shelter_amount,paper_Shelter_remark,stand_style,stand_amount,stand_remark,rent1,rent2,remark
+
+#worknum,case_name,company_name,phone,client_name,worktime,cleanuptime,workaddress,pack,transport,cemployee1,cemployee2,cemployee3,cemployee4,cemployee5,crossbar_width,crossbar_amount,crossbar_remark,150shelter,180shelter,iron_Shelter_amount,iron_Shelter_remark,paper_Shelter_height,paper_Shelter_amount,paper_Shelter_remark,stand_style,stand_amount,stand_remark,rent1,rent2,remark
+# data['worknum'],
+# data['product_1'],data['product_2'],data['product_3'],data['product_4'],data['product_5'],data['product_6'],data['product_7'],data['product_8'],data['product_9'],data['product_10'],data['product_11'],data['product_12'],data['product_13'],data['product_14'],data['product_15'],
+# data['width_1'],data['width_2'],data['width_3'],data['width_4'],data['width_5'],data['width_6'],data['width_7'],data['width_8'],data['width_9'],data['width_10'],data['width_11'],data['width_12'],data['width_13'],data['width_14'],data['width_15'],
+# data['height_1'],data['height_2'],data['height_3'],data['height_4'],data['height_5'],data['height_6'],data['height_7'],data['height_8'],data['height_9'],data['height_10'],data['height_11'],data['height_12'],data['height_13'],data['height_14'],data['height_15'],
+# data['amount_1'],data['amount_2'],data['amount_3'],data['amount_4'],data['amount_5'],data['amount_6'],data['amount_7'],data['amount_8'],data['amount_9'],data['amount_10'],data['amount_11'],data['amount_12'],data['amount_13'],data['amount_14'],data['amount_15'],
+# data['material_1'],data['material_2'],data['material_3'],data['material_4'],data['material_5'],data['material_6'],data['material_7'],data['material_8'],data['material_9'],data['material_10'],data['material_11'],data['material_12'],data['material_13'],data['material_14'],data['material_15'],
+# data['process_1'],data['process_2'],data['process_3'],data['process_4'],data['process_5'],data['process_6'],data['process_7'],data['process_8'],data['process_9'],data['process_10'],data['process_11'],data['process_12'],data['process_13'],data['process_14'],data['process_15'],
+# data['plate_1'],data['plate_2'],data['plate_3'],data['plate_4'],data['plate_5'],data['plate_6'],data['plate_7'],data['plate_8'],data['plate_9'],data['plate_10'],data['plate_11'],data['plate_12'],data['plate_13'],data['plate_14'],data['plate_15'],
+# data['thicknes_1'],data['thicknes_2'],data['thicknes_3'],data['thicknes_4'],data['thicknes_5'],data['thicknes_6'],data['thicknes_7'],data['thicknes_8'],data['thicknes_9'],data['thicknes_10'],data['thicknes_11'],data['thicknes_12'],data['thicknes_13'],data['thicknes_14'],data['thicknes_15'],
+# data['others_1'],data['others_2'],data['others_3'],data['others_4'],data['others_5'],data['others_6'],data['others_7'],data['others_8'],data['others_9'],data['others_10'],data['others_11'],data['others_12'],data['others_13'],data['others_14'],data['others_15'],
+# data['others_amount_1'],data['others_amount_2'],data['others_amount_3'],data['others_amount_4'],data['others_amount_5'],data['others_amount_6'],data['others_amount_7'],data['others_amount_8'],data['others_amount_9'],data['others_amount_10'],data['others_amount_11'],data['others_amount_12'],data['others_amount_13'],data['others_amount_14'],data['others_amount_15']
+
