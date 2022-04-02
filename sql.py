@@ -550,10 +550,15 @@ def Update_central_data(data):
              WHERE worknum='%s'
           """% (data['product_1'],data['product_2'],data['product_3'],data['product_4'],data['product_5'],data['product_6'],data['product_7'],data['product_8'],data['product_9'],data['product_10'],data['product_11'],data['product_12'],data['product_13'],data['product_14'],data['product_15'],data['width_1'],data['width_2'],data['width_3'],data['width_4'],data['width_5'],data['width_6'],data['width_7'],data['width_8'],data['width_9'],data['width_10'],data['width_11'],data['width_12'],data['width_13'],data['width_14'],data['width_15'],data['height_1'],data['height_2'],data['height_3'],data['height_4'],data['height_5'],data['height_6'],data['height_7'],data['height_8'],data['height_9'],data['height_10'],data['height_11'],data['height_12'],data['height_13'],data['height_14'],data['height_15'],data['amount_1'],data['amount_2'],data['amount_3'],data['amount_4'],data['amount_5'],data['amount_6'],data['amount_7'],data['amount_8'],data['amount_9'],data['amount_10'],data['amount_11'],data['amount_12'],data['amount_13'],data['amount_14'],data['amount_15'],data['material_1'],data['material_2'],data['material_3'],data['material_4'],data['material_5'],data['material_6'],data['material_7'],data['material_8'],data['material_9'],data['material_10'],data['material_11'],data['material_12'],data['material_13'],data['material_14'],data['material_15'],data['process_1'],data['process_2'],data['process_3'],data['process_4'],data['process_5'],data['process_6'],data['process_7'],data['process_8'],data['process_9'],data['process_10'],data['process_11'],data['process_12'],data['process_13'],data['process_14'],data['process_15'],data['plate_1'],data['plate_2'],data['plate_3'],data['plate_4'],data['plate_5'],data['plate_6'],data['plate_7'],data['plate_8'],data['plate_9'],data['plate_10'],data['plate_11'],data['plate_12'],data['plate_13'],data['plate_14'],data['plate_15'],data['thicknes_1'],data['thicknes_2'],data['thicknes_3'],data['thicknes_4'],data['thicknes_5'],data['thicknes_6'],data['thicknes_7'],data['thicknes_8'],data['thicknes_9'],data['thicknes_10'],data['thicknes_11'],data['thicknes_12'],data['thicknes_13'],data['thicknes_14'],data['thicknes_15'],data['others_1'],data['others_2'],data['others_3'],data['others_4'],data['others_5'],data['others_6'],data['others_7'],data['others_8'],data['others_9'],data['others_10'],data['others_11'],data['others_12'],data['others_13'],data['others_14'],data['others_15'],data['others_amount_1'],data['others_amount_2'],data['others_amount_3'],data['others_amount_4'],data['others_amount_5'],data['others_amount_6'],data['others_amount_7'],data['others_amount_8'],data['others_amount_9'],data['others_amount_10'],data['others_amount_11'],data['others_amount_12'],data['others_amount_13'],data['others_amount_14'],data['others_amount_15'],data['worknum'])
     cursor.execute(SQL)
+    print(SQL)
     connection.commit()
 
-def call_central_data():
-    pass
+def call_central_data(Wnum):
+    SQL = """SELECT * FROM save_central_data WHERE worknum = '%s'""" % Wnum
+    cursor.execute(SQL)
+    connection.commit()
+    data = cursor.fetchall()
+    print(data)
 #######################################
 
 
@@ -565,12 +570,11 @@ def Update_price_data(data):
                  lineEdit_single_price_16='%s',lineEdit_single_price_17='%s',lineEdit_single_price_18='%s',lineEdit_single_price_19='%s',lineEdit_single_price_20='%s',lineEdit_single_price_21='%s',lineEdit_single_price_22='%s',lineEdit_single_price_23='%s',lineEdit_single_price_24='%s',lineEdit_single_price_25='%s',lineEdit_single_price_26='%s',lineEdit_single_price_27='%s',lineEdit_single_price_28='%s',lineEdit_single_price_29='%s',lineEdit_single_price_30='%s',
                  lineEdit_tmpprice='%s',lineEdit_tax='%s',lineEdit_final_price='%s'             
              WHERE worknum='%s'
-          """%(data['lineEdit_CBM_1'],data['lineEdit_CBM_2'],data['lineEdit_CBM_3'],data['lineEdit_CBM_4'],data['lineEdit_CBM_5'],data['lineEdit_CBM_6'],data['lineEdit_CBM_7'],data['lineEdit_CBM_8'],data['lineEdit_CBM_9'],data['lineEdit_CBM_10'],data['lineEdit_CBM_11'],data['lineEdit_CBM_12'],data['lineEdit_CBM_13'],data['lineEdit_CBM_14'],data['lineEdit_CBM_15'],data['lineEdit_CBMprice_1'],data['lineEdit_CBMprice_2'],data['lineEdit_CBMprice_3'],data['lineEdit_CBMprice_4'],data['lineEdit_CBMprice_5'],data['lineEdit_CBMprice_6'],data['lineEdit_CBMprice_7'],data['lineEdit_CBMprice_8'],data['lineEdit_CBMprice_9'],data['lineEdit_CBMprice_10'],data['lineEdit_CBMprice_11'],data['lineEdit_CBMprice_12'],data['lineEdit_CBMprice_13'],data['lineEdit_CBMprice_14'],data['lineEdit_CBMprice_15'],data['lineEdit_single_price_1'],data['lineEdit_single_price_2'],data['lineEdit_single_price_3'],data['lineEdit_single_price_4'],data['lineEdit_single_price_5'],data['lineEdit_single_price_6'],data['lineEdit_single_price_7'],data['lineEdit_single_price_8'],data['lineEdit_single_price_9'],data['lineEdit_single_price_10'],data['lineEdit_single_price_11'],data['lineEdit_single_price_12'],data['lineEdit_single_price_13'],data['lineEdit_single_price_14'],data['lineEdit_single_price_15'],data['lineEdit_single_price_16'],data['lineEdit_single_price_17'],data['lineEdit_single_price_18'],data['lineEdit_single_price_19'],data['lineEdit_single_price_20'],data['lineEdit_single_price_21'],data['lineEdit_single_price_22'],data['lineEdit_single_price_23'],data['lineEdit_single_price_24'],data['lineEdit_single_price_25'],data['lineEdit_single_price_26'],data['lineEdit_single_price_27'],data['lineEdit_single_price_28'],data['lineEdit_single_price_29'],data['lineEdit_single_price_30'],data['lineEdit_tmpprice'],data['lineEdit_tax'],data['lineEdit_final_price'],data['worknum'])
+          """ %( data['lineEdit_CBM_1'],data['lineEdit_CBM_2'],data['lineEdit_CBM_3'],data['lineEdit_CBM_4'],data['lineEdit_CBM_5'],data['lineEdit_CBM_6'],data['lineEdit_CBM_7'],data['lineEdit_CBM_8'],data['lineEdit_CBM_9'],data['lineEdit_CBM_10'],data['lineEdit_CBM_11'],data['lineEdit_CBM_12'],data['lineEdit_CBM_13'],data['lineEdit_CBM_14'],data['lineEdit_CBM_15'],data['lineEdit_CBMprice_1'],data['lineEdit_CBMprice_2'],data['lineEdit_CBMprice_3'],data['lineEdit_CBMprice_4'],data['lineEdit_CBMprice_5'],data['lineEdit_CBMprice_6'],data['lineEdit_CBMprice_7'],data['lineEdit_CBMprice_8'],data['lineEdit_CBMprice_9'],data['lineEdit_CBMprice_10'],data['lineEdit_CBMprice_11'],data['lineEdit_CBMprice_12'],data['lineEdit_CBMprice_13'],data['lineEdit_CBMprice_14'],data['lineEdit_CBMprice_15'],data['lineEdit_single_price_1'],data['lineEdit_single_price_2'],data['lineEdit_single_price_3'],data['lineEdit_single_price_4'],data['lineEdit_single_price_5'],data['lineEdit_single_price_6'],data['lineEdit_single_price_7'],data['lineEdit_single_price_8'],data['lineEdit_single_price_9'],data['lineEdit_single_price_10'],data['lineEdit_single_price_11'],data['lineEdit_single_price_12'],data['lineEdit_single_price_13'],data['lineEdit_single_price_14'],data['lineEdit_single_price_15'],data['lineEdit_single_price_16'],data['lineEdit_single_price_17'],data['lineEdit_single_price_18'],data['lineEdit_single_price_19'],data['lineEdit_single_price_20'],data['lineEdit_single_price_21'],data['lineEdit_single_price_22'],data['lineEdit_single_price_23'],data['lineEdit_single_price_24'],data['lineEdit_single_price_25'],data['lineEdit_single_price_26'],data['lineEdit_single_price_27'],data['lineEdit_single_price_28'],data['lineEdit_single_price_29'],data['lineEdit_single_price_30'],data['lineEdit_tmpprice'],data['lineEdit_tax'],data['lineEdit_final_price'],data['worknum'])
     cursor.execute(SQL)
-    print(SQL)
-    connection.commit
+    connection.commit()
 
-def call_price_data():
+def call_price_data(Wnum):
     pass
 #######################################
 
@@ -580,6 +584,7 @@ def create_work_order(Wnum):
         SQL1 = """INSERT INTO save_basic_data(worknum) VALUES('%s')""" % Wnum
         SQL2 = """INSERT INTO save_central_data(worknum) VALUES('%s')""" % Wnum
         SQL3 = """INSERT INTO save_price_data(worknum) VALUES('%s')""" % Wnum
+        
         cursor.execute(SQL1)
         cursor.execute(SQL2)
         cursor.execute(SQL3)

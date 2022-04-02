@@ -91,10 +91,7 @@ class Main(QMainWindow, ui.Ui_Form):
             result = sum(final_price)
             
             tax = result*0.05
-            tax = 0.55
-            print(tax)
             tax = int(tax+0.5)
-            print(tax)
             answer = result + tax
             self.lineEdit_tmpprice.setText(str(result))
             self.lineEdit_tax.setText(str(tax))
@@ -448,7 +445,7 @@ class Main(QMainWindow, ui.Ui_Form):
             self.textEdit_remark.setText(data['remark'])
         
         ###顯示Central_data
-        def show_central_data():
+        def show_central_data(data):
             pass
         
         ###顯示price data
@@ -457,10 +454,12 @@ class Main(QMainWindow, ui.Ui_Form):
 
         ###點擊開啟
         def call_data():
-            data = call__basic_data(self.lineEdit_worknum.text())
+            data_basic = call__basic_data(self.lineEdit_worknum.text())
+            data_central = call_central_data(self.lineEdit_worknum.text())
+            data_price = call_price_data(self.lineEdit_worknum.text())
             init_data()
-            show_basic_data(data)
-            show_central_data()
+            show_basic_data(data_basic)
+            show_central_data(data_central)
             show_price_data()
         self.pushButton_open.clicked.connect(call_data)
 
