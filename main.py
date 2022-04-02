@@ -14,7 +14,7 @@ import pymysql
 import math
 # import openpyxl
 
-connection = pymysql.connect(host='192.168.101.59',
+connection = pymysql.connect(host='192.168.1.2',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -31,6 +31,7 @@ class Main(QMainWindow, ui.Ui_Form):
         super().__init__()
         self.setupUi(self)
 
+        #create_table()
         #del_data()
         ###增加下拉式選單客戶
         self.comboBox_company_name.addItems(company_name())
@@ -101,7 +102,7 @@ class Main(QMainWindow, ui.Ui_Form):
         self.pushButton_finalcal.clicked.connect(lambda:cal_final_price(self))
        
 
-       ### 判斷是INSERT還是UPDATE 去存basic_data
+       ### 直接存basic_data
         def save_basic_data():
             dict_data = {
                 'worknum' : self.lineEdit_worknum.text(),
@@ -139,7 +140,7 @@ class Main(QMainWindow, ui.Ui_Form):
             Update_basic_data(dict_data)
 
 
-        ###判斷是INSERT還是UPDATE 去存central_data
+        ###直接存central_data
         def save_central_data():
             dict_data = {
                 'worknum':self.lineEdit_worknum.text(),
@@ -297,17 +298,83 @@ class Main(QMainWindow, ui.Ui_Form):
             }
             Update_central_data(dict_data)
 
-        ###判斷是INSERT還是UPDATE 去存price_data        
+        ###直接存price_data        
         def save_price_data():
-            pass    
+            dict_data={
+                'worknum':self.lineEdit_worknum.text(),
+                'lineEdit_CBM_1':self.lineEdit_CBM_1.text(),
+                'lineEdit_CBM_2':self.lineEdit_CBM_2.text(),
+                'lineEdit_CBM_3':self.lineEdit_CBM_3.text(),
+                'lineEdit_CBM_4':self.lineEdit_CBM_4.text(),
+                'lineEdit_CBM_5':self.lineEdit_CBM_5.text(),
+                'lineEdit_CBM_6':self.lineEdit_CBM_6.text(),
+                'lineEdit_CBM_7':self.lineEdit_CBM_7.text(),
+                'lineEdit_CBM_8':self.lineEdit_CBM_8.text(),
+                'lineEdit_CBM_9':self.lineEdit_CBM_9.text(),
+                'lineEdit_CBM_10':self.lineEdit_CBM_10.text(),
+                'lineEdit_CBM_11':self.lineEdit_CBM_11.text(),
+                'lineEdit_CBM_12':self.lineEdit_CBM_12.text(),
+                'lineEdit_CBM_13':self.lineEdit_CBM_13.text(),
+                'lineEdit_CBM_14':self.lineEdit_CBM_14.text(),
+                'lineEdit_CBM_15':self.lineEdit_CBM_15.text(),
+                'lineEdit_CBMprice_1':self.lineEdit_CBMprice_1.text(),
+                'lineEdit_CBMprice_2':self.lineEdit_CBMprice_2.text(),
+                'lineEdit_CBMprice_3':self.lineEdit_CBMprice_3.text(),
+                'lineEdit_CBMprice_4':self.lineEdit_CBMprice_4.text(),
+                'lineEdit_CBMprice_5':self.lineEdit_CBMprice_5.text(),
+                'lineEdit_CBMprice_6':self.lineEdit_CBMprice_6.text(),
+                'lineEdit_CBMprice_7':self.lineEdit_CBMprice_7.text(),
+                'lineEdit_CBMprice_8':self.lineEdit_CBMprice_8.text(),
+                'lineEdit_CBMprice_9':self.lineEdit_CBMprice_9.text(),
+                'lineEdit_CBMprice_10':self.lineEdit_CBMprice_10.text(),
+                'lineEdit_CBMprice_11':self.lineEdit_CBMprice_11.text(),
+                'lineEdit_CBMprice_12':self.lineEdit_CBMprice_12.text(),
+                'lineEdit_CBMprice_13':self.lineEdit_CBMprice_13.text(),
+                'lineEdit_CBMprice_14':self.lineEdit_CBMprice_14.text(),
+                'lineEdit_CBMprice_15':self.lineEdit_CBMprice_15.text(),
+                'lineEdit_single_price_1':self.lineEdit_single_price_1.text(),
+                'lineEdit_single_price_2':self.lineEdit_single_price_2.text(),
+                'lineEdit_single_price_3':self.lineEdit_single_price_3.text(),
+                'lineEdit_single_price_4':self.lineEdit_single_price_4.text(),
+                'lineEdit_single_price_5':self.lineEdit_single_price_5.text(),
+                'lineEdit_single_price_6':self.lineEdit_single_price_6.text(),
+                'lineEdit_single_price_7':self.lineEdit_single_price_7.text(),
+                'lineEdit_single_price_8':self.lineEdit_single_price_8.text(),
+                'lineEdit_single_price_9':self.lineEdit_single_price_9.text(),
+                'lineEdit_single_price_10':self.lineEdit_single_price_10.text(),
+                'lineEdit_single_price_11':self.lineEdit_single_price_11.text(),
+                'lineEdit_single_price_12':self.lineEdit_single_price_12.text(),
+                'lineEdit_single_price_13':self.lineEdit_single_price_13.text(),
+                'lineEdit_single_price_14':self.lineEdit_single_price_14.text(),
+                'lineEdit_single_price_15':self.lineEdit_single_price_15.text(),
+                'lineEdit_single_price_16':self.lineEdit_single_price_16.text(),
+                'lineEdit_single_price_17':self.lineEdit_single_price_17.text(),
+                'lineEdit_single_price_18':self.lineEdit_single_price_18.text(),
+                'lineEdit_single_price_19':self.lineEdit_single_price_19.text(),
+                'lineEdit_single_price_20':self.lineEdit_single_price_20.text(),
+                'lineEdit_single_price_21':self.lineEdit_single_price_21.text(),
+                'lineEdit_single_price_22':self.lineEdit_single_price_22.text(),
+                'lineEdit_single_price_23':self.lineEdit_single_price_23.text(),
+                'lineEdit_single_price_24':self.lineEdit_single_price_24.text(),
+                'lineEdit_single_price_25':self.lineEdit_single_price_25.text(),
+                'lineEdit_single_price_26':self.lineEdit_single_price_26.text(),
+                'lineEdit_single_price_27':self.lineEdit_single_price_27.text(),
+                'lineEdit_single_price_28':self.lineEdit_single_price_28.text(),
+                'lineEdit_single_price_29':self.lineEdit_single_price_29.text(),
+                'lineEdit_single_price_30':self.lineEdit_single_price_30.text(),
+                'lineEdit_tmpprice':self.lineEdit_tmpprice.text(),
+                'lineEdit_tax':self.lineEdit_tax.text(),
+                'lineEdit_final_price':self.lineEdit_final_price.text()
+            }    
+            Update_price_data(dict_data)
 
-        ###點擊儲存
+
+        ###點擊儲存，直接生一個工單編號在三個表裡面
         def save_data():
             create_work_order(self.lineEdit_worknum.text())
-
             save_basic_data()
             save_central_data()
-            # save_price_data()
+            save_price_data()
         self.pushButton_save.clicked.connect(save_data)
 
         ### 初始化視窗內所有表格
@@ -404,5 +471,8 @@ if __name__ == '__main__':
     window.showMaximized()
     window.show()
     sys.exit(app.exec())
+
+
+
 
 
