@@ -896,7 +896,6 @@ class Main(QMainWindow, ui.Ui_Form):
                     if lk < lk1:
                         lk = lk1
                 lks.append(lk)
-            print(lks)
 
             for i in range(1,new_worksheet.max_column+1):
                 k = get_column_letter(i)
