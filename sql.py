@@ -13,7 +13,7 @@ import pymysql
 import project as ui
 import main as m
 
-connection = pymysql.connect(host='192.168.1.2',
+connection = pymysql.connect(host='192.168.101.59',
                              port=3306,
                              user='root',
                              passwd='root',
