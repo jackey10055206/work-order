@@ -687,7 +687,7 @@ class Main(QMainWindow, ui.Ui_Form):
 
 
         def excel_progess():
-            workbook = openpyxl.load_workbook('proto.xlsx')
+            workbook = openpyxl.load_workbook('excel_progess.xlsx')
             worksheet = workbook.worksheets[0]
 
             new_workbook = openpyxl.Workbook()
@@ -995,8 +995,8 @@ class Main(QMainWindow, ui.Ui_Form):
             for row in new_worksheet['K20:K23']:
                 for cell in row:
                     cell.border = border_right
-
-            new_workbook.save('test1.xlsx')
+    
+            new_workbook.save('%s-%s-%s.xlsx' % (self.lineEdit_worknum.text(),self.comboBox_company_name.currentText(),self.lineEdit_case_name.text()))
         self.pushButton_excelProgess.clicked.connect(excel_progess)
 
         def excel_all():
