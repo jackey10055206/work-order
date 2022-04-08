@@ -45,6 +45,7 @@ class Main(QMainWindow, ui.Ui_Form):
 
         #create_table()
         #del_data()
+        #update_data()
         ###增加下拉式選單客戶
         self.comboBox_company_name.addItems(company_name())
 
@@ -1000,10 +1001,324 @@ class Main(QMainWindow, ui.Ui_Form):
         self.pushButton_excelProgess.clicked.connect(excel_progess)
 
         def excel_all():
-            pass
+            workbook = openpyxl.load_workbook('excel_all.xlsx')
+            worksheet = workbook.worksheets[0]
+
+            new_workbook = openpyxl.Workbook()
+            new_worksheet = new_workbook.active
+
+            for value in worksheet.iter_rows(min_row=1, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column, values_only=True):
+                value = list(value)
+                new_worksheet.append(value)
+
+
+            new_worksheet['B1'] = self.lineEdit_case_name.text()
+            new_worksheet['D1'] = self.comboBox_company_name.currentText()
+            new_worksheet['F1'] = self.lineEdit_phone.text()
+            new_worksheet['H1'] = self.lineEdit_worknum.text()
+            new_worksheet['B2'] = self.lineEdit_client_name.text()
+            new_worksheet['D2'] = self.lineEdit_worktime.text()
+            new_worksheet['F2'] = self.lineEdit_cleanup_time.text()
+            new_worksheet['H2'] = self.lineEdit_workaddress.text()
+            new_worksheet['B20'] = self.comboBox_pack.currentText() 
+            new_worksheet['B21'] = self.comboBox_transport.currentText()
+            new_worksheet['J20'] = self.comboBox_employee_1.currentText()
+            new_worksheet['J21'] = self.comboBox_employee_2.currentText()
+            new_worksheet['J22'] = self.comboBox_employee_3.currentText()
+            new_worksheet['J23'] = self.comboBox_employee_4.currentText()
+            new_worksheet['J24'] = self.comboBox_employee_5.currentText()
+            new_worksheet['E20'] = self.lineEdit_crossbar_width.text()
+            new_worksheet['G20'] = self.lineEdit_crossbar_amount.text()
+            if self.checkBox_150iron_shelter.isChecked() == True:
+                new_worksheet['E21'] = '150'
+            elif self.checkBox_180iron_shelter.isChecked() == True:
+                new_worksheet['E21'] = '180'
+            elif self.checkBox_150iron_shelter.isChecked() == True and self.checkBox_180iron_shelter.isChecked() == True:
+                new_worksheet['E21'] = '150 and 180'
+            else:
+                pass
+            new_worksheet['G21'] = self.lineEdit_iron_shelter_amount.text()
+            new_worksheet['E22'] = self.lineEdit_paper_shelter_height.text()
+            new_worksheet['G22'] = self.lineEdit_paper_shelter_amount.text()
+            new_worksheet['E23'] = self.lineEdit_stand_style.text()
+            new_worksheet['G23'] = self.lineEdit_stand_amount.text()
+            new_worksheet['D24'] = self.lineEdit_rent_1.text()
+            new_worksheet['G24'] = self.lineEdit_rent_2.text()
+            new_worksheet['A4'] = self.comboBox_product_1.currentText()
+            new_worksheet['A5'] = self.comboBox_product_2.currentText()
+            new_worksheet['A6'] = self.comboBox_product_3.currentText()
+            new_worksheet['A7'] = self.comboBox_product_4.currentText()
+            new_worksheet['A8'] = self.comboBox_product_5.currentText()
+            new_worksheet['A9'] = self.comboBox_product_6.currentText()
+            new_worksheet['A10'] = self.comboBox_product_7.currentText()
+            new_worksheet['A11'] = self.comboBox_product_8.currentText()
+            new_worksheet['A12'] = self.comboBox_product_9.currentText()
+            new_worksheet['A13'] = self.comboBox_product_10.currentText()
+            new_worksheet['A14'] = self.comboBox_product_11.currentText()
+            new_worksheet['A15'] = self.comboBox_product_12.currentText()
+            new_worksheet['A16'] = self.comboBox_product_13.currentText()
+            new_worksheet['A17'] = self.comboBox_product_14.currentText()
+            new_worksheet['A18'] = self.comboBox_product_15.currentText()
+            new_worksheet['B4'] = self.lineEdit_width_1.text()
+            new_worksheet['B5'] = self.lineEdit_width_2.text()
+            new_worksheet['B6'] = self.lineEdit_width_3.text()
+            new_worksheet['B7'] = self.lineEdit_width_4.text()
+            new_worksheet['B8'] = self.lineEdit_width_5.text()
+            new_worksheet['B9'] = self.lineEdit_width_6.text()
+            new_worksheet['B10'] = self.lineEdit_width_7.text()
+            new_worksheet['B11'] = self.lineEdit_width_8.text()
+            new_worksheet['B12'] = self.lineEdit_width_9.text()
+            new_worksheet['B13'] = self.lineEdit_width_10.text()
+            new_worksheet['B14'] = self.lineEdit_width_11.text()
+            new_worksheet['B15'] = self.lineEdit_width_12.text()
+            new_worksheet['B16'] = self.lineEdit_width_13.text()
+            new_worksheet['B17'] = self.lineEdit_width_14.text()
+            new_worksheet['B18'] = self.lineEdit_width_15.text()
+            new_worksheet['D4'] = self.lineEdit_height_1.text()
+            new_worksheet['D5'] = self.lineEdit_height_2.text()
+            new_worksheet['D6'] = self.lineEdit_height_3.text()
+            new_worksheet['D7'] = self.lineEdit_height_4.text()
+            new_worksheet['D8'] = self.lineEdit_height_5.text()
+            new_worksheet['D9'] = self.lineEdit_height_6.text()
+            new_worksheet['D10'] = self.lineEdit_height_7.text()
+            new_worksheet['D11'] = self.lineEdit_height_8.text()
+            new_worksheet['D12'] = self.lineEdit_height_9.text()
+            new_worksheet['D13'] = self.lineEdit_height_10.text()
+            new_worksheet['D14'] = self.lineEdit_height_11.text()
+            new_worksheet['D15'] = self.lineEdit_height_12.text()
+            new_worksheet['D16'] = self.lineEdit_height_13.text()
+            new_worksheet['D17'] = self.lineEdit_height_14.text()
+            new_worksheet['D18'] = self.lineEdit_height_15.text()
+            new_worksheet['E4'] = self.lineEdit_amount_1.text()
+            new_worksheet['E5'] = self.lineEdit_amount_2.text()
+            new_worksheet['E6'] = self.lineEdit_amount_3.text()
+            new_worksheet['E7'] = self.lineEdit_amount_4.text()
+            new_worksheet['E8'] = self.lineEdit_amount_5.text()
+            new_worksheet['E9'] = self.lineEdit_amount_6.text()
+            new_worksheet['E10'] = self.lineEdit_amount_7.text()
+            new_worksheet['E11'] = self.lineEdit_amount_8.text()
+            new_worksheet['E12'] = self.lineEdit_amount_9.text()
+            new_worksheet['E13'] = self.lineEdit_amount_10.text()
+            new_worksheet['E14'] = self.lineEdit_amount_11.text()
+            new_worksheet['E15'] = self.lineEdit_amount_12.text()
+            new_worksheet['E16'] = self.lineEdit_amount_13.text()
+            new_worksheet['E17'] = self.lineEdit_amount_14.text()
+            new_worksheet['E18'] = self.lineEdit_amount_15.text()
+            new_worksheet['F4'] = self.comboBox_material_1.currentText()
+            new_worksheet['F5'] = self.comboBox_material_2.currentText()
+            new_worksheet['F6'] = self.comboBox_material_3.currentText()
+            new_worksheet['F7'] = self.comboBox_material_4.currentText()
+            new_worksheet['F8'] = self.comboBox_material_5.currentText()
+            new_worksheet['F9'] = self.comboBox_material_6.currentText()
+            new_worksheet['F10'] = self.comboBox_material_7.currentText()
+            new_worksheet['F11'] = self.comboBox_material_8.currentText()
+            new_worksheet['F12'] = self.comboBox_material_9.currentText()
+            new_worksheet['F13'] = self.comboBox_material_10.currentText()
+            new_worksheet['F14'] = self.comboBox_material_11.currentText()
+            new_worksheet['F15'] = self.comboBox_material_12.currentText()
+            new_worksheet['F16'] = self.comboBox_material_13.currentText()
+            new_worksheet['F17'] = self.comboBox_material_14.currentText()
+            new_worksheet['F18'] = self.comboBox_material_15.currentText()
+            new_worksheet['G4'] = self.comboBox_process_1.currentText()
+            new_worksheet['G5'] = self.comboBox_process_2.currentText()
+            new_worksheet['G6'] = self.comboBox_process_3.currentText()
+            new_worksheet['G7'] = self.comboBox_process_4.currentText()
+            new_worksheet['G8'] = self.comboBox_process_5.currentText()
+            new_worksheet['G9'] = self.comboBox_process_6.currentText()
+            new_worksheet['G10'] = self.comboBox_process_7.currentText()
+            new_worksheet['G11'] = self.comboBox_process_8.currentText()
+            new_worksheet['G12'] = self.comboBox_process_9.currentText()
+            new_worksheet['G13'] = self.comboBox_process_10.currentText()
+            new_worksheet['G14'] = self.comboBox_process_11.currentText()
+            new_worksheet['G15'] = self.comboBox_process_12.currentText()
+            new_worksheet['G16'] = self.comboBox_process_13.currentText()
+            new_worksheet['G17'] = self.comboBox_process_14.currentText()
+            new_worksheet['G18'] = self.comboBox_process_15.currentText()
+            new_worksheet['H4'] = self.comboBox_plate_1.currentText()
+            new_worksheet['H5'] = self.comboBox_plate_2.currentText()
+            new_worksheet['H6'] = self.comboBox_plate_3.currentText()
+            new_worksheet['H7'] = self.comboBox_plate_4.currentText()
+            new_worksheet['H8'] = self.comboBox_plate_5.currentText()
+            new_worksheet['H9'] = self.comboBox_plate_6.currentText()
+            new_worksheet['H10'] = self.comboBox_plate_7.currentText()
+            new_worksheet['H11'] = self.comboBox_plate_8.currentText()
+            new_worksheet['H12'] = self.comboBox_plate_9.currentText()
+            new_worksheet['H13'] = self.comboBox_plate_10.currentText()
+            new_worksheet['H14'] = self.comboBox_plate_11.currentText()
+            new_worksheet['H15'] = self.comboBox_plate_12.currentText()
+            new_worksheet['H16'] = self.comboBox_plate_13.currentText()
+            new_worksheet['H17'] = self.comboBox_plate_14.currentText()
+            new_worksheet['H18'] = self.comboBox_plate_15.currentText()
+            new_worksheet['I4'] = self.comboBox_thicknes_1.currentText()
+            new_worksheet['I5'] = self.comboBox_thicknes_2.currentText()
+            new_worksheet['I6'] = self.comboBox_thicknes_3.currentText()
+            new_worksheet['I7'] = self.comboBox_thicknes_4.currentText()
+            new_worksheet['I8'] = self.comboBox_thicknes_5.currentText()
+            new_worksheet['I9'] = self.comboBox_thicknes_6.currentText()
+            new_worksheet['I10'] = self.comboBox_thicknes_7.currentText()
+            new_worksheet['I11'] = self.comboBox_thicknes_8.currentText()
+            new_worksheet['I12'] = self.comboBox_thicknes_9.currentText()
+            new_worksheet['I13'] = self.comboBox_thicknes_10.currentText()
+            new_worksheet['I14'] = self.comboBox_thicknes_11.currentText()
+            new_worksheet['I15'] = self.comboBox_thicknes_12.currentText()
+            new_worksheet['I16'] = self.comboBox_thicknes_13.currentText()
+            new_worksheet['I17'] = self.comboBox_thicknes_14.currentText()
+            new_worksheet['I18'] = self.comboBox_thicknes_15.currentText()
+            new_worksheet['J4'] = self.comboBox_others_1.currentText()
+            new_worksheet['J5'] = self.comboBox_others_2.currentText()
+            new_worksheet['J6'] = self.comboBox_others_3.currentText()
+            new_worksheet['J7'] = self.comboBox_others_4.currentText()
+            new_worksheet['J8'] = self.comboBox_others_5.currentText()
+            new_worksheet['J9'] = self.comboBox_others_6.currentText()
+            new_worksheet['J10'] = self.comboBox_others_7.currentText()
+            new_worksheet['J11'] = self.comboBox_others_8.currentText()
+            new_worksheet['J12'] = self.comboBox_others_9.currentText()
+            new_worksheet['J13'] = self.comboBox_others_10.currentText()
+            new_worksheet['J14'] = self.comboBox_others_11.currentText()
+            new_worksheet['J15'] = self.comboBox_others_12.currentText()
+            new_worksheet['J16'] = self.comboBox_others_13.currentText()
+            new_worksheet['J17'] = self.comboBox_others_14.currentText()
+            new_worksheet['J18'] = self.comboBox_others_15.currentText()
+            new_worksheet['K4'] = self.lineEdit_others_amount_1.text()
+            new_worksheet['K5'] = self.lineEdit_others_amount_2.text()
+            new_worksheet['K6'] = self.lineEdit_others_amount_3.text()
+            new_worksheet['K7'] = self.lineEdit_others_amount_4.text()
+            new_worksheet['K8'] = self.lineEdit_others_amount_5.text()
+            new_worksheet['K9'] = self.lineEdit_others_amount_6.text()
+            new_worksheet['K10'] = self.lineEdit_others_amount_7.text()
+            new_worksheet['K11'] = self.lineEdit_others_amount_8.text()
+            new_worksheet['K12'] = self.lineEdit_others_amount_9.text()
+            new_worksheet['K13'] = self.lineEdit_others_amount_10.text()
+            new_worksheet['K14'] = self.lineEdit_others_amount_11.text()
+            new_worksheet['K15'] = self.lineEdit_others_amount_12.text()
+            new_worksheet['K16'] = self.lineEdit_others_amount_13.text()
+            new_worksheet['K17'] = self.lineEdit_others_amount_14.text()
+            new_worksheet['K18'] = self.lineEdit_others_amount_15.text()
+            
+
+            font = Font('新細明體',size = 22,)
+            align = Alignment(horizontal="center",vertical="center",wrapText=True)
+
+            for row in range(new_worksheet.max_row):
+                for column in range(new_worksheet.max_column):
+                    new_worksheet.cell(row=row+1,column=column+1).font = font
+                    new_worksheet.cell(row=row+1,column=column+1).alignment = align
+
+            lks=[]
+            for i in range(1,new_worksheet.max_column+1):
+                lk = 1
+                for j in range(1,new_worksheet.max_row+1):
+                    sz = new_worksheet.cell(row = j, column = i).value
+                    if isinstance(sz,str):
+                        lk1 = len(sz.encode('utf-8'))
+                    else:
+                        lk1 = len(str(sz))
+                    if lk < lk1:
+                        lk = lk1
+                lks.append(lk)
+
+            for i in range(1,new_worksheet.max_column+1):
+                k = get_column_letter(i)
+                new_worksheet.column_dimensions[k].width = lks[i-1]+10
+            
+            fille = PatternFill('solid',fgColor='E0FFFF')
+            for row in new_worksheet['A3:K3']:
+                for cell in row:
+                    cell.fill = fille 
+
+            line_t = Side(style='thin',color = '000000')
+            line_T = Side(style='thick',color = '000000')
+            border = Border(left=line_t,right=line_t,top=line_t,bottom=line_t)
+            border_leftup = Border(left=line_T,right=line_t,top=line_T,bottom=line_t)
+            border_rightup = Border(left=line_t,right=line_T,top=line_T,bottom=line_t)
+            border_leftdown = Border(left=line_T,right=line_t,top=line_t,bottom=line_T)
+            border_rightdown = Border(left=line_t,right=line_T,top=line_t,bottom=line_T)
+            border_left = Border(left=line_T,right=line_t,top=line_t,bottom=line_t)
+            border_up = Border(left=line_t,right=line_t,top=line_T,bottom=line_t)
+            border_down = Border(left=line_t,right=line_t,top=line_t,bottom=line_T)
+            border_right = Border(left=line_t,right=line_T,top=line_t,bottom=line_t)
+            
+            new_worksheet['A1'].border = border_leftup
+            new_worksheet['A2'].border = border_leftdown
+            new_worksheet['H1'].border = border_rightup
+            new_worksheet['H2'].border = border_rightdown
+            new_worksheet['A3'].border = border_leftup
+            new_worksheet['K3'].border = border_rightup
+            new_worksheet['A18'].border = border_leftdown
+            new_worksheet['K18'].border = border_rightdown
+            for row in new_worksheet['B1:G1']:
+                for cell in row:
+                    cell.border = border_up
+            for row in new_worksheet['B2:G2']:
+                for cell in row:
+                    cell.border = border_down
+            
+            for row in new_worksheet['A4:A17']:
+                for cell in row:
+                    cell.border = border_left
+            for row in new_worksheet['B3:J3']:
+                for cell in row:
+                    cell.border = border_up
+            for row in new_worksheet['K4:K17']:
+                for cell in row:
+                    cell.border = border_right
+            for row in new_worksheet['B18:J18']:
+                for cell in row:
+                    cell.border = border_down
+            for row in new_worksheet['B4:J17']:
+                for cell in row:
+                    cell.border = border
+
+            new_worksheet['A19'].border = border_leftup
+            new_worksheet['B19'].border = border_rightup
+            new_worksheet['A21'].border = border_leftdown
+            new_worksheet['B21'].border = border_rightdown
+            new_worksheet['A20'].border = border_left
+            new_worksheet['B20'].border = border_right
+
+            new_worksheet['C19'].border = border_leftup
+            new_worksheet['I19'].border = border_rightup
+            new_worksheet['C24'].border = border_leftdown
+            new_worksheet['I24'].border = border_rightdown
+
+            for row in new_worksheet['D19:I19']:
+                for cell in row:
+                    cell.border = border_up
+            for row in new_worksheet['C20:C23']:
+                for cell in row:
+                    cell.border = border_left
+            for row in new_worksheet['I20:I23']:
+                for cell in row:
+                    cell.border = border_right
+            for row in new_worksheet['D24:H24']:
+                for cell in row:
+                    cell.border = border_down
+            for row in new_worksheet['D20:H23']:
+                for cell in row:
+                    cell.border = border
+
+            new_worksheet['J19'].border = border_leftup
+            new_worksheet['K19'].border = border_rightup
+            new_worksheet['J24'].border = border_leftdown
+            new_worksheet['K24'].border = border_rightdown
+
+            for row in new_worksheet['J20:J23']:
+                for cell in row:
+                    cell.border = border_left
+            
+            for row in new_worksheet['K20:K23']:
+                for cell in row:
+                    cell.border = border_right
         self.pushButton_excelALL.clicked.connect(excel_all)
 
+        def excel_payment():
+            workbook = openpyxl.load_workbook('excel_payment.xlsx')
+            worksheet = workbook.worksheets[0]
 
+            new_workbook = openpyxl.Workbook()
+            new_workbook.copy_worksheet(workbook)
+            new_workbook.save("COPY.xlsx")
+        self.pushButton_excelpayment.clicked.connect(excel_payment)
 
 
 
