@@ -997,10 +997,11 @@ class Main(QMainWindow, ui.Ui_Form):
                     cell.border = border_right
 
             new_workbook.save('test1.xlsx')
-
         self.pushButton_excelProgess.clicked.connect(excel_progess)
 
-
+        def excel_all():
+            pass
+        self.pushButton_excelALL.clicked.connect(excel_all)
 
 
 
