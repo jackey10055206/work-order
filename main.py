@@ -1,5 +1,3 @@
-from ctypes import alignment
-from hashlib import new
 import sys
 
 from unittest import result
@@ -23,7 +21,7 @@ from openpyxl.styles import PatternFill
 
 
 
-connection = pymysql.connect(host='192.168.101.59',
+connection = pymysql.connect(host='192.168.1.2',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -1312,12 +1310,17 @@ class Main(QMainWindow, ui.Ui_Form):
         self.pushButton_excelALL.clicked.connect(excel_all)
 
         def excel_payment():
-            workbook = openpyxl.load_workbook('excel_payment.xlsx')
+            workbook = openpyxl.load_workbook('proto.xlsx')
             worksheet = workbook.worksheets[0]
 
             new_workbook = openpyxl.Workbook()
-            new_workbook.copy_worksheet(workbook)
-            new_workbook.save("COPY.xlsx")
+            new_worksheet = new_workbook.active
+
+            for value in worksheet.iter_rows(min_row=1, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column, values_only=True):
+                value = list(value)
+                new_worksheet.append(value)
+            
+            new_workbook.save('test1.xlsx')
         self.pushButton_excelpayment.clicked.connect(excel_payment)
 
 
