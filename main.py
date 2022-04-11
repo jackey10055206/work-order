@@ -21,7 +21,7 @@ from openpyxl.styles import PatternFill
 
 
 
-connection = pymysql.connect(host='192.168.1.2',
+connection = pymysql.connect(host='192.168.101.59',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -1310,17 +1310,221 @@ class Main(QMainWindow, ui.Ui_Form):
         self.pushButton_excelALL.clicked.connect(excel_all)
 
         def excel_payment():
-            workbook = openpyxl.load_workbook('proto.xlsx')
-            worksheet = workbook.worksheets[0]
+            full_name,phone,address,taxID = company_name_change(self.comboBox_company_name.currentText())
+            workbook = openpyxl.load_workbook('excel_payment.xlsx')
+            ws = workbook.worksheets[0]
 
-            new_workbook = openpyxl.Workbook()
-            new_worksheet = new_workbook.active
+            font = Font('新細明體',size = 22)
+            align = Alignment(horizontal="left",vertical="center",wrapText=True)
+            align1 = Alignment(horizontal="center",vertical="center",wrapText=True)
 
-            for value in worksheet.iter_rows(min_row=1, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column, values_only=True):
-                value = list(value)
-                new_worksheet.append(value)
+            ws['C3'] = full_name
+            ws['C3'].font = font
+            ws['C3'].alignment = align
+            ws['G3'] = self.lineEdit_case_name.text()
+            ws['G3'].font = font
+            ws['G3'].alignment = align
+            ws['I3'] = self.lineEdit_client_name.text()
+            ws['I3'].font = font
+            ws['I3'].alignment = align
+            ws['K3'] = phone
+            ws['K3'].font = font
+            ws['K3'].alignment = align
+            ws['C5'] = taxID
+            ws['C5'].font = font
+            ws['C5'].alignment = align
+            ws['I4'] = self.lineEdit_worktime.text()
+            ws['I4'].font = font
+            ws['I4'].alignment = align
+            ws['K4'] = self.lineEdit_cleanup_time.text()
+            ws['K4'].font = font
+            ws['K4'].alignment = align
+            ws['C4'] = self.lineEdit_workaddress.text()
+            ws['C4'].font = font
+            ws['C4'].alignment = align
+            ws['F5'] = address
+            ws['F5'].font = font
+            ws['F5'].alignment = align
             
-            new_workbook.save('test1.xlsx')
+            ws['B7'] = self.comboBox_product_1.currentText()
+            if self.lineEdit_width_1.text() != "" : ws['C7'] = self.lineEdit_width_1.text() + " X " + self.lineEdit_height_1.text()
+            ws['E7'] = self.lineEdit_amount_1.text()
+            ws['F7'] = self.comboBox_material_1.currentText()
+            ws['G7'] = self.comboBox_thicknes_1.currentText() + self.comboBox_plate_1.currentText()
+            ws['H7'] = self.comboBox_others_1.currentText()
+            ws['I7'] = self.lineEdit_others_amount_1.text()
+            ws['J7'] = self.lineEdit_CBM_1.text()
+            ws['K7'] = self.lineEdit_single_price_1.text()
+            ws['L7'] = self.lineEdit_single_price_16.text()
+
+            ws['B8'] = self.comboBox_product_2.currentText()
+            if self.lineEdit_width_2.text() != "" : ws['C8'] = self.lineEdit_width_2.text() + " X " + self.lineEdit_height_2.text()
+            ws['E8'] = self.lineEdit_amount_2.text()
+            ws['F8'] = self.comboBox_material_2.currentText()
+            ws['G8'] = self.comboBox_thicknes_2.currentText() + self.comboBox_plate_2.currentText()
+            ws['H8'] = self.comboBox_others_2.currentText()
+            ws['I8'] = self.lineEdit_others_amount_2.text()
+            ws['J8'] = self.lineEdit_CBM_2.text()
+            ws['K8'] = self.lineEdit_single_price_2.text()
+            ws['L8'] = self.lineEdit_single_price_17.text()
+
+            ws['B9'] = self.comboBox_product_3.currentText()
+            if self.lineEdit_width_3.text() != "" : ws['C9'] = self.lineEdit_width_3.text() + " X " + self.lineEdit_height_3.text()
+            ws['E9'] = self.lineEdit_amount_3.text()
+            ws['F9'] = self.comboBox_material_3.currentText()
+            ws['G9'] = self.comboBox_thicknes_3.currentText() + self.comboBox_plate_3.currentText()
+            ws['H9'] = self.comboBox_others_3.currentText()
+            ws['I9'] = self.lineEdit_others_amount_3.text()
+            ws['J9'] = self.lineEdit_CBM_3.text()
+            ws['K9'] = self.lineEdit_single_price_3.text()
+            ws['L9'] = self.lineEdit_single_price_18.text()
+
+            ws['B10'] = self.comboBox_product_4.currentText()
+            if self.lineEdit_width_4.text() != "" : ws['C10'] = self.lineEdit_width_4.text() + " X " + self.lineEdit_height_4.text()
+            ws['E10'] = self.lineEdit_amount_4.text()
+            ws['F10'] = self.comboBox_material_4.currentText()
+            ws['G10'] = self.comboBox_thicknes_4.currentText() + self.comboBox_plate_4.currentText()
+            ws['H10'] = self.comboBox_others_4.currentText()
+            ws['I10'] = self.lineEdit_others_amount_4.text()
+            ws['J10'] = self.lineEdit_CBM_4.text()
+            ws['K10'] = self.lineEdit_single_price_4.text()
+            ws['L10'] = self.lineEdit_single_price_19.text()
+
+            ws['B11'] = self.comboBox_product_5.currentText()
+            if self.lineEdit_width_5.text() != "" : ws['C11'] = self.lineEdit_width_5.text() + " X " + self.lineEdit_height_5.text()
+            ws['E11'] = self.lineEdit_amount_5.text()
+            ws['F11'] = self.comboBox_material_5.currentText()
+            ws['G11'] = self.comboBox_thicknes_5.currentText() + self.comboBox_plate_5.currentText()
+            ws['H11'] = self.comboBox_others_5.currentText()
+            ws['I11'] = self.lineEdit_others_amount_5.text()
+            ws['J11'] = self.lineEdit_CBM_5.text()
+            ws['K11'] = self.lineEdit_single_price_5.text()
+            ws['L11'] = self.lineEdit_single_price_20.text()
+
+            ws['B12'] = self.comboBox_product_6.currentText()
+            if self.lineEdit_width_6.text() != "" : ws['C12'] = self.lineEdit_width_6.text() + " X " + self.lineEdit_height_6.text()
+            ws['E12'] = self.lineEdit_amount_6.text()
+            ws['F12'] = self.comboBox_material_6.currentText()
+            ws['G12'] = self.comboBox_thicknes_6.currentText() + self.comboBox_plate_6.currentText()
+            ws['H12'] = self.comboBox_others_6.currentText()
+            ws['I12'] = self.lineEdit_others_amount_6.text()
+            ws['J12'] = self.lineEdit_CBM_6.text()
+            ws['K12'] = self.lineEdit_single_price_6.text()
+            ws['L12'] = self.lineEdit_single_price_21.text()
+
+            ws['B13'] = self.comboBox_product_7.currentText()
+            if self.lineEdit_width_7.text() != "" : ws['C13'] = self.lineEdit_width_7.text() + " X " + self.lineEdit_height_7.text()
+            ws['E13'] = self.lineEdit_amount_7.text()
+            ws['F13'] = self.comboBox_material_7.currentText()
+            ws['G13'] = self.comboBox_thicknes_7.currentText() + self.comboBox_plate_7.currentText()
+            ws['H13'] = self.comboBox_others_7.currentText()
+            ws['I13'] = self.lineEdit_others_amount_7.text()
+            ws['J13'] = self.lineEdit_CBM_7.text()
+            ws['K13'] = self.lineEdit_single_price_7.text()
+            ws['L13'] = self.lineEdit_single_price_22.text()
+
+            ws['B14'] = self.comboBox_product_8.currentText()
+            if self.lineEdit_width_8.text() != "" : ws['C14'] = self.lineEdit_width_8.text() + " X " + self.lineEdit_height_8.text()
+            ws['E14'] = self.lineEdit_amount_8.text()
+            ws['F14'] = self.comboBox_material_8.currentText()
+            ws['G14'] = self.comboBox_thicknes_8.currentText() + self.comboBox_plate_8.currentText()
+            ws['H14'] = self.comboBox_others_8.currentText()
+            ws['I14'] = self.lineEdit_others_amount_8.text()
+            ws['J14'] = self.lineEdit_CBM_8.text()
+            ws['K14'] = self.lineEdit_single_price_8.text()
+            ws['L14'] = self.lineEdit_single_price_23.text()
+
+            ws['B15'] = self.comboBox_product_9.currentText()
+            if self.lineEdit_width_9.text() != "" : ws['C15'] = self.lineEdit_width_9.text() + " X " + self.lineEdit_height_9.text()
+            ws['E15'] = self.lineEdit_amount_9.text()
+            ws['F15'] = self.comboBox_material_9.currentText()
+            ws['G15'] = self.comboBox_thicknes_9.currentText() + self.comboBox_plate_9.currentText()
+            ws['H15'] = self.comboBox_others_9.currentText()
+            ws['I15'] = self.lineEdit_others_amount_9.text()
+            ws['J15'] = self.lineEdit_CBM_9.text()
+            ws['K15'] = self.lineEdit_single_price_9.text()
+            ws['L15'] = self.lineEdit_single_price_24.text()
+
+            ws['B16'] = self.comboBox_product_10.currentText()
+            if self.lineEdit_width_10.text() != "" : ws['C16'] = self.lineEdit_width_10.text() + " X " + self.lineEdit_height_10.text()
+            ws['E16'] = self.lineEdit_amount_10.text()
+            ws['F16'] = self.comboBox_material_10.currentText()
+            ws['G16'] = self.comboBox_thicknes_10.currentText() + self.comboBox_plate_10.currentText()
+            ws['H16'] = self.comboBox_others_10.currentText()
+            ws['I16'] = self.lineEdit_others_amount_10.text()
+            ws['J16'] = self.lineEdit_CBM_10.text()
+            ws['K16'] = self.lineEdit_single_price_10.text()
+            ws['L16'] = self.lineEdit_single_price_25.text()
+
+            ws['B17'] = self.comboBox_product_11.currentText()
+            if self.lineEdit_width_11.text() != "" : ws['C17'] = self.lineEdit_width_11.text() + " X " + self.lineEdit_height_11.text()
+            ws['E17'] = self.lineEdit_amount_11.text()
+            ws['F17'] = self.comboBox_material_11.currentText()
+            ws['G17'] = self.comboBox_thicknes_11.currentText() + self.comboBox_plate_11.currentText()
+            ws['H17'] = self.comboBox_others_11.currentText()
+            ws['I17'] = self.lineEdit_others_amount_11.text()
+            ws['J17'] = self.lineEdit_CBM_11.text()
+            ws['K17'] = self.lineEdit_single_price_11.text()
+            ws['L17'] = self.lineEdit_single_price_26.text()
+
+            ws['B18'] = self.comboBox_product_12.currentText()
+            if self.lineEdit_width_12.text() != "" : ws['C18'] = self.lineEdit_width_12.text() + " X " + self.lineEdit_height_12.text()
+            ws['E18'] = self.lineEdit_amount_12.text()
+            ws['F18'] = self.comboBox_material_12.currentText()
+            ws['G18'] = self.comboBox_thicknes_12.currentText() + self.comboBox_plate_12.currentText()
+            ws['H18'] = self.comboBox_others_12.currentText()
+            ws['I18'] = self.lineEdit_others_amount_12.text()
+            ws['J18'] = self.lineEdit_CBM_12.text()
+            ws['K18'] = self.lineEdit_single_price_12.text()
+            ws['L18'] = self.lineEdit_single_price_27.text()
+
+            ws['B19'] = self.comboBox_product_13.currentText()
+            if self.lineEdit_width_13.text() != "" : ws['C19'] = self.lineEdit_width_13.text() + " X " + self.lineEdit_height_13.text()
+            ws['E19'] = self.lineEdit_amount_13.text()
+            ws['F19'] = self.comboBox_material_13.currentText()
+            ws['G19'] = self.comboBox_thicknes_13.currentText() + self.comboBox_plate_13.currentText()
+            ws['H19'] = self.comboBox_others_13.currentText()
+            ws['I19'] = self.lineEdit_others_amount_13.text()
+            ws['J19'] = self.lineEdit_CBM_13.text()
+            ws['K19'] = self.lineEdit_single_price_13.text()
+            ws['L19'] = self.lineEdit_single_price_28.text()
+
+            ws['B20'] = self.comboBox_product_14.currentText()
+            if self.lineEdit_width_14.text() != "" : ws['C20'] = self.lineEdit_width_14.text() + " X " + self.lineEdit_height_14.text()
+            ws['E20'] = self.lineEdit_amount_14.text()
+            ws['F20'] = self.comboBox_material_14.currentText()
+            ws['G20'] = self.comboBox_thicknes_14.currentText() + self.comboBox_plate_14.currentText()
+            ws['H20'] = self.comboBox_others_14.currentText()
+            ws['I20'] = self.lineEdit_others_amount_14.text()
+            ws['J20'] = self.lineEdit_CBM_14.text()
+            ws['K20'] = self.lineEdit_single_price_14.text()
+            ws['L20'] = self.lineEdit_single_price_29.text()
+
+            ws['B21'] = self.comboBox_product_15.currentText()
+            if self.lineEdit_width_15.text() != "" : ws['C21'] = self.lineEdit_width_15.text() + " X " + self.lineEdit_height_15.text()
+            ws['E21'] = self.lineEdit_amount_15.text()
+            ws['F21'] = self.comboBox_material_15.currentText()
+            ws['G21'] = self.comboBox_thicknes_15.currentText() + self.comboBox_plate_15.currentText()
+            ws['H21'] = self.comboBox_others_15.currentText()
+            ws['I21'] = self.lineEdit_others_amount_15.text()
+            ws['J21'] = self.lineEdit_CBM_15.text()
+            ws['K21'] = self.lineEdit_single_price_15.text()
+            ws['L21'] = self.lineEdit_single_price_30.text()
+
+            ws['H22'] = self.lineEdit_tmpprice.text()
+            ws['H22'].font = font
+            ws['H22'].alignment = align1
+            ws['J22'] = self.lineEdit_tax.text()
+            ws['J22'].font = font
+            ws['J22'].alignment = align1
+            ws['L22'] = self.lineEdit_final_price.text()
+            ws['L22'].font = font
+            ws['L22'].alignment = align1
+            for row in ws['B7:L21']:
+                for cell in row:
+                    cell.font = font
+                    cell.alignment = align1
+            workbook.save('test1.xlsx')
         self.pushButton_excelpayment.clicked.connect(excel_payment)
 
 
