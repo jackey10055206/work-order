@@ -1,4 +1,6 @@
 import sys
+import getpass
+import os
 
 from unittest import result
 from PyQt5 import QtWidgets
@@ -6,6 +8,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from tkinter import *
+
+from openpyxl import Workbook
 from sql import *
 
 import sql
@@ -686,7 +690,7 @@ class Main(QMainWindow, ui.Ui_Form):
 
 
         def excel_progess():
-            workbook = openpyxl.load_workbook('excel_progess.xlsx')
+            workbook = openpyxl.load_workbook('C:/Desktop/work-order/excel_progess.xlsx')
             worksheet = workbook.worksheets[0]
 
             new_workbook = openpyxl.Workbook()
@@ -718,7 +722,7 @@ class Main(QMainWindow, ui.Ui_Form):
             elif self.checkBox_180iron_shelter.isChecked() == True:
                 new_worksheet['E21'] = '180'
             elif self.checkBox_150iron_shelter.isChecked() == True and self.checkBox_180iron_shelter.isChecked() == True:
-                new_worksheet['E21'] = '150 and 180'
+                new_worksheet['E21'] = '150 & 180'
             else:
                 pass
             new_worksheet['G21'] = self.lineEdit_iron_shelter_amount.text()
@@ -995,323 +999,315 @@ class Main(QMainWindow, ui.Ui_Form):
                 for cell in row:
                     cell.border = border_right
     
-            new_workbook.save('%s-%s-%s.xlsx' % (self.lineEdit_worknum.text(),self.comboBox_company_name.currentText(),self.lineEdit_case_name.text()))
+            user_name = getpass.getuser()
+            save_path = "C:/Users/" + user_name + "/Desktop/" + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"
+            print(save_path)
+            new_workbook.save(save_path)
+
         self.pushButton_excelProgess.clicked.connect(excel_progess)
 
         def excel_all():
-            workbook = openpyxl.load_workbook('excel_all.xlsx')
-            worksheet = workbook.worksheets[0]
+            workbook = openpyxl.load_workbook('C:/Desktop/work-order/excel_all.xlsx')
+            ws = workbook.worksheets[0]
 
-            new_workbook = openpyxl.Workbook()
-            new_worksheet = new_workbook.active
-
-            for value in worksheet.iter_rows(min_row=1, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column, values_only=True):
-                value = list(value)
-                new_worksheet.append(value)
-
-
-            new_worksheet['B1'] = self.lineEdit_case_name.text()
-            new_worksheet['D1'] = self.comboBox_company_name.currentText()
-            new_worksheet['F1'] = self.lineEdit_phone.text()
-            new_worksheet['H1'] = self.lineEdit_worknum.text()
-            new_worksheet['B2'] = self.lineEdit_client_name.text()
-            new_worksheet['D2'] = self.lineEdit_worktime.text()
-            new_worksheet['F2'] = self.lineEdit_cleanup_time.text()
-            new_worksheet['H2'] = self.lineEdit_workaddress.text()
-            new_worksheet['B20'] = self.comboBox_pack.currentText() 
-            new_worksheet['B21'] = self.comboBox_transport.currentText()
-            new_worksheet['J20'] = self.comboBox_employee_1.currentText()
-            new_worksheet['J21'] = self.comboBox_employee_2.currentText()
-            new_worksheet['J22'] = self.comboBox_employee_3.currentText()
-            new_worksheet['J23'] = self.comboBox_employee_4.currentText()
-            new_worksheet['J24'] = self.comboBox_employee_5.currentText()
-            new_worksheet['E20'] = self.lineEdit_crossbar_width.text()
-            new_worksheet['G20'] = self.lineEdit_crossbar_amount.text()
-            if self.checkBox_150iron_shelter.isChecked() == True:
-                new_worksheet['E21'] = '150'
-            elif self.checkBox_180iron_shelter.isChecked() == True:
-                new_worksheet['E21'] = '180'
-            elif self.checkBox_150iron_shelter.isChecked() == True and self.checkBox_180iron_shelter.isChecked() == True:
-                new_worksheet['E21'] = '150 and 180'
-            else:
-                pass
-            new_worksheet['G21'] = self.lineEdit_iron_shelter_amount.text()
-            new_worksheet['E22'] = self.lineEdit_paper_shelter_height.text()
-            new_worksheet['G22'] = self.lineEdit_paper_shelter_amount.text()
-            new_worksheet['E23'] = self.lineEdit_stand_style.text()
-            new_worksheet['G23'] = self.lineEdit_stand_amount.text()
-            new_worksheet['D24'] = self.lineEdit_rent_1.text()
-            new_worksheet['G24'] = self.lineEdit_rent_2.text()
-            new_worksheet['A4'] = self.comboBox_product_1.currentText()
-            new_worksheet['A5'] = self.comboBox_product_2.currentText()
-            new_worksheet['A6'] = self.comboBox_product_3.currentText()
-            new_worksheet['A7'] = self.comboBox_product_4.currentText()
-            new_worksheet['A8'] = self.comboBox_product_5.currentText()
-            new_worksheet['A9'] = self.comboBox_product_6.currentText()
-            new_worksheet['A10'] = self.comboBox_product_7.currentText()
-            new_worksheet['A11'] = self.comboBox_product_8.currentText()
-            new_worksheet['A12'] = self.comboBox_product_9.currentText()
-            new_worksheet['A13'] = self.comboBox_product_10.currentText()
-            new_worksheet['A14'] = self.comboBox_product_11.currentText()
-            new_worksheet['A15'] = self.comboBox_product_12.currentText()
-            new_worksheet['A16'] = self.comboBox_product_13.currentText()
-            new_worksheet['A17'] = self.comboBox_product_14.currentText()
-            new_worksheet['A18'] = self.comboBox_product_15.currentText()
-            new_worksheet['B4'] = self.lineEdit_width_1.text()
-            new_worksheet['B5'] = self.lineEdit_width_2.text()
-            new_worksheet['B6'] = self.lineEdit_width_3.text()
-            new_worksheet['B7'] = self.lineEdit_width_4.text()
-            new_worksheet['B8'] = self.lineEdit_width_5.text()
-            new_worksheet['B9'] = self.lineEdit_width_6.text()
-            new_worksheet['B10'] = self.lineEdit_width_7.text()
-            new_worksheet['B11'] = self.lineEdit_width_8.text()
-            new_worksheet['B12'] = self.lineEdit_width_9.text()
-            new_worksheet['B13'] = self.lineEdit_width_10.text()
-            new_worksheet['B14'] = self.lineEdit_width_11.text()
-            new_worksheet['B15'] = self.lineEdit_width_12.text()
-            new_worksheet['B16'] = self.lineEdit_width_13.text()
-            new_worksheet['B17'] = self.lineEdit_width_14.text()
-            new_worksheet['B18'] = self.lineEdit_width_15.text()
-            new_worksheet['D4'] = self.lineEdit_height_1.text()
-            new_worksheet['D5'] = self.lineEdit_height_2.text()
-            new_worksheet['D6'] = self.lineEdit_height_3.text()
-            new_worksheet['D7'] = self.lineEdit_height_4.text()
-            new_worksheet['D8'] = self.lineEdit_height_5.text()
-            new_worksheet['D9'] = self.lineEdit_height_6.text()
-            new_worksheet['D10'] = self.lineEdit_height_7.text()
-            new_worksheet['D11'] = self.lineEdit_height_8.text()
-            new_worksheet['D12'] = self.lineEdit_height_9.text()
-            new_worksheet['D13'] = self.lineEdit_height_10.text()
-            new_worksheet['D14'] = self.lineEdit_height_11.text()
-            new_worksheet['D15'] = self.lineEdit_height_12.text()
-            new_worksheet['D16'] = self.lineEdit_height_13.text()
-            new_worksheet['D17'] = self.lineEdit_height_14.text()
-            new_worksheet['D18'] = self.lineEdit_height_15.text()
-            new_worksheet['E4'] = self.lineEdit_amount_1.text()
-            new_worksheet['E5'] = self.lineEdit_amount_2.text()
-            new_worksheet['E6'] = self.lineEdit_amount_3.text()
-            new_worksheet['E7'] = self.lineEdit_amount_4.text()
-            new_worksheet['E8'] = self.lineEdit_amount_5.text()
-            new_worksheet['E9'] = self.lineEdit_amount_6.text()
-            new_worksheet['E10'] = self.lineEdit_amount_7.text()
-            new_worksheet['E11'] = self.lineEdit_amount_8.text()
-            new_worksheet['E12'] = self.lineEdit_amount_9.text()
-            new_worksheet['E13'] = self.lineEdit_amount_10.text()
-            new_worksheet['E14'] = self.lineEdit_amount_11.text()
-            new_worksheet['E15'] = self.lineEdit_amount_12.text()
-            new_worksheet['E16'] = self.lineEdit_amount_13.text()
-            new_worksheet['E17'] = self.lineEdit_amount_14.text()
-            new_worksheet['E18'] = self.lineEdit_amount_15.text()
-            new_worksheet['F4'] = self.comboBox_material_1.currentText()
-            new_worksheet['F5'] = self.comboBox_material_2.currentText()
-            new_worksheet['F6'] = self.comboBox_material_3.currentText()
-            new_worksheet['F7'] = self.comboBox_material_4.currentText()
-            new_worksheet['F8'] = self.comboBox_material_5.currentText()
-            new_worksheet['F9'] = self.comboBox_material_6.currentText()
-            new_worksheet['F10'] = self.comboBox_material_7.currentText()
-            new_worksheet['F11'] = self.comboBox_material_8.currentText()
-            new_worksheet['F12'] = self.comboBox_material_9.currentText()
-            new_worksheet['F13'] = self.comboBox_material_10.currentText()
-            new_worksheet['F14'] = self.comboBox_material_11.currentText()
-            new_worksheet['F15'] = self.comboBox_material_12.currentText()
-            new_worksheet['F16'] = self.comboBox_material_13.currentText()
-            new_worksheet['F17'] = self.comboBox_material_14.currentText()
-            new_worksheet['F18'] = self.comboBox_material_15.currentText()
-            new_worksheet['G4'] = self.comboBox_process_1.currentText()
-            new_worksheet['G5'] = self.comboBox_process_2.currentText()
-            new_worksheet['G6'] = self.comboBox_process_3.currentText()
-            new_worksheet['G7'] = self.comboBox_process_4.currentText()
-            new_worksheet['G8'] = self.comboBox_process_5.currentText()
-            new_worksheet['G9'] = self.comboBox_process_6.currentText()
-            new_worksheet['G10'] = self.comboBox_process_7.currentText()
-            new_worksheet['G11'] = self.comboBox_process_8.currentText()
-            new_worksheet['G12'] = self.comboBox_process_9.currentText()
-            new_worksheet['G13'] = self.comboBox_process_10.currentText()
-            new_worksheet['G14'] = self.comboBox_process_11.currentText()
-            new_worksheet['G15'] = self.comboBox_process_12.currentText()
-            new_worksheet['G16'] = self.comboBox_process_13.currentText()
-            new_worksheet['G17'] = self.comboBox_process_14.currentText()
-            new_worksheet['G18'] = self.comboBox_process_15.currentText()
-            new_worksheet['H4'] = self.comboBox_plate_1.currentText()
-            new_worksheet['H5'] = self.comboBox_plate_2.currentText()
-            new_worksheet['H6'] = self.comboBox_plate_3.currentText()
-            new_worksheet['H7'] = self.comboBox_plate_4.currentText()
-            new_worksheet['H8'] = self.comboBox_plate_5.currentText()
-            new_worksheet['H9'] = self.comboBox_plate_6.currentText()
-            new_worksheet['H10'] = self.comboBox_plate_7.currentText()
-            new_worksheet['H11'] = self.comboBox_plate_8.currentText()
-            new_worksheet['H12'] = self.comboBox_plate_9.currentText()
-            new_worksheet['H13'] = self.comboBox_plate_10.currentText()
-            new_worksheet['H14'] = self.comboBox_plate_11.currentText()
-            new_worksheet['H15'] = self.comboBox_plate_12.currentText()
-            new_worksheet['H16'] = self.comboBox_plate_13.currentText()
-            new_worksheet['H17'] = self.comboBox_plate_14.currentText()
-            new_worksheet['H18'] = self.comboBox_plate_15.currentText()
-            new_worksheet['I4'] = self.comboBox_thicknes_1.currentText()
-            new_worksheet['I5'] = self.comboBox_thicknes_2.currentText()
-            new_worksheet['I6'] = self.comboBox_thicknes_3.currentText()
-            new_worksheet['I7'] = self.comboBox_thicknes_4.currentText()
-            new_worksheet['I8'] = self.comboBox_thicknes_5.currentText()
-            new_worksheet['I9'] = self.comboBox_thicknes_6.currentText()
-            new_worksheet['I10'] = self.comboBox_thicknes_7.currentText()
-            new_worksheet['I11'] = self.comboBox_thicknes_8.currentText()
-            new_worksheet['I12'] = self.comboBox_thicknes_9.currentText()
-            new_worksheet['I13'] = self.comboBox_thicknes_10.currentText()
-            new_worksheet['I14'] = self.comboBox_thicknes_11.currentText()
-            new_worksheet['I15'] = self.comboBox_thicknes_12.currentText()
-            new_worksheet['I16'] = self.comboBox_thicknes_13.currentText()
-            new_worksheet['I17'] = self.comboBox_thicknes_14.currentText()
-            new_worksheet['I18'] = self.comboBox_thicknes_15.currentText()
-            new_worksheet['J4'] = self.comboBox_others_1.currentText()
-            new_worksheet['J5'] = self.comboBox_others_2.currentText()
-            new_worksheet['J6'] = self.comboBox_others_3.currentText()
-            new_worksheet['J7'] = self.comboBox_others_4.currentText()
-            new_worksheet['J8'] = self.comboBox_others_5.currentText()
-            new_worksheet['J9'] = self.comboBox_others_6.currentText()
-            new_worksheet['J10'] = self.comboBox_others_7.currentText()
-            new_worksheet['J11'] = self.comboBox_others_8.currentText()
-            new_worksheet['J12'] = self.comboBox_others_9.currentText()
-            new_worksheet['J13'] = self.comboBox_others_10.currentText()
-            new_worksheet['J14'] = self.comboBox_others_11.currentText()
-            new_worksheet['J15'] = self.comboBox_others_12.currentText()
-            new_worksheet['J16'] = self.comboBox_others_13.currentText()
-            new_worksheet['J17'] = self.comboBox_others_14.currentText()
-            new_worksheet['J18'] = self.comboBox_others_15.currentText()
-            new_worksheet['K4'] = self.lineEdit_others_amount_1.text()
-            new_worksheet['K5'] = self.lineEdit_others_amount_2.text()
-            new_worksheet['K6'] = self.lineEdit_others_amount_3.text()
-            new_worksheet['K7'] = self.lineEdit_others_amount_4.text()
-            new_worksheet['K8'] = self.lineEdit_others_amount_5.text()
-            new_worksheet['K9'] = self.lineEdit_others_amount_6.text()
-            new_worksheet['K10'] = self.lineEdit_others_amount_7.text()
-            new_worksheet['K11'] = self.lineEdit_others_amount_8.text()
-            new_worksheet['K12'] = self.lineEdit_others_amount_9.text()
-            new_worksheet['K13'] = self.lineEdit_others_amount_10.text()
-            new_worksheet['K14'] = self.lineEdit_others_amount_11.text()
-            new_worksheet['K15'] = self.lineEdit_others_amount_12.text()
-            new_worksheet['K16'] = self.lineEdit_others_amount_13.text()
-            new_worksheet['K17'] = self.lineEdit_others_amount_14.text()
-            new_worksheet['K18'] = self.lineEdit_others_amount_15.text()
-            
-
-            font = Font('新細明體',size = 22,)
+            font = Font('新細明體',size = 22)
             align = Alignment(horizontal="center",vertical="center",wrapText=True)
 
-            for row in range(new_worksheet.max_row):
-                for column in range(new_worksheet.max_column):
-                    new_worksheet.cell(row=row+1,column=column+1).font = font
-                    new_worksheet.cell(row=row+1,column=column+1).alignment = align
+            ws['B1'] = self.lineEdit_case_name.text()
+            ws['B1'].font = font
+            ws['B1'].alignment = align
+            ws['E1'] = self.comboBox_company_name.currentText()
+            ws['E1'].font = font
+            ws['E1'].alignment = align
+            ws['G1'] = self.lineEdit_phone.text()
+            ws['G1'].font = font
+            ws['G1'].alignment = align
+            ws['I1'] = self.lineEdit_worknum.text()
+            ws['I1'].font = font
+            ws['I1'].alignment = align
+            ws['B2'] = self.lineEdit_client_name.text()
+            ws['B2'].font = font
+            ws['B2'].alignment = align
+            ws['E2'] = self.lineEdit_worktime.text()
+            ws['E2'].font = font
+            ws['E2'].alignment = align
+            ws['G2'] = self.lineEdit_cleanup_time.text()
+            ws['G2'].font = font
+            ws['G2'].alignment = align
+            ws['I2'] = self.lineEdit_workaddress.text()
+            ws['I2'].font = font
+            ws['I2'].alignment = align
 
-            lks=[]
-            for i in range(1,new_worksheet.max_column+1):
-                lk = 1
-                for j in range(1,new_worksheet.max_row+1):
-                    sz = new_worksheet.cell(row = j, column = i).value
-                    if isinstance(sz,str):
-                        lk1 = len(sz.encode('utf-8'))
-                    else:
-                        lk1 = len(str(sz))
-                    if lk < lk1:
-                        lk = lk1
-                lks.append(lk)
+            ws['B20'] = self.comboBox_pack.currentText()
+            ws['B21'] = self.comboBox_transport.currentText()
+            ws['E20'] = self.lineEdit_crossbar_width.text()
+            ws['G20'] = self.lineEdit_crossbar_amount.text()
+            if self.checkBox_150iron_shelter.isChecked() == True:
+                ws['E21'] = '150'
+            elif self.checkBox_180iron_shelter.isChecked() == True:
+                ws['E21'] = '180'
+            elif self.checkBox_150iron_shelter.isChecked() == True and self.checkBox_180iron_shelter.isChecked() == True:
+                ws['E21'] = '150 and 180'
+            else:
+                pass
+            ws['G21'] = self.lineEdit_iron_shelter_amount.text()
+            ws['E22'] = self.lineEdit_paper_shelter_height.text()
+            ws['G22'] = self.lineEdit_paper_shelter_amount.text()
+            ws['E23'] = self.lineEdit_stand_style.text()
+            ws['G23'] = self.lineEdit_stand_amount.text()
+            ws['D24'] = self.lineEdit_rent_1.text()
+            ws['G24'] = self.lineEdit_rent_2.text()
 
-            for i in range(1,new_worksheet.max_column+1):
-                k = get_column_letter(i)
-                new_worksheet.column_dimensions[k].width = lks[i-1]+10
-            
-            fille = PatternFill('solid',fgColor='E0FFFF')
-            for row in new_worksheet['A3:K3']:
-                for cell in row:
-                    cell.fill = fille 
+            ws['A23'] = self.comboBox_employee_1.currentText()
+            ws['A24'] = self.comboBox_employee_2.currentText()
+            ws['A25'] = self.comboBox_employee_3.currentText()
+            ws['A26'] = self.comboBox_employee_4.currentText()
+            ws['A27'] = self.comboBox_employee_5.currentText()
+###############################################################################
+            ws['A4'] = self.comboBox_product_1.currentText()
+            ws['B4'] = self.lineEdit_width_1.text()
+            ws['C4'] = self.lineEdit_height_1.text()
+            ws['D4'] = self.lineEdit_amount_1.text()
+            ws['E4'] = self.comboBox_material_1.currentText()
+            ws['F4'] = self.comboBox_process_1.currentText()
+            ws['G4'] = self.comboBox_plate_1.currentText()
+            ws['H4'] = self.comboBox_thicknes_1.currentText()
+            ws['I4'] = self.comboBox_others_1.currentText()
+            ws['J4'] = self.lineEdit_others_amount_1.text()
+            ws['K4'] = self.lineEdit_CBM_1.text()
+            ws['L4'] = self.lineEdit_CBMprice_1.text()
+            ws['M4'] = self.lineEdit_single_price_1.text()
+            ws['N4'] = self.lineEdit_single_price_16.text()
 
-            line_t = Side(style='thin',color = '000000')
-            line_T = Side(style='thick',color = '000000')
-            border = Border(left=line_t,right=line_t,top=line_t,bottom=line_t)
-            border_leftup = Border(left=line_T,right=line_t,top=line_T,bottom=line_t)
-            border_rightup = Border(left=line_t,right=line_T,top=line_T,bottom=line_t)
-            border_leftdown = Border(left=line_T,right=line_t,top=line_t,bottom=line_T)
-            border_rightdown = Border(left=line_t,right=line_T,top=line_t,bottom=line_T)
-            border_left = Border(left=line_T,right=line_t,top=line_t,bottom=line_t)
-            border_up = Border(left=line_t,right=line_t,top=line_T,bottom=line_t)
-            border_down = Border(left=line_t,right=line_t,top=line_t,bottom=line_T)
-            border_right = Border(left=line_t,right=line_T,top=line_t,bottom=line_t)
-            
-            new_worksheet['A1'].border = border_leftup
-            new_worksheet['A2'].border = border_leftdown
-            new_worksheet['H1'].border = border_rightup
-            new_worksheet['H2'].border = border_rightdown
-            new_worksheet['A3'].border = border_leftup
-            new_worksheet['K3'].border = border_rightup
-            new_worksheet['A18'].border = border_leftdown
-            new_worksheet['K18'].border = border_rightdown
-            for row in new_worksheet['B1:G1']:
-                for cell in row:
-                    cell.border = border_up
-            for row in new_worksheet['B2:G2']:
-                for cell in row:
-                    cell.border = border_down
-            
-            for row in new_worksheet['A4:A17']:
-                for cell in row:
-                    cell.border = border_left
-            for row in new_worksheet['B3:J3']:
-                for cell in row:
-                    cell.border = border_up
-            for row in new_worksheet['K4:K17']:
-                for cell in row:
-                    cell.border = border_right
-            for row in new_worksheet['B18:J18']:
-                for cell in row:
-                    cell.border = border_down
-            for row in new_worksheet['B4:J17']:
-                for cell in row:
-                    cell.border = border
+            ws['A5'] = self.comboBox_product_2.currentText()
+            ws['B5'] = self.lineEdit_width_2.text()
+            ws['C5'] = self.lineEdit_height_2.text()
+            ws['D5'] = self.lineEdit_amount_2.text()
+            ws['E5'] = self.comboBox_material_2.currentText()
+            ws['F5'] = self.comboBox_process_2.currentText()
+            ws['G5'] = self.comboBox_plate_2.currentText()
+            ws['H5'] = self.comboBox_thicknes_2.currentText()
+            ws['I5'] = self.comboBox_others_2.currentText()
+            ws['J5'] = self.lineEdit_others_amount_2.text()
+            ws['K5'] = self.lineEdit_CBM_2.text()
+            ws['L5'] = self.lineEdit_CBMprice_2.text()
+            ws['M5'] = self.lineEdit_single_price_2.text()
+            ws['N5'] = self.lineEdit_single_price_17.text()
 
-            new_worksheet['A19'].border = border_leftup
-            new_worksheet['B19'].border = border_rightup
-            new_worksheet['A21'].border = border_leftdown
-            new_worksheet['B21'].border = border_rightdown
-            new_worksheet['A20'].border = border_left
-            new_worksheet['B20'].border = border_right
+            ws['A6'] = self.comboBox_product_3.currentText()
+            ws['B6'] = self.lineEdit_width_3.text()
+            ws['C6'] = self.lineEdit_height_3.text()
+            ws['D6'] = self.lineEdit_amount_3.text()
+            ws['E6'] = self.comboBox_material_3.currentText()
+            ws['F6'] = self.comboBox_process_3.currentText()
+            ws['G6'] = self.comboBox_plate_3.currentText()
+            ws['H6'] = self.comboBox_thicknes_3.currentText()
+            ws['I6'] = self.comboBox_others_3.currentText()
+            ws['J6'] = self.lineEdit_others_amount_3.text()
+            ws['K6'] = self.lineEdit_CBM_3.text()
+            ws['L6'] = self.lineEdit_CBMprice_3.text()
+            ws['M6'] = self.lineEdit_single_price_3.text()
+            ws['N6'] = self.lineEdit_single_price_18.text()
 
-            new_worksheet['C19'].border = border_leftup
-            new_worksheet['I19'].border = border_rightup
-            new_worksheet['C24'].border = border_leftdown
-            new_worksheet['I24'].border = border_rightdown
+            ws['A7'] = self.comboBox_product_4.currentText()
+            ws['B7'] = self.lineEdit_width_4.text()
+            ws['C7'] = self.lineEdit_height_4.text()
+            ws['D7'] = self.lineEdit_amount_4.text()
+            ws['E7'] = self.comboBox_material_4.currentText()
+            ws['F7'] = self.comboBox_process_4.currentText()
+            ws['G7'] = self.comboBox_plate_4.currentText()
+            ws['H7'] = self.comboBox_thicknes_4.currentText()
+            ws['I7'] = self.comboBox_others_4.currentText()
+            ws['J7'] = self.lineEdit_others_amount_4.text()
+            ws['K7'] = self.lineEdit_CBM_4.text()
+            ws['L7'] = self.lineEdit_CBMprice_4.text()
+            ws['M7'] = self.lineEdit_single_price_4.text()
+            ws['N7'] = self.lineEdit_single_price_19.text()
 
-            for row in new_worksheet['D19:I19']:
-                for cell in row:
-                    cell.border = border_up
-            for row in new_worksheet['C20:C23']:
-                for cell in row:
-                    cell.border = border_left
-            for row in new_worksheet['I20:I23']:
-                for cell in row:
-                    cell.border = border_right
-            for row in new_worksheet['D24:H24']:
-                for cell in row:
-                    cell.border = border_down
-            for row in new_worksheet['D20:H23']:
-                for cell in row:
-                    cell.border = border
+            ws['A8'] = self.comboBox_product_5.currentText()
+            ws['B8'] = self.lineEdit_width_5.text()
+            ws['C8'] = self.lineEdit_height_5.text()
+            ws['D8'] = self.lineEdit_amount_5.text()
+            ws['E8'] = self.comboBox_material_5.currentText()
+            ws['F8'] = self.comboBox_process_5.currentText()
+            ws['G8'] = self.comboBox_plate_5.currentText()
+            ws['H8'] = self.comboBox_thicknes_5.currentText()
+            ws['I8'] = self.comboBox_others_5.currentText()
+            ws['J8'] = self.lineEdit_others_amount_5.text()
+            ws['K8'] = self.lineEdit_CBM_5.text()
+            ws['L8'] = self.lineEdit_CBMprice_5.text()
+            ws['M8'] = self.lineEdit_single_price_5.text()
+            ws['N8'] = self.lineEdit_single_price_20.text()
 
-            new_worksheet['J19'].border = border_leftup
-            new_worksheet['K19'].border = border_rightup
-            new_worksheet['J24'].border = border_leftdown
-            new_worksheet['K24'].border = border_rightdown
+            ws['A9'] = self.comboBox_product_6.currentText()
+            ws['B9'] = self.lineEdit_width_6.text()
+            ws['C9'] = self.lineEdit_height_6.text()
+            ws['D9'] = self.lineEdit_amount_6.text()
+            ws['E9'] = self.comboBox_material_6.currentText()
+            ws['F9'] = self.comboBox_process_6.currentText()
+            ws['G9'] = self.comboBox_plate_6.currentText()
+            ws['H9'] = self.comboBox_thicknes_6.currentText()
+            ws['I9'] = self.comboBox_others_6.currentText()
+            ws['J9'] = self.lineEdit_others_amount_6.text()
+            ws['K9'] = self.lineEdit_CBM_6.text()
+            ws['L9'] = self.lineEdit_CBMprice_6.text()
+            ws['M9'] = self.lineEdit_single_price_6.text()
+            ws['N9'] = self.lineEdit_single_price_21.text()
 
-            for row in new_worksheet['J20:J23']:
+            ws['A10'] = self.comboBox_product_7.currentText()
+            ws['B10'] = self.lineEdit_width_7.text()
+            ws['C10'] = self.lineEdit_height_7.text()
+            ws['D10'] = self.lineEdit_amount_7.text()
+            ws['E10'] = self.comboBox_material_7.currentText()
+            ws['F10'] = self.comboBox_process_7.currentText()
+            ws['G10'] = self.comboBox_plate_7.currentText()
+            ws['H10'] = self.comboBox_thicknes_7.currentText()
+            ws['I10'] = self.comboBox_others_7.currentText()
+            ws['J10'] = self.lineEdit_others_amount_7.text()
+            ws['K10'] = self.lineEdit_CBM_7.text()
+            ws['L10'] = self.lineEdit_CBMprice_7.text()
+            ws['M10'] = self.lineEdit_single_price_7.text()
+            ws['N10'] = self.lineEdit_single_price_22.text()
+
+            ws['A11'] = self.comboBox_product_8.currentText()
+            ws['B11'] = self.lineEdit_width_8.text()
+            ws['C11'] = self.lineEdit_height_8.text()
+            ws['D11'] = self.lineEdit_amount_8.text()
+            ws['E11'] = self.comboBox_material_8.currentText()
+            ws['F11'] = self.comboBox_process_8.currentText()
+            ws['G11'] = self.comboBox_plate_8.currentText()
+            ws['H11'] = self.comboBox_thicknes_8.currentText()
+            ws['I11'] = self.comboBox_others_8.currentText()
+            ws['J11'] = self.lineEdit_others_amount_8.text()
+            ws['K11'] = self.lineEdit_CBM_8.text()
+            ws['L11'] = self.lineEdit_CBMprice_8.text()
+            ws['M11'] = self.lineEdit_single_price_8.text()
+            ws['N11'] = self.lineEdit_single_price_23.text()
+
+            ws['A12'] = self.comboBox_product_9.currentText()
+            ws['B12'] = self.lineEdit_width_9.text()
+            ws['C12'] = self.lineEdit_height_9.text()
+            ws['D12'] = self.lineEdit_amount_9.text()
+            ws['E12'] = self.comboBox_material_9.currentText()
+            ws['F12'] = self.comboBox_process_9.currentText()
+            ws['G12'] = self.comboBox_plate_9.currentText()
+            ws['H12'] = self.comboBox_thicknes_9.currentText()
+            ws['I12'] = self.comboBox_others_9.currentText()
+            ws['J12'] = self.lineEdit_others_amount_9.text()
+            ws['K12'] = self.lineEdit_CBM_9.text()
+            ws['L12'] = self.lineEdit_CBMprice_9.text()
+            ws['M12'] = self.lineEdit_single_price_9.text()
+            ws['N12'] = self.lineEdit_single_price_24.text()
+
+            ws['A13'] = self.comboBox_product_10.currentText()
+            ws['B13'] = self.lineEdit_width_10.text()
+            ws['C13'] = self.lineEdit_height_10.text()
+            ws['D13'] = self.lineEdit_amount_10.text()
+            ws['E13'] = self.comboBox_material_10.currentText()
+            ws['F13'] = self.comboBox_process_10.currentText()
+            ws['G13'] = self.comboBox_plate_10.currentText()
+            ws['H13'] = self.comboBox_thicknes_10.currentText()
+            ws['I13'] = self.comboBox_others_10.currentText()
+            ws['J13'] = self.lineEdit_others_amount_10.text()
+            ws['K13'] = self.lineEdit_CBM_10.text()
+            ws['L13'] = self.lineEdit_CBMprice_10.text()
+            ws['M13'] = self.lineEdit_single_price_10.text()
+            ws['N13'] = self.lineEdit_single_price_25.text()
+
+            ws['A14'] = self.comboBox_product_11.currentText()
+            ws['B14'] = self.lineEdit_width_11.text()
+            ws['C14'] = self.lineEdit_height_11.text()
+            ws['D14'] = self.lineEdit_amount_11.text()
+            ws['E14'] = self.comboBox_material_11.currentText()
+            ws['F14'] = self.comboBox_process_11.currentText()
+            ws['G14'] = self.comboBox_plate_11.currentText()
+            ws['H14'] = self.comboBox_thicknes_11.currentText()
+            ws['I14'] = self.comboBox_others_11.currentText()
+            ws['J14'] = self.lineEdit_others_amount_11.text()
+            ws['K14'] = self.lineEdit_CBM_11.text()
+            ws['L14'] = self.lineEdit_CBMprice_11.text()
+            ws['M14'] = self.lineEdit_single_price_11.text()
+            ws['N14'] = self.lineEdit_single_price_26.text()
+
+            ws['A15'] = self.comboBox_product_12.currentText()
+            ws['B15'] = self.lineEdit_width_12.text()
+            ws['C15'] = self.lineEdit_height_12.text()
+            ws['D15'] = self.lineEdit_amount_12.text()
+            ws['E15'] = self.comboBox_material_12.currentText()
+            ws['F15'] = self.comboBox_process_12.currentText()
+            ws['G15'] = self.comboBox_plate_12.currentText()
+            ws['H15'] = self.comboBox_thicknes_12.currentText()
+            ws['I15'] = self.comboBox_others_12.currentText()
+            ws['J15'] = self.lineEdit_others_amount_12.text()
+            ws['K15'] = self.lineEdit_CBM_12.text()
+            ws['L15'] = self.lineEdit_CBMprice_12.text()
+            ws['M15'] = self.lineEdit_single_price_12.text()
+            ws['N15'] = self.lineEdit_single_price_27.text()
+
+            ws['A16'] = self.comboBox_product_13.currentText()
+            ws['B16'] = self.lineEdit_width_13.text()
+            ws['C16'] = self.lineEdit_height_13.text()
+            ws['D16'] = self.lineEdit_amount_13.text()
+            ws['E16'] = self.comboBox_material_13.currentText()
+            ws['F16'] = self.comboBox_process_13.currentText()
+            ws['G16'] = self.comboBox_plate_13.currentText()
+            ws['H16'] = self.comboBox_thicknes_13.currentText()
+            ws['I16'] = self.comboBox_others_13.currentText()
+            ws['J16'] = self.lineEdit_others_amount_13.text()
+            ws['K16'] = self.lineEdit_CBM_13.text()
+            ws['L16'] = self.lineEdit_CBMprice_13.text()
+            ws['M16'] = self.lineEdit_single_price_13.text()
+            ws['N16'] = self.lineEdit_single_price_28.text()
+
+            ws['A17'] = self.comboBox_product_14.currentText()
+            ws['B17'] = self.lineEdit_width_14.text()
+            ws['C17'] = self.lineEdit_height_14.text()
+            ws['D17'] = self.lineEdit_amount_14.text()
+            ws['E17'] = self.comboBox_material_14.currentText()
+            ws['F17'] = self.comboBox_process_14.currentText()
+            ws['G17'] = self.comboBox_plate_14.currentText()
+            ws['H17'] = self.comboBox_thicknes_14.currentText()
+            ws['I17'] = self.comboBox_others_14.currentText()
+            ws['J17'] = self.lineEdit_others_amount_14.text()
+            ws['K17'] = self.lineEdit_CBM_14.text()
+            ws['L17'] = self.lineEdit_CBMprice_14.text()
+            ws['M17'] = self.lineEdit_single_price_14.text()
+            ws['N17'] = self.lineEdit_single_price_29.text()
+
+            ws['A18'] = self.comboBox_product_15.currentText()
+            ws['B18'] = self.lineEdit_width_15.text()
+            ws['C18'] = self.lineEdit_height_15.text()
+            ws['D18'] = self.lineEdit_amount_15.text()
+            ws['E18'] = self.comboBox_material_15.currentText()
+            ws['F18'] = self.comboBox_process_15.currentText()
+            ws['G18'] = self.comboBox_plate_15.currentText()
+            ws['H18'] = self.comboBox_thicknes_15.currentText()
+            ws['I18'] = self.comboBox_others_15.currentText()
+            ws['J18'] = self.lineEdit_others_amount_15.text()
+            ws['K18'] = self.lineEdit_CBM_15.text()
+            ws['L18'] = self.lineEdit_CBMprice_15.text()
+            ws['M18'] = self.lineEdit_single_price_15.text()
+            ws['N18'] = self.lineEdit_single_price_30.text()
+
+
+            ws['L19'] = self.lineEdit_tmpprice.text()
+            ws['L21'] = self.lineEdit_tax.text()
+            ws['L23'] = self.lineEdit_final_price.text()
+
+
+            for row in ws['A4:N27']:
                 for cell in row:
-                    cell.border = border_left
-            
-            for row in new_worksheet['K20:K23']:
-                for cell in row:
-                    cell.border = border_right
+                    cell.font = font
+                    cell.alignment = align
+            user_name = getpass.getuser()
+            save_path = "C:/Users/" + user_name + "/Desktop/" + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"
+            print(save_path)
+            workbook.save(save_path)
         self.pushButton_excelALL.clicked.connect(excel_all)
 
         def excel_payment():
             full_name,phone,address,taxID = company_name_change(self.comboBox_company_name.currentText())
-            workbook = openpyxl.load_workbook('excel_payment.xlsx')
+            workbook = openpyxl.load_workbook('C:/Desktop/work-order/excel_payment.xlsx')
             ws = workbook.worksheets[0]
 
             font = Font('新細明體',size = 22)
@@ -1524,7 +1520,11 @@ class Main(QMainWindow, ui.Ui_Form):
                 for cell in row:
                     cell.font = font
                     cell.alignment = align1
-            workbook.save('test1.xlsx')
+            user_name = getpass.getuser()
+            save_path = "C:/Users/" + user_name + "/Desktop/報價留底/" + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"
+            print(save_path)
+            workbook.save(save_path)
+
         self.pushButton_excelpayment.clicked.connect(excel_payment)
 
 
