@@ -21,6 +21,7 @@ from openpyxl.styles import Alignment
 from openpyxl.styles import Border,Side
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill
+import work_order_rc
 
 
 
@@ -690,7 +691,7 @@ class Main(QMainWindow, ui.Ui_Form):
 
 
         def excel_progess():
-            workbook = openpyxl.load_workbook('C:/Desktop/work-order/excel_progess.xlsx')
+            workbook = openpyxl.load_workbook('excel_progess.xlsx')
             worksheet = workbook.worksheets[0]
 
             new_workbook = openpyxl.Workbook()
@@ -1007,7 +1008,7 @@ class Main(QMainWindow, ui.Ui_Form):
         self.pushButton_excelProgess.clicked.connect(excel_progess)
 
         def excel_all():
-            workbook = openpyxl.load_workbook('C:/Desktop/work-order/excel_all.xlsx')
+            workbook = openpyxl.load_workbook('excel_all.xlsx')
             ws = workbook.worksheets[0]
 
             font = Font('新細明體',size = 22)
@@ -1307,7 +1308,7 @@ class Main(QMainWindow, ui.Ui_Form):
 
         def excel_payment():
             full_name,phone,address,taxID = company_name_change(self.comboBox_company_name.currentText())
-            workbook = openpyxl.load_workbook('C:/Desktop/work-order/excel_payment.xlsx')
+            workbook = openpyxl.load_workbook('excel_payment.xlsx')
             ws = workbook.worksheets[0]
 
             font = Font('新細明體',size = 22)
@@ -1531,8 +1532,13 @@ class Main(QMainWindow, ui.Ui_Form):
 
 if __name__ == '__main__':
     import sys
+    import work_order_rc
     from PyQt5 import QtCore
-    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+    from PyQt5 import QtGui
+    #QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+    #QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+    #QtCore.QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
     app = QtWidgets.QApplication(sys.argv)
     window = Main()
     window.showMaximized()

@@ -393,7 +393,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -6521,6 +6521,8 @@
    </layout>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="work_order.qrc"/>
+ </resources>
  <connections/>
 </ui>
