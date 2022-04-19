@@ -4,6 +4,8 @@ import os
 
 from unittest import result
 from PyQt5 import QtWidgets
+from PyQt5 import QtCore
+from PyQt5 import QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -23,6 +25,8 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill
 import work_order_rc
 
+#QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+#QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.Round)
 
 
 
@@ -1533,12 +1537,16 @@ class Main(QMainWindow, ui.Ui_Form):
 if __name__ == '__main__':
     import sys
     import work_order_rc
+    from PyQt5 import QtWidgets
     from PyQt5 import QtCore
     from PyQt5 import QtGui
+    #QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     #QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+    #QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
     #QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     #QtCore.QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
-
+    QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.Round)
+    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
     window = Main()
     window.showMaximized()
