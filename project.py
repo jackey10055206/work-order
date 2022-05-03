@@ -9,7 +9,8 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-
+#QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+#QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.Round)
 
 class Ui_Form(object):
     def setupUi(self, Form):
