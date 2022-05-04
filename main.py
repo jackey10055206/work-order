@@ -43,8 +43,6 @@ class Main(QMainWindow, ui.Ui_Form):
         self.setupUi(self)
 
 
-
-
         #create_table()
         #del_data()
         #update_data()
@@ -96,8 +94,10 @@ class Main(QMainWindow, ui.Ui_Form):
                     exec("if result == 0: result = '' ")
                     exec("self.lineEdit_single_price_"+str(i)+".setText(str(result))")
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))       
+                QMessageBox.critical(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)     
         self.pushButton_cal.clicked.connect(lambda:cal_price(self))
+
+        #self.pushButton_cal.clicked.connect(self.confirm_window.show)
 
         ###點擊"計算"，算出總價
         def cal_final_price(self):
@@ -117,7 +117,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 self.lineEdit_tax.setText(str(tax))
                 self.lineEdit_final_price.setText(str(answer))
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))    
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_finalcal.clicked.connect(lambda:cal_final_price(self))
        
 
@@ -159,7 +159,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 }
                 Update_basic_data(dict_data)
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
 
 
         ###直接存central_data
@@ -321,7 +321,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 }
                 Update_central_data(dict_data)
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
 
         ###直接存price_data        
         def save_price_data():
@@ -394,18 +394,22 @@ class Main(QMainWindow, ui.Ui_Form):
                 }    
                 Update_price_data(dict_data)
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
 
 
         ###點擊儲存，直接生一個工單編號在三個表裡面
         def save_data():
             try:
-                create_work_order(self.lineEdit_worknum.text())
-                save_basic_data()
-                save_central_data()
-                save_price_data()
+                reply = QMessageBox.information(self,'Check Again!','請確認你輸入的資料是否正確', QMessageBox.Ok | QMessageBox.Abort , QMessageBox.Abort)
+                if reply == QMessageBox.Ok:
+                    create_work_order(self.lineEdit_worknum.text())
+                    save_basic_data()
+                    save_central_data()
+                    save_price_data()
+                else:
+                    pass
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_save.clicked.connect(save_data)
 
         ### 初始化視窗內所有表格
@@ -479,7 +483,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 self.lineEdit_rent_2.setText(data['rent2'])
                 self.textEdit_remark.setText(data['remark'])
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         
         ###顯示Central_data
         def show_central_data(data):
@@ -635,7 +639,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 self.lineEdit_others_amount_14.setText(data['lineEdit_others_amount_14'])
                 self.lineEdit_others_amount_15.setText(data['lineEdit_others_amount_15'])
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         
         ###顯示price data
         def show_price_data(data):
@@ -704,7 +708,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 self.lineEdit_tax.setText(data['lineEdit_tax'])
                 self.lineEdit_final_price.setText(data['lineEdit_final_price'])
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         ###點擊開啟
         def call_data():
             try:
@@ -716,7 +720,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 show_central_data(data_central)
                 show_price_data(data_price)
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_open.clicked.connect(call_data)
 
 
@@ -1036,7 +1040,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 print(save_path)
                 new_workbook.save(save_path)
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_excelProgess.clicked.connect(excel_progess)
 
         def excel_all():
@@ -1338,7 +1342,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 print(save_path)
                 workbook.save(save_path)
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_excelALL.clicked.connect(excel_all)
 
         def excel_payment():
@@ -1562,9 +1566,8 @@ class Main(QMainWindow, ui.Ui_Form):
                 print(save_path)
                 workbook.save(save_path)
             except Exception as e:
-                print('Exception occurred while code execution: ' + repr(e))
+                QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_excelpayment.clicked.connect(excel_payment)
-
 
 
 if __name__ == '__main__':

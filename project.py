@@ -2666,3 +2666,8 @@ class Ui_Form(object):
         self.pushButton_excelpayment.setText(_translate("Form", "請款"))
         self.pushButton_cal.setText(_translate("Form", "小計"))
         self.pushButton_finalcal.setText(_translate("Form", "計算"))
+
+
+
+
+
