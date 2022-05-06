@@ -1337,10 +1337,14 @@ class Main(QMainWindow, ui.Ui_Form):
                     for cell in row:
                         cell.font = font
                         cell.alignment = align
-                user_name = getpass.getuser()
-                save_path = "C:/Users/" + user_name + "/Desktop/" + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"
-                print(save_path)
-                workbook.save(save_path)
+                txt = (self.lineEdit_worknum.text()).split("-")
+                #print(txt)
+                path = 'X:\\' + txt[0] +"\\" + txt[1] 
+                folder = os.path.exists(path)
+                if not folder:
+                    os.makedirs(path)                
+                save_path1 = "X:\\" + txt[0] + "\\" + txt[1] + "\\"  + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"               
+                workbook.save(save_path1)
             except Exception as e:
                 QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_excelALL.clicked.connect(excel_all)
@@ -1562,17 +1566,22 @@ class Main(QMainWindow, ui.Ui_Form):
                         cell.font = font
                         cell.alignment = align1
                 user_name = getpass.getuser()
+                check = "C:/Users/" + user_name + "/Desktop/報價留底/"
+                folder = os.path.exists(check)
+                if not folder:
+                    os.makedirs(check)
                 save_path = "C:/Users/" + user_name + "/Desktop/報價留底/" + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"
-                print(save_path)
                 workbook.save(save_path)
+
             except Exception as e:
                 QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_excelpayment.clicked.connect(excel_payment)
 
+        
+
 
 if __name__ == '__main__':
     import sys
-    import work_order_rc
     from PyQt5 import QtWidgets
     from PyQt5 import QtCore
     from PyQt5 import QtGui
