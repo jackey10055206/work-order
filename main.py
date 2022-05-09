@@ -406,6 +406,7 @@ class Main(QMainWindow, ui.Ui_Form):
                     save_basic_data()
                     save_central_data()
                     save_price_data()
+                    QMessageBox.information(self,'Save Success!','儲存成功',QMessageBox.Ok)
                 else:
                     pass
             except Exception as e:
@@ -1039,6 +1040,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 save_path = "C:/Users/" + user_name + "/Desktop/" + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"
                 print(save_path)
                 new_workbook.save(save_path)
+                QMessageBox.information(self,'Export Success','匯出成功',QMessageBox.Ok)
             except Exception as e:
                 QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_excelProgess.clicked.connect(excel_progess)
@@ -1345,6 +1347,7 @@ class Main(QMainWindow, ui.Ui_Form):
                     os.makedirs(path)                
                 save_path1 = "X:\\" + txt[0] + "\\" + txt[1] + "\\"  + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"               
                 workbook.save(save_path1)
+                QMessageBox.information(self,'Export Success','匯出成功',QMessageBox.Ok)
             except Exception as e:
                 QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_excelALL.clicked.connect(excel_all)
@@ -1572,7 +1575,7 @@ class Main(QMainWindow, ui.Ui_Form):
                     os.makedirs(check)
                 save_path = "C:/Users/" + user_name + "/Desktop/報價留底/" + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"
                 workbook.save(save_path)
-
+                QMessageBox.information(self,'Export Success','匯出成功',QMessageBox.Ok)
             except Exception as e:
                 QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_excelpayment.clicked.connect(excel_payment)
