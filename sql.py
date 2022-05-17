@@ -598,9 +598,9 @@ def create_work_order(Wnum):
         pass
 
 def del_data():
-    SQL = """DELETE FROM save_central_data"""
-    SQL2 = """DELETE FROM save_basic_data"""
-    SQL3 = """DELETE FROM save_price_data"""
+    SQL = """DELETE FROM save_central_data WHERE worknum = '23-01-002'"""
+    SQL2 = """DELETE FROM save_basic_data WHERE worknum = '23-01-002'"""
+    SQL3 = """DELETE FROM save_price_data WHERE worknum = '23-01-002'"""
     cursor.execute(SQL)
     cursor.execute(SQL2)
     cursor.execute(SQL3)
