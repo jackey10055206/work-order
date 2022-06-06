@@ -12,7 +12,7 @@ import pymysql
 import project as ui
 import main as m
 
-connection = pymysql.connect(host='192.168.101.59',
+connection = pymysql.connect(host='192.168.101.55',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -598,12 +598,12 @@ def create_work_order(Wnum):
         pass
 
 def del_data():
-    SQL = """DELETE FROM save_central_data WHERE worknum = '23-01-002'"""
+    SQL = """DELETE FROM save_central_data WHERE worknum = '22-06-02'"""
     SQL2 = """DELETE FROM save_basic_data WHERE worknum = '23-01-002'"""
     SQL3 = """DELETE FROM save_price_data WHERE worknum = '23-01-002'"""
     cursor.execute(SQL)
-    cursor.execute(SQL2)
-    cursor.execute(SQL3)
+    #cursor.execute(SQL2)
+    #cursor.execute(SQL3)
     connection.commit()
 
 
@@ -614,6 +614,28 @@ def update_data():
           """
     cursor.execute(SQL)
     connection.commit()
+
+def insert_data():
+    SQL = """INSERT INTO central_data (product,material,process,plate,plate_thickness,others)
+             VALUES('標示牌','','','','','')"""
+    cursor.execute(SQL)
+    connection.commit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #worknum,case_name,company_name,phone,client_name,worktime,cleanuptime,workaddress,pack,transport,cemployee1,cemployee2,cemployee3,cemployee4,cemployee5,crossbar_width,crossbar_amount,crossbar_remark,150shelter,180shelter,iron_Shelter_amount,iron_Shelter_remark,paper_Shelter_height,paper_Shelter_amount,paper_Shelter_remark,stand_style,stand_amount,stand_remark,rent1,rent2,remark
 # data['worknum'],
 # data['product_1'],data['product_2'],data['product_3'],data['product_4'],data['product_5'],data['product_6'],data['product_7'],data['product_8'],data['product_9'],data['product_10'],data['product_11'],data['product_12'],data['product_13'],data['product_14'],data['product_15'],

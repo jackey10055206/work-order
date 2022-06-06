@@ -25,7 +25,7 @@ from openpyxl.styles import Border,Side
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill
 
-connection = pymysql.connect(host='192.168.101.59',
+connection = pymysql.connect(host='192.168.101.55',
                              port=3306,
                              user='root',
                              passwd='root',
@@ -46,6 +46,7 @@ class Main(QMainWindow, ui.Ui_Form):
         #create_table()
         #del_data()
         #update_data()
+        #insert_data()
 
         ###增加下拉式選單客戶
         self.comboBox_company_name.addItems(company_name())
@@ -167,21 +168,21 @@ class Main(QMainWindow, ui.Ui_Form):
             try:
                 dict_data = {
                     'worknum':self.lineEdit_worknum.text(),
-                    'product_1':str(self.comboBox_product_1.currentIndex()),
-                    'product_2':str(self.comboBox_product_2.currentIndex()),
-                    'product_3':str(self.comboBox_product_3.currentIndex()),
-                    'product_4':str(self.comboBox_product_4.currentIndex()),
-                    'product_5':str(self.comboBox_product_5.currentIndex()),
-                    'product_6':str(self.comboBox_product_6.currentIndex()),
-                    'product_7':str(self.comboBox_product_7.currentIndex()),
-                    'product_8':str(self.comboBox_product_8.currentIndex()),
-                    'product_9':str(self.comboBox_product_9.currentIndex()),
-                    'product_10':str(self.comboBox_product_10.currentIndex()),
-                    'product_11':str(self.comboBox_product_11.currentIndex()),
-                    'product_12':str(self.comboBox_product_12.currentIndex()),
-                    'product_13':str(self.comboBox_product_13.currentIndex()),
-                    'product_14':str(self.comboBox_product_14.currentIndex()),
-                    'product_15':str(self.comboBox_product_15.currentIndex()),
+                    'product_1':str(self.comboBox_product_1.currentText()),
+                    'product_2':str(self.comboBox_product_2.currentText()),
+                    'product_3':str(self.comboBox_product_3.currentText()),
+                    'product_4':str(self.comboBox_product_4.currentText()),
+                    'product_5':str(self.comboBox_product_5.currentText()),
+                    'product_6':str(self.comboBox_product_6.currentText()),
+                    'product_7':str(self.comboBox_product_7.currentText()),
+                    'product_8':str(self.comboBox_product_8.currentText()),
+                    'product_9':str(self.comboBox_product_9.currentText()),
+                    'product_10':str(self.comboBox_product_10.currentText()),
+                    'product_11':str(self.comboBox_product_11.currentText()),
+                    'product_12':str(self.comboBox_product_12.currentText()),
+                    'product_13':str(self.comboBox_product_13.currentText()),
+                    'product_14':str(self.comboBox_product_14.currentText()),
+                    'product_15':str(self.comboBox_product_15.currentText()),
                     'width_1':self.lineEdit_width_1.text(),
                     'width_2':self.lineEdit_width_2.text(),
                     'width_3':self.lineEdit_width_3.text(),
@@ -227,81 +228,81 @@ class Main(QMainWindow, ui.Ui_Form):
                     'amount_13':self.lineEdit_amount_13.text(),
                     'amount_14':self.lineEdit_amount_14.text(),
                     'amount_15':self.lineEdit_amount_15.text(),
-                    'material_1':str(self.comboBox_material_1.currentIndex()),
-                    'material_2':str(self.comboBox_material_2.currentIndex()),
-                    'material_3':str(self.comboBox_material_3.currentIndex()),
-                    'material_4':str(self.comboBox_material_4.currentIndex()),
-                    'material_5':str(self.comboBox_material_5.currentIndex()),
-                    'material_6':str(self.comboBox_material_6.currentIndex()),
-                    'material_7':str(self.comboBox_material_7.currentIndex()),
-                    'material_8':str(self.comboBox_material_8.currentIndex()),
-                    'material_9':str(self.comboBox_material_9.currentIndex()),
-                    'material_10':str(self.comboBox_material_10.currentIndex()),
-                    'material_11':str(self.comboBox_material_11.currentIndex()),
-                    'material_12':str(self.comboBox_material_12.currentIndex()),
-                    'material_13':str(self.comboBox_material_13.currentIndex()),
-                    'material_14':str(self.comboBox_material_14.currentIndex()),
-                    'material_15':str(self.comboBox_material_15.currentIndex()),
-                    'process_1':str(self.comboBox_process_1.currentIndex()),
-                    'process_2':str(self.comboBox_process_2.currentIndex()),
-                    'process_3':str(self.comboBox_process_3.currentIndex()),
-                    'process_4':str(self.comboBox_process_4.currentIndex()),
-                    'process_5':str(self.comboBox_process_5.currentIndex()),
-                    'process_6':str(self.comboBox_process_6.currentIndex()),
-                    'process_7':str(self.comboBox_process_7.currentIndex()),
-                    'process_8':str(self.comboBox_process_8.currentIndex()),
-                    'process_9':str(self.comboBox_process_9.currentIndex()),
-                    'process_10':str(self.comboBox_process_10.currentIndex()),
-                    'process_11':str(self.comboBox_process_11.currentIndex()),
-                    'process_12':str(self.comboBox_process_12.currentIndex()),
-                    'process_13':str(self.comboBox_process_13.currentIndex()),
-                    'process_14':str(self.comboBox_process_14.currentIndex()),
-                    'process_15':str(self.comboBox_process_15.currentIndex()),
-                    'plate_1':str(self.comboBox_plate_1.currentIndex()),
-                    'plate_2':str(self.comboBox_plate_2.currentIndex()),
-                    'plate_3':str(self.comboBox_plate_3.currentIndex()),
-                    'plate_4':str(self.comboBox_plate_4.currentIndex()),
-                    'plate_5':str(self.comboBox_plate_5.currentIndex()),
-                    'plate_6':str(self.comboBox_plate_6.currentIndex()),
-                    'plate_7':str(self.comboBox_plate_7.currentIndex()),
-                    'plate_8':str(self.comboBox_plate_8.currentIndex()),
-                    'plate_9':str(self.comboBox_plate_9.currentIndex()),
-                    'plate_10':str(self.comboBox_plate_10.currentIndex()),
-                    'plate_11':str(self.comboBox_plate_11.currentIndex()),
-                    'plate_12':str(self.comboBox_plate_12.currentIndex()),
-                    'plate_13':str(self.comboBox_plate_13.currentIndex()),
-                    'plate_14':str(self.comboBox_plate_14.currentIndex()),
-                    'plate_15':str(self.comboBox_plate_15.currentIndex()),
-                    'thicknes_1':str(self.comboBox_thicknes_1.currentIndex()),
-                    'thicknes_2':str(self.comboBox_thicknes_2.currentIndex()),
-                    'thicknes_3':str(self.comboBox_thicknes_3.currentIndex()),
-                    'thicknes_4':str(self.comboBox_thicknes_4.currentIndex()),
-                    'thicknes_5':str(self.comboBox_thicknes_5.currentIndex()),
-                    'thicknes_6':str(self.comboBox_thicknes_6.currentIndex()),
-                    'thicknes_7':str(self.comboBox_thicknes_7.currentIndex()),
-                    'thicknes_8':str(self.comboBox_thicknes_8.currentIndex()),
-                    'thicknes_9':str(self.comboBox_thicknes_9.currentIndex()),
-                    'thicknes_10':str(self.comboBox_thicknes_10.currentIndex()),
-                    'thicknes_11':str(self.comboBox_thicknes_11.currentIndex()),
-                    'thicknes_12':str(self.comboBox_thicknes_12.currentIndex()),
-                    'thicknes_13':str(self.comboBox_thicknes_13.currentIndex()),
-                    'thicknes_14':str(self.comboBox_thicknes_14.currentIndex()),
-                    'thicknes_15':str(self.comboBox_thicknes_15.currentIndex()),
-                    'others_1':str(self.comboBox_others_1.currentIndex()),
-                    'others_2':str(self.comboBox_others_2.currentIndex()),
-                    'others_3':str(self.comboBox_others_3.currentIndex()),
-                    'others_4':str(self.comboBox_others_4.currentIndex()),
-                    'others_5':str(self.comboBox_others_5.currentIndex()),
-                    'others_6':str(self.comboBox_others_6.currentIndex()),
-                    'others_7':str(self.comboBox_others_7.currentIndex()),
-                    'others_8':str(self.comboBox_others_8.currentIndex()),
-                    'others_9':str(self.comboBox_others_9.currentIndex()),
-                    'others_10':str(self.comboBox_others_10.currentIndex()),
-                    'others_11':str(self.comboBox_others_11.currentIndex()),
-                    'others_12':str(self.comboBox_others_12.currentIndex()),
-                    'others_13':str(self.comboBox_others_13.currentIndex()),
-                    'others_14':str(self.comboBox_others_14.currentIndex()),
-                    'others_15':str(self.comboBox_others_15.currentIndex()),
+                    'material_1':str(self.comboBox_material_1.currentText()),
+                    'material_2':str(self.comboBox_material_2.currentText()),
+                    'material_3':str(self.comboBox_material_3.currentText()),
+                    'material_4':str(self.comboBox_material_4.currentText()),
+                    'material_5':str(self.comboBox_material_5.currentText()),
+                    'material_6':str(self.comboBox_material_6.currentText()),
+                    'material_7':str(self.comboBox_material_7.currentText()),
+                    'material_8':str(self.comboBox_material_8.currentText()),
+                    'material_9':str(self.comboBox_material_9.currentText()),
+                    'material_10':str(self.comboBox_material_10.currentText()),
+                    'material_11':str(self.comboBox_material_11.currentText()),
+                    'material_12':str(self.comboBox_material_12.currentText()),
+                    'material_13':str(self.comboBox_material_13.currentText()),
+                    'material_14':str(self.comboBox_material_14.currentText()),
+                    'material_15':str(self.comboBox_material_15.currentText()),
+                    'process_1':str(self.comboBox_process_1.currentText()),
+                    'process_2':str(self.comboBox_process_2.currentText()),
+                    'process_3':str(self.comboBox_process_3.currentText()),
+                    'process_4':str(self.comboBox_process_4.currentText()),
+                    'process_5':str(self.comboBox_process_5.currentText()),
+                    'process_6':str(self.comboBox_process_6.currentText()),
+                    'process_7':str(self.comboBox_process_7.currentText()),
+                    'process_8':str(self.comboBox_process_8.currentText()),
+                    'process_9':str(self.comboBox_process_9.currentText()),
+                    'process_10':str(self.comboBox_process_10.currentText()),
+                    'process_11':str(self.comboBox_process_11.currentText()),
+                    'process_12':str(self.comboBox_process_12.currentText()),
+                    'process_13':str(self.comboBox_process_13.currentText()),
+                    'process_14':str(self.comboBox_process_14.currentText()),
+                    'process_15':str(self.comboBox_process_15.currentText()),
+                    'plate_1':str(self.comboBox_plate_1.currentText()),
+                    'plate_2':str(self.comboBox_plate_2.currentText()),
+                    'plate_3':str(self.comboBox_plate_3.currentText()),
+                    'plate_4':str(self.comboBox_plate_4.currentText()),
+                    'plate_5':str(self.comboBox_plate_5.currentText()),
+                    'plate_6':str(self.comboBox_plate_6.currentText()),
+                    'plate_7':str(self.comboBox_plate_7.currentText()),
+                    'plate_8':str(self.comboBox_plate_8.currentText()),
+                    'plate_9':str(self.comboBox_plate_9.currentText()),
+                    'plate_10':str(self.comboBox_plate_10.currentText()),
+                    'plate_11':str(self.comboBox_plate_11.currentText()),
+                    'plate_12':str(self.comboBox_plate_12.currentText()),
+                    'plate_13':str(self.comboBox_plate_13.currentText()),
+                    'plate_14':str(self.comboBox_plate_14.currentText()),
+                    'plate_15':str(self.comboBox_plate_15.currentText()),
+                    'thicknes_1':str(self.comboBox_thicknes_1.currentText()),
+                    'thicknes_2':str(self.comboBox_thicknes_2.currentText()),
+                    'thicknes_3':str(self.comboBox_thicknes_3.currentText()),
+                    'thicknes_4':str(self.comboBox_thicknes_4.currentText()),
+                    'thicknes_5':str(self.comboBox_thicknes_5.currentText()),
+                    'thicknes_6':str(self.comboBox_thicknes_6.currentText()),
+                    'thicknes_7':str(self.comboBox_thicknes_7.currentText()),
+                    'thicknes_8':str(self.comboBox_thicknes_8.currentText()),
+                    'thicknes_9':str(self.comboBox_thicknes_9.currentText()),
+                    'thicknes_10':str(self.comboBox_thicknes_10.currentText()),
+                    'thicknes_11':str(self.comboBox_thicknes_11.currentText()),
+                    'thicknes_12':str(self.comboBox_thicknes_12.currentText()),
+                    'thicknes_13':str(self.comboBox_thicknes_13.currentText()),
+                    'thicknes_14':str(self.comboBox_thicknes_14.currentText()),
+                    'thicknes_15':str(self.comboBox_thicknes_15.currentText()),
+                    'others_1':str(self.comboBox_others_1.currentText()),
+                    'others_2':str(self.comboBox_others_2.currentText()),
+                    'others_3':str(self.comboBox_others_3.currentText()),
+                    'others_4':str(self.comboBox_others_4.currentText()),
+                    'others_5':str(self.comboBox_others_5.currentText()),
+                    'others_6':str(self.comboBox_others_6.currentText()),
+                    'others_7':str(self.comboBox_others_7.currentText()),
+                    'others_8':str(self.comboBox_others_8.currentText()),
+                    'others_9':str(self.comboBox_others_9.currentText()),
+                    'others_10':str(self.comboBox_others_10.currentText()),
+                    'others_11':str(self.comboBox_others_11.currentText()),
+                    'others_12':str(self.comboBox_others_12.currentText()),
+                    'others_13':str(self.comboBox_others_13.currentText()),
+                    'others_14':str(self.comboBox_others_14.currentText()),
+                    'others_15':str(self.comboBox_others_15.currentText()),
                     'others_amount_1':str(self.lineEdit_others_amount_1.text()),
                     'others_amount_2':str(self.lineEdit_others_amount_2.text()),
                     'others_amount_3':str(self.lineEdit_others_amount_3.text()),
@@ -489,21 +490,21 @@ class Main(QMainWindow, ui.Ui_Form):
         ###顯示Central_data
         def show_central_data(data):
             try:
-                self.comboBox_product_1.setCurrentIndex(int(data['comboBox_product_1']))
-                self.comboBox_product_2.setCurrentIndex(int(data['comboBox_product_2']))
-                self.comboBox_product_3.setCurrentIndex(int(data['comboBox_product_3']))
-                self.comboBox_product_4.setCurrentIndex(int(data['comboBox_product_4']))
-                self.comboBox_product_5.setCurrentIndex(int(data['comboBox_product_5']))
-                self.comboBox_product_6.setCurrentIndex(int(data['comboBox_product_6']))
-                self.comboBox_product_7.setCurrentIndex(int(data['comboBox_product_7']))
-                self.comboBox_product_8.setCurrentIndex(int(data['comboBox_product_8']))
-                self.comboBox_product_9.setCurrentIndex(int(data['comboBox_product_9']))
-                self.comboBox_product_10.setCurrentIndex(int(data['comboBox_product_10']))
-                self.comboBox_product_11.setCurrentIndex(int(data['comboBox_product_11']))
-                self.comboBox_product_12.setCurrentIndex(int(data['comboBox_product_12']))
-                self.comboBox_product_13.setCurrentIndex(int(data['comboBox_product_13']))
-                self.comboBox_product_14.setCurrentIndex(int(data['comboBox_product_14']))
-                self.comboBox_product_15.setCurrentIndex(int(data['comboBox_product_15']))
+                self.comboBox_product_1.setCurrentText(data['comboBox_product_1'])
+                self.comboBox_product_2.setCurrentText(data['comboBox_product_2'])
+                self.comboBox_product_3.setCurrentText(data['comboBox_product_3'])
+                self.comboBox_product_4.setCurrentText(data['comboBox_product_4'])
+                self.comboBox_product_5.setCurrentText(data['comboBox_product_5'])
+                self.comboBox_product_6.setCurrentText(data['comboBox_product_6'])
+                self.comboBox_product_7.setCurrentText(data['comboBox_product_7'])
+                self.comboBox_product_8.setCurrentText(data['comboBox_product_8'])
+                self.comboBox_product_9.setCurrentText(data['comboBox_product_9'])
+                self.comboBox_product_10.setCurrentText(data['comboBox_product_10'])
+                self.comboBox_product_11.setCurrentText(data['comboBox_product_11'])
+                self.comboBox_product_12.setCurrentText(data['comboBox_product_12'])
+                self.comboBox_product_13.setCurrentText(data['comboBox_product_13'])
+                self.comboBox_product_14.setCurrentText(data['comboBox_product_14'])
+                self.comboBox_product_15.setCurrentText(data['comboBox_product_15'])
                 self.lineEdit_width_1.setText(data['lineEdit_width_1'])
                 self.lineEdit_width_2.setText(data['lineEdit_width_2'])
                 self.lineEdit_width_3.setText(data['lineEdit_width_3'])
@@ -549,81 +550,81 @@ class Main(QMainWindow, ui.Ui_Form):
                 self.lineEdit_amount_13.setText(data['lineEdit_amount_13'])
                 self.lineEdit_amount_14.setText(data['lineEdit_amount_14'])
                 self.lineEdit_amount_15.setText(data['lineEdit_amount_15'])
-                self.comboBox_material_1.setCurrentIndex(int(data['comboBox_material_1']))
-                self.comboBox_material_2.setCurrentIndex(int(data['comboBox_material_2']))
-                self.comboBox_material_3.setCurrentIndex(int(data['comboBox_material_3']))
-                self.comboBox_material_4.setCurrentIndex(int(data['comboBox_material_4']))
-                self.comboBox_material_5.setCurrentIndex(int(data['comboBox_material_5']))
-                self.comboBox_material_6.setCurrentIndex(int(data['comboBox_material_6']))
-                self.comboBox_material_7.setCurrentIndex(int(data['comboBox_material_7']))
-                self.comboBox_material_8.setCurrentIndex(int(data['comboBox_material_8']))
-                self.comboBox_material_9.setCurrentIndex(int(data['comboBox_material_9']))
-                self.comboBox_material_10.setCurrentIndex(int(data['comboBox_material_10']))
-                self.comboBox_material_11.setCurrentIndex(int(data['comboBox_material_11']))
-                self.comboBox_material_12.setCurrentIndex(int(data['comboBox_material_12']))
-                self.comboBox_material_13.setCurrentIndex(int(data['comboBox_material_13']))
-                self.comboBox_material_14.setCurrentIndex(int(data['comboBox_material_14']))
-                self.comboBox_material_15.setCurrentIndex(int(data['comboBox_material_15']))
-                self.comboBox_process_1.setCurrentIndex(int(data['comboBox_process_1']))
-                self.comboBox_process_2.setCurrentIndex(int(data['comboBox_process_2']))
-                self.comboBox_process_3.setCurrentIndex(int(data['comboBox_process_3']))
-                self.comboBox_process_4.setCurrentIndex(int(data['comboBox_process_4']))
-                self.comboBox_process_5.setCurrentIndex(int(data['comboBox_process_5']))
-                self.comboBox_process_6.setCurrentIndex(int(data['comboBox_process_6']))
-                self.comboBox_process_7.setCurrentIndex(int(data['comboBox_process_7']))
-                self.comboBox_process_8.setCurrentIndex(int(data['comboBox_process_8']))
-                self.comboBox_process_9.setCurrentIndex(int(data['comboBox_process_9']))
-                self.comboBox_process_10.setCurrentIndex(int(data['comboBox_process_10']))
-                self.comboBox_process_11.setCurrentIndex(int(data['comboBox_process_11']))
-                self.comboBox_process_12.setCurrentIndex(int(data['comboBox_process_12']))
-                self.comboBox_process_13.setCurrentIndex(int(data['comboBox_process_13']))
-                self.comboBox_process_14.setCurrentIndex(int(data['comboBox_process_14']))
-                self.comboBox_process_15.setCurrentIndex(int(data['comboBox_process_15']))
-                self.comboBox_plate_1.setCurrentIndex(int(data['comboBox_plate_1']))
-                self.comboBox_plate_2.setCurrentIndex(int(data['comboBox_plate_2']))
-                self.comboBox_plate_3.setCurrentIndex(int(data['comboBox_plate_3']))
-                self.comboBox_plate_4.setCurrentIndex(int(data['comboBox_plate_4']))
-                self.comboBox_plate_5.setCurrentIndex(int(data['comboBox_plate_5']))
-                self.comboBox_plate_6.setCurrentIndex(int(data['comboBox_plate_6']))
-                self.comboBox_plate_7.setCurrentIndex(int(data['comboBox_plate_7']))
-                self.comboBox_plate_8.setCurrentIndex(int(data['comboBox_plate_8']))
-                self.comboBox_plate_9.setCurrentIndex(int(data['comboBox_plate_9']))
-                self.comboBox_plate_10.setCurrentIndex(int(data['comboBox_plate_10']))
-                self.comboBox_plate_11.setCurrentIndex(int(data['comboBox_plate_11']))
-                self.comboBox_plate_12.setCurrentIndex(int(data['comboBox_plate_12']))
-                self.comboBox_plate_13.setCurrentIndex(int(data['comboBox_plate_13']))
-                self.comboBox_plate_14.setCurrentIndex(int(data['comboBox_plate_14']))
-                self.comboBox_plate_15.setCurrentIndex(int(data['comboBox_plate_15']))
-                self.comboBox_thicknes_1.setCurrentIndex(int(data['comboBox_thicknes_1']))
-                self.comboBox_thicknes_2.setCurrentIndex(int(data['comboBox_thicknes_2']))
-                self.comboBox_thicknes_3.setCurrentIndex(int(data['comboBox_thicknes_3']))
-                self.comboBox_thicknes_4.setCurrentIndex(int(data['comboBox_thicknes_4']))
-                self.comboBox_thicknes_5.setCurrentIndex(int(data['comboBox_thicknes_5']))
-                self.comboBox_thicknes_6.setCurrentIndex(int(data['comboBox_thicknes_6']))
-                self.comboBox_thicknes_7.setCurrentIndex(int(data['comboBox_thicknes_7']))
-                self.comboBox_thicknes_8.setCurrentIndex(int(data['comboBox_thicknes_8']))
-                self.comboBox_thicknes_9.setCurrentIndex(int(data['comboBox_thicknes_9']))
-                self.comboBox_thicknes_10.setCurrentIndex(int(data['comboBox_thicknes_10']))
-                self.comboBox_thicknes_11.setCurrentIndex(int(data['comboBox_thicknes_11']))
-                self.comboBox_thicknes_12.setCurrentIndex(int(data['comboBox_thicknes_12']))
-                self.comboBox_thicknes_13.setCurrentIndex(int(data['comboBox_thicknes_13']))
-                self.comboBox_thicknes_14.setCurrentIndex(int(data['comboBox_thicknes_14']))
-                self.comboBox_thicknes_15.setCurrentIndex(int(data['comboBox_thicknes_15']))
-                self.comboBox_others_1.setCurrentIndex(int(data['comboBox_others_1']))
-                self.comboBox_others_2.setCurrentIndex(int(data['comboBox_others_2']))
-                self.comboBox_others_3.setCurrentIndex(int(data['comboBox_others_3']))
-                self.comboBox_others_4.setCurrentIndex(int(data['comboBox_others_4']))
-                self.comboBox_others_5.setCurrentIndex(int(data['comboBox_others_5']))
-                self.comboBox_others_6.setCurrentIndex(int(data['comboBox_others_6']))
-                self.comboBox_others_7.setCurrentIndex(int(data['comboBox_others_7']))
-                self.comboBox_others_8.setCurrentIndex(int(data['comboBox_others_8']))
-                self.comboBox_others_9.setCurrentIndex(int(data['comboBox_others_9']))
-                self.comboBox_others_10.setCurrentIndex(int(data['comboBox_others_10']))
-                self.comboBox_others_11.setCurrentIndex(int(data['comboBox_others_11']))
-                self.comboBox_others_12.setCurrentIndex(int(data['comboBox_others_12']))
-                self.comboBox_others_13.setCurrentIndex(int(data['comboBox_others_13']))
-                self.comboBox_others_14.setCurrentIndex(int(data['comboBox_others_14']))
-                self.comboBox_others_15.setCurrentIndex(int(data['comboBox_others_15']))
+                self.comboBox_material_1.setCurrentText(data['comboBox_material_1'])
+                self.comboBox_material_2.setCurrentText(data['comboBox_material_2'])
+                self.comboBox_material_3.setCurrentText(data['comboBox_material_3'])
+                self.comboBox_material_4.setCurrentText(data['comboBox_material_4'])
+                self.comboBox_material_5.setCurrentText(data['comboBox_material_5'])
+                self.comboBox_material_6.setCurrentText(data['comboBox_material_6'])
+                self.comboBox_material_7.setCurrentText(data['comboBox_material_7'])
+                self.comboBox_material_8.setCurrentText(data['comboBox_material_8'])
+                self.comboBox_material_9.setCurrentText(data['comboBox_material_9'])
+                self.comboBox_material_10.setCurrentText(data['comboBox_material_10'])
+                self.comboBox_material_11.setCurrentText(data['comboBox_material_11'])
+                self.comboBox_material_12.setCurrentText(data['comboBox_material_12'])
+                self.comboBox_material_13.setCurrentText(data['comboBox_material_13'])
+                self.comboBox_material_14.setCurrentText(data['comboBox_material_14'])
+                self.comboBox_material_15.setCurrentText(data['comboBox_material_15'])
+                self.comboBox_process_1.setCurrentText(data['comboBox_process_1'])
+                self.comboBox_process_2.setCurrentText(data['comboBox_process_2'])
+                self.comboBox_process_3.setCurrentText(data['comboBox_process_3'])
+                self.comboBox_process_4.setCurrentText(data['comboBox_process_4'])
+                self.comboBox_process_5.setCurrentText(data['comboBox_process_5'])
+                self.comboBox_process_6.setCurrentText(data['comboBox_process_6'])
+                self.comboBox_process_7.setCurrentText(data['comboBox_process_7'])
+                self.comboBox_process_8.setCurrentText(data['comboBox_process_8'])
+                self.comboBox_process_9.setCurrentText(data['comboBox_process_9'])
+                self.comboBox_process_10.setCurrentText(data['comboBox_process_10'])
+                self.comboBox_process_11.setCurrentText(data['comboBox_process_11'])
+                self.comboBox_process_12.setCurrentText(data['comboBox_process_12'])
+                self.comboBox_process_13.setCurrentText(data['comboBox_process_13'])
+                self.comboBox_process_14.setCurrentText(data['comboBox_process_14'])
+                self.comboBox_process_15.setCurrentText(data['comboBox_process_15'])
+                self.comboBox_plate_1.setCurrentText(data['comboBox_plate_1'])
+                self.comboBox_plate_2.setCurrentText(data['comboBox_plate_2'])
+                self.comboBox_plate_3.setCurrentText(data['comboBox_plate_3'])
+                self.comboBox_plate_4.setCurrentText(data['comboBox_plate_4'])
+                self.comboBox_plate_5.setCurrentText(data['comboBox_plate_5'])
+                self.comboBox_plate_6.setCurrentText(data['comboBox_plate_6'])
+                self.comboBox_plate_7.setCurrentText(data['comboBox_plate_7'])
+                self.comboBox_plate_8.setCurrentText(data['comboBox_plate_8'])
+                self.comboBox_plate_9.setCurrentText(data['comboBox_plate_9'])
+                self.comboBox_plate_10.setCurrentText(data['comboBox_plate_10'])
+                self.comboBox_plate_11.setCurrentText(data['comboBox_plate_11'])
+                self.comboBox_plate_12.setCurrentText(data['comboBox_plate_12'])
+                self.comboBox_plate_13.setCurrentText(data['comboBox_plate_13'])
+                self.comboBox_plate_14.setCurrentText(data['comboBox_plate_14'])
+                self.comboBox_plate_15.setCurrentText(data['comboBox_plate_15'])
+                self.comboBox_thicknes_1.setCurrentText(data['comboBox_thicknes_1'])
+                self.comboBox_thicknes_2.setCurrentText(data['comboBox_thicknes_2'])
+                self.comboBox_thicknes_3.setCurrentText(data['comboBox_thicknes_3'])
+                self.comboBox_thicknes_4.setCurrentText(data['comboBox_thicknes_4'])
+                self.comboBox_thicknes_5.setCurrentText(data['comboBox_thicknes_5'])
+                self.comboBox_thicknes_6.setCurrentText(data['comboBox_thicknes_6'])
+                self.comboBox_thicknes_7.setCurrentText(data['comboBox_thicknes_7'])
+                self.comboBox_thicknes_8.setCurrentText(data['comboBox_thicknes_8'])
+                self.comboBox_thicknes_9.setCurrentText(data['comboBox_thicknes_9'])
+                self.comboBox_thicknes_10.setCurrentText(data['comboBox_thicknes_10'])
+                self.comboBox_thicknes_11.setCurrentText(data['comboBox_thicknes_11'])
+                self.comboBox_thicknes_12.setCurrentText(data['comboBox_thicknes_12'])
+                self.comboBox_thicknes_13.setCurrentText(data['comboBox_thicknes_13'])
+                self.comboBox_thicknes_14.setCurrentText(data['comboBox_thicknes_14'])
+                self.comboBox_thicknes_15.setCurrentText(data['comboBox_thicknes_15'])
+                self.comboBox_others_1.setCurrentText(data['comboBox_others_1'])
+                self.comboBox_others_2.setCurrentText(data['comboBox_others_2'])
+                self.comboBox_others_3.setCurrentText(data['comboBox_others_3'])
+                self.comboBox_others_4.setCurrentText(data['comboBox_others_4'])
+                self.comboBox_others_5.setCurrentText(data['comboBox_others_5'])
+                self.comboBox_others_6.setCurrentText(data['comboBox_others_6'])
+                self.comboBox_others_7.setCurrentText(data['comboBox_others_7'])
+                self.comboBox_others_8.setCurrentText(data['comboBox_others_8'])
+                self.comboBox_others_9.setCurrentText(data['comboBox_others_9'])
+                self.comboBox_others_10.setCurrentText(data['comboBox_others_10'])
+                self.comboBox_others_11.setCurrentText(data['comboBox_others_11'])
+                self.comboBox_others_12.setCurrentText(data['comboBox_others_12'])
+                self.comboBox_others_13.setCurrentText(data['comboBox_others_13'])
+                self.comboBox_others_14.setCurrentText(data['comboBox_others_14'])
+                self.comboBox_others_15.setCurrentText(data['comboBox_others_15'])
                 self.lineEdit_others_amount_1.setText(data['lineEdit_others_amount_1'])
                 self.lineEdit_others_amount_2.setText(data['lineEdit_others_amount_2'])
                 self.lineEdit_others_amount_3.setText(data['lineEdit_others_amount_3'])
@@ -1588,7 +1589,7 @@ if __name__ == '__main__':
     from PyQt5 import QtWidgets
     from PyQt5 import QtCore
     from PyQt5 import QtGui
-    QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.Round)
+    QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.Floor)
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
     window = Main()
