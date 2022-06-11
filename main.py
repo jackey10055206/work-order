@@ -28,7 +28,7 @@ from openpyxl.styles import PatternFill
 connection = pymysql.connect(host='192.168.101.55',
                              port=3306,
                              user='root',
-                             passwd='root',
+                             passwd='jackey8869',
                              database='work_order',
                              charset='utf8',
                              cursorclass=pymysql.cursors.DictCursor)
@@ -82,16 +82,17 @@ class Main(QMainWindow, ui.Ui_Form):
                     exec("if width == '': width = '0'")
                     exec("height = self.lineEdit_height_"+str(i)+".text()")
                     exec("if height == '': height = '0'")
-                    exec("CBM1 = math.ceil(int(width) * int(height) / 900)")
-                    exec("if CBM1 == 0: CBM1 = ''")
-                    exec("self.lineEdit_CBM_"+str(i)+".setText(str(CBM1))")
                     exec("amount = self.lineEdit_amount_"+str(i)+".text()")
                     exec("if amount == '': amount = '1'")
+                    exec("CBM1 = math.ceil(int(width) * int(height) / 900)")
+                    exec("CBM2 = int(CBM1) * int(amount)")
+                    exec("if CBM2 == 0: CBM2 = ''")
+                    exec("self.lineEdit_CBM_"+str(i)+".setText(str(CBM2))")
                     exec("CBM= self.lineEdit_CBM_"+str(i)+".text()")
                     exec("if CBM == '': CBM = '0'")
                     exec("CBMprice= self.lineEdit_CBMprice_"+str(i)+".text()")
                     exec("if CBMprice == '': CBMprice = '0'")
-                    exec("result = int(amount)*int(CBM)*int(CBMprice)")
+                    exec("result = int(CBM)*int(CBMprice)")
                     exec("if result == 0: result = '' ")
                     exec("self.lineEdit_single_price_"+str(i)+".setText(str(result))")
             except Exception as e:

@@ -15,7 +15,7 @@ import main as m
 connection = pymysql.connect(host='192.168.101.55',
                              port=3306,
                              user='root',
-                             passwd='root',
+                             passwd='jackey8869',
                              database='work_order',
                              charset='utf8',
                              cursorclass=pymysql.cursors.DictCursor)
