@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\project.ui'
+# Form implementation generated from reading ui file 'project.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -2698,9 +2698,9 @@ class Ui_Form(object):
         self.label_pack.setText(_translate("Form", "包裝方式:"))
         self.label_transport.setText(_translate("Form", "送貨方式:"))
         self.label_product.setText(_translate("Form", "製作項目"))
-        self.label_width.setText(_translate("Form", "長度"))
+        self.label_width.setText(_translate("Form", "寬度"))
         self.label_42.setText(_translate("Form", "x"))
-        self.label_height.setText(_translate("Form", "寬度"))
+        self.label_height.setText(_translate("Form", "長度"))
         self.label_amount.setText(_translate("Form", "數量"))
         self.label_material.setText(_translate("Form", "材質"))
         self.label_process.setText(_translate("Form", "冷錶加工"))
