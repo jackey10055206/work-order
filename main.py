@@ -408,6 +408,7 @@ class Main(QMainWindow, ui.Ui_Form):
                     save_basic_data()
                     save_central_data()
                     save_price_data()
+                    excel_all()
                     QMessageBox.information(self,'Save Success!','儲存成功',QMessageBox.Ok)
                 else:
                     pass
@@ -448,6 +449,26 @@ class Main(QMainWindow, ui.Ui_Form):
             self.lineEdit_rent_1.setText("")
             self.lineEdit_rent_2.setText("")
             self.textEdit_remark.setText("")
+
+            for i in range(1,16):
+                exec("self.comboBox_product_"+str(i)+".setCurrentIndex(0)")
+                exec("self.lineEdit_width_"+str(i)+".setText('')")
+                exec("self.lineEdit_height_"+str(i)+".setText('')")
+                exec("self.lineEdit_amount_"+str(i)+".setText('')")
+                exec("self.comboBox_material_"+str(i)+".setCurrentIndex(0)")
+                exec("self.comboBox_process_"+str(i)+".setCurrentIndex(0)")
+                exec("self.comboBox_plate_"+str(i)+".setCurrentIndex(0)")
+                exec("self.comboBox_thicknes_"+str(i)+".setCurrentIndex(0)")
+                exec("self.comboBox_others_"+str(i)+".setCurrentIndex(0)")
+                exec("self.lineEdit_others_amount_"+str(i)+".setText('')")
+                exec("self.lineEdit_CBM_"+str(i)+".setText('')")
+                exec("self.lineEdit_CBMprice_"+str(i)+".setText('')")
+                exec("self.lineEdit_single_price_"+str(i)+".setText('')")
+            for i in range(16,31):
+                exec("self.lineEdit_single_price_"+str(i)+".setText('')")
+            self.lineEdit_tmpprice.setText("")
+            self.lineEdit_tax.setText("")
+            self.lineEdit_final_price.setText("")
         
         ### 顯示basic_data
         def show_basic_data(data):
@@ -1352,7 +1373,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 QMessageBox.information(self,'Export Success','匯出成功',QMessageBox.Ok)
             except Exception as e:
                 QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
-        self.pushButton_excelALL.clicked.connect(excel_all)
+        #self.pushButton_excelALL.clicked.connect(excel_all)
 
         def excel_payment():
             try:
@@ -1582,7 +1603,9 @@ class Main(QMainWindow, ui.Ui_Form):
                 QMessageBox.warning(self, 'Error Information', repr(e), QMessageBox.Ok | QMessageBox.Close, QMessageBox.Close)
         self.pushButton_excelpayment.clicked.connect(excel_payment)
 
-        
+        def clean_data():
+            init_data()
+        self.pushButton_clean.clicked.connect(clean_data)
 
 
 if __name__ == '__main__':

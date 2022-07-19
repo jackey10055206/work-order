@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'project.ui'
+# Form implementation generated from reading ui file '.\project.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -2650,11 +2650,11 @@ class Ui_Form(object):
         self.pushButton_save.setMaximumSize(QtCore.QSize(100, 30))
         self.pushButton_save.setObjectName("pushButton_save")
         self.gridLayout_3.addWidget(self.pushButton_save, 1, 1, 1, 1)
-        self.pushButton_excelALL = QtWidgets.QPushButton(self.layoutWidget2)
-        self.pushButton_excelALL.setMinimumSize(QtCore.QSize(100, 30))
-        self.pushButton_excelALL.setMaximumSize(QtCore.QSize(100, 30))
-        self.pushButton_excelALL.setObjectName("pushButton_excelALL")
-        self.gridLayout_3.addWidget(self.pushButton_excelALL, 1, 2, 1, 1)
+        self.pushButton_clean = QtWidgets.QPushButton(self.layoutWidget2)
+        self.pushButton_clean.setMinimumSize(QtCore.QSize(100, 30))
+        self.pushButton_clean.setMaximumSize(QtCore.QSize(100, 30))
+        self.pushButton_clean.setObjectName("pushButton_clean")
+        self.gridLayout_3.addWidget(self.pushButton_clean, 1, 2, 1, 1)
         self.pushButton_excelProgess = QtWidgets.QPushButton(self.layoutWidget2)
         self.pushButton_excelProgess.setMinimumSize(QtCore.QSize(100, 30))
         self.pushButton_excelProgess.setMaximumSize(QtCore.QSize(100, 30))
@@ -2752,7 +2752,7 @@ class Ui_Form(object):
         self.label_final_price.setText(_translate("Form", "總計"))
         self.pushButton_open.setText(_translate("Form", "開啟"))
         self.pushButton_save.setText(_translate("Form", "儲存"))
-        self.pushButton_excelALL.setText(_translate("Form", "總表"))
+        self.pushButton_clean.setText(_translate("Form", "重設"))
         self.pushButton_excelProgess.setText(_translate("Form", "工作進度"))
         self.pushButton_excelpayment.setText(_translate("Form", "請款"))
         self.pushButton_cal.setText(_translate("Form", "小計"))

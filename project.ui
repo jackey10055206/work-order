@@ -6704,7 +6704,7 @@
            </widget>
           </item>
           <item row="1" column="2">
-           <widget class="QPushButton" name="pushButton_excelALL">
+           <widget class="QPushButton" name="pushButton_clean">
             <property name="minimumSize">
              <size>
               <width>100</width>
@@ -6718,7 +6718,7 @@
              </size>
             </property>
             <property name="text">
-             <string>總表</string>
+             <string>重設</string>
             </property>
            </widget>
           </item>
