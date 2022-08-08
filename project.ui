@@ -4530,7 +4530,7 @@
            <string notr="true">background-color:rgb(255, 170, 255)</string>
           </property>
           <property name="text">
-           <string>特殊計價</string>
+           <string>備料計價</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>

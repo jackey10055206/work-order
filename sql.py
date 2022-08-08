@@ -608,9 +608,9 @@ def del_data():
 
 
 def update_data():
-    SQL = """UPDATE client
-             SET full_name = '參拾設創意行銷有限公司'
-             WHERE name = '鴻榮'
+    SQL = """UPDATE central_data
+             SET plate_thickness = '350磅'
+             WHERE product = '講台背板'
           """
     cursor.execute(SQL)
     connection.commit()

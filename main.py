@@ -45,7 +45,7 @@ class Main(QMainWindow, ui.Ui_Form):
 
         #create_table()
         #del_data()
-        #update_data()
+        update_data()
         #insert_data()
 
         ###增加下拉式選單客戶
