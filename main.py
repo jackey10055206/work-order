@@ -1367,7 +1367,16 @@ class Main(QMainWindow, ui.Ui_Form):
                 path = 'X:\\' + txt[0] +"\\" + txt[1] 
                 folder = os.path.exists(path)
                 if not folder:
-                    os.makedirs(path)                
+                    os.makedirs(path)
+                
+                filename = self.lineEdit_worknum.text()
+                
+                for root,dirs,files in os.walk(path):
+                    for name in files:
+                        if filename in name:
+                            print(name)
+                            os.remove(path+"\\"+name)
+
                 save_path1 = "X:\\" + txt[0] + "\\" + txt[1] + "\\"  + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"               
                 workbook.save(save_path1)
                 QMessageBox.information(self,'Export Success','匯出成功',QMessageBox.Ok)
