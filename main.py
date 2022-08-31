@@ -1374,7 +1374,6 @@ class Main(QMainWindow, ui.Ui_Form):
                 for root,dirs,files in os.walk(path):
                     for name in files:
                         if filename in name:
-                            print(name)
                             os.remove(path+"\\"+name)
 
                 save_path1 = "X:\\" + txt[0] + "\\" + txt[1] + "\\"  + self.lineEdit_worknum.text() + "-" + self.comboBox_company_name.currentText() + "-" + self.lineEdit_case_name.text() + ".xlsx"               
