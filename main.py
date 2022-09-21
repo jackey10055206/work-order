@@ -51,11 +51,15 @@ class Main(QMainWindow, ui.Ui_Form):
         ###增加下拉式選單客戶
         self.comboBox_company_name.addItems(company_name())
 
+
         def index_change():
-            full_name,phone,address,taxID = company_name_change(self.comboBox_company_name.currentText())
-            #print(full_name,phone,address,taxID)
-            self.lineEdit_phone.setText(phone)
-        self.comboBox_company_name.currentIndexChanged.connect(index_change)
+            try:
+                full_name,phone,address,taxID = company_name_change(self.comboBox_company_name.currentText())
+                #print(full_name,phone,address,taxID)
+                self.lineEdit_phone.setText(phone)
+            except:
+                pass
+        self.comboBox_company_name.currentTextChanged.connect(index_change)
 
         ###增加下拉式選單工作人員
         for i in range(1,6):
@@ -129,7 +133,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 dict_data = {
                     'worknum' : self.lineEdit_worknum.text(),
                     'case_name' : self.lineEdit_case_name.text(),
-                    'company_name' :str(self.comboBox_company_name.currentIndex()),
+                    'company_name' :str(self.comboBox_company_name.currentText()),
                     'phone' : self.lineEdit_phone.text(),
                     'client_name' : self.lineEdit_client_name.text(),
                     'worktime' : self.lineEdit_worktime.text(),
@@ -475,7 +479,7 @@ class Main(QMainWindow, ui.Ui_Form):
             try:
                 self.lineEdit_worknum.setText(data['worknum'])
                 self.lineEdit_case_name.setText(data['case_name'])
-                self.comboBox_company_name.setCurrentIndex(int(data['company_name']))
+                self.comboBox_company_name.setCurrentText(data['company_name'])
                 self.lineEdit_phone.setText(data['phone'])
                 self.lineEdit_client_name.setText(data['client_name'])
                 self.lineEdit_worktime.setText(data['worktime'])
@@ -1385,7 +1389,13 @@ class Main(QMainWindow, ui.Ui_Form):
 
         def excel_payment():
             try:
-                full_name,phone,address,taxID = company_name_change(self.comboBox_company_name.currentText())
+                try:
+                    full_name,phone,address,taxID = company_name_change(self.comboBox_company_name.currentText())
+                except:
+                    full_name = ''
+                    phone = ''
+                    address = ''
+                    taxID = ''
                 workbook = openpyxl.load_workbook('excel_payment.xlsx')
                 ws = workbook.worksheets[0]
 

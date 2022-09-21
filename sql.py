@@ -608,9 +608,10 @@ def del_data():
 
 
 def update_data():
-    SQL = """UPDATE central_data
-             SET plate_thickness = '350磅'
-             WHERE product = '講台背板'
+    SQL = """UPDATE save_basic_data
+             SET company_name = '228共生'
+             WHERE company_name = '3'
+             
           """
     cursor.execute(SQL)
     connection.commit()
