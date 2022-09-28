@@ -349,19 +349,26 @@ def company_name():
 
 def company_name_change(Cname):
     
-    #print(Cname)
+    print(Cname)
     SQL="""SELECT * FROM client WHERE name = '%s'""" % Cname
     #print(SQL)
     cursor.execute(SQL)
     connection.commit()
     data = cursor.fetchall()
 
-    for row in data:
-        full_name = row['full_name']
-        phone = row['phone']
-        address = row['address']
-        taxID = row['taxID']       
-    return full_name,phone,address,taxID
+    if data != ():
+        for row in data:
+            full_name = row['full_name']
+            phone = row['phone']
+            address = row['address']
+            taxID = row['taxID']     
+        return full_name,phone,address,taxID
+    else:
+        full_name = ""
+        phone = ""
+        address = ""
+        taxID =  ""
+        return full_name,phone,address,taxID
     
 def employee_name():
     SQL = """SELECT name FROM employee"""

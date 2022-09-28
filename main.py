@@ -55,7 +55,6 @@ class Main(QMainWindow, ui.Ui_Form):
         def index_change():
             try:
                 full_name,phone,address,taxID = company_name_change(self.comboBox_company_name.currentText())
-                #print(full_name,phone,address,taxID)
                 self.lineEdit_phone.setText(phone)
             except:
                 pass
