@@ -12,16 +12,17 @@ import pymysql
 import project as ui
 import main as m
 
-connection = pymysql.connect(host='192.168.101.55',
+
+connection = pymysql.connect(host='192.168.101.64',
                              port=3306,
                              user='root',
                              passwd='jackey8869',
                              database='work_order',
                              charset='utf8',
                              cursorclass=pymysql.cursors.DictCursor)
+cursor = connection.cursor()
 
 #print(bool(connection))
-cursor = connection.cursor()
 # def create_table():
 #     SQL="""CREATE TABLE central_data(
 #         `product` char(50),
@@ -349,7 +350,7 @@ def company_name():
 
 def company_name_change(Cname):
     
-    print(Cname)
+    #print(Cname)
     SQL="""SELECT * FROM client WHERE name = '%s'""" % Cname
     #print(SQL)
     cursor.execute(SQL)

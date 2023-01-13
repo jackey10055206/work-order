@@ -13,9 +13,9 @@ from PyQt5.QtGui import *
 from tkinter import *
 
 from openpyxl import Workbook
-from sql import *
 
-import sql
+
+
 import project as ui
 import pymysql
 import openpyxl
@@ -25,17 +25,21 @@ from openpyxl.styles import Border,Side
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill
 
-connection = pymysql.connect(host='192.168.101.55',
-                             port=3306,
-                             user='root',
-                             passwd='jackey8869',
-                             database='work_order',
-                             charset='utf8',
-                             cursorclass=pymysql.cursors.DictCursor)
-#print(bool(connection))
+#import auto_login
+try:
+    connection = pymysql.connect(host='192.168.101.64',
+                            port=3306,
+                            user='root',
+                            passwd='jackey8869',
+                            database='work_order',
+                            charset='utf8',
+                            cursorclass=pymysql.cursors.DictCursor)
+except:
+    import auto_login
+    #print("1")
 # cursor = connection.cursor()
-
-
+from sql import *
+import sql
 
 class Main(QMainWindow, ui.Ui_Form):
     def __init__(self):
@@ -1630,7 +1634,7 @@ if __name__ == '__main__':
     from PyQt5 import QtWidgets
     from PyQt5 import QtCore
     from PyQt5 import QtGui
-    QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.Floor)
+    #QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.Floor)
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
     window = Main()
