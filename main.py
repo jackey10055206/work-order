@@ -24,22 +24,21 @@ from openpyxl.styles import Alignment
 from openpyxl.styles import Border,Side
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill
-
-#import auto_login
-try:
-    connection = pymysql.connect(host='192.168.101.64',
-                            port=3306,
-                            user='root',
-                            passwd='jackey8869',
-                            database='work_order',
-                            charset='utf8',
-                            cursorclass=pymysql.cursors.DictCursor)
-except:
-    import auto_login
-    #print("1")
-# cursor = connection.cursor()
 from sql import *
 import sql
+#import auto_login
+
+connection = pymysql.connect(host='192.168.101.64',
+                        port=3306,
+                        user='root',
+                        passwd='jackey8869',
+                        database='work_order',
+                        charset='utf8',
+                        cursorclass=pymysql.cursors.DictCursor)
+
+
+# cursor = connection.cursor()
+
 
 class Main(QMainWindow, ui.Ui_Form):
     def __init__(self):
@@ -49,7 +48,7 @@ class Main(QMainWindow, ui.Ui_Form):
 
         #create_table()
         #del_data()
-        update_data()
+        #update_data()
         #insert_data()
 
         ###增加下拉式選單客戶

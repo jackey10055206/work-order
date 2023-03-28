@@ -616,17 +616,17 @@ def del_data():
 
 
 def update_data():
-    SQL = """UPDATE save_basic_data
-             SET company_name = '228共生'
-             WHERE company_name = '3'
+    SQL = """UPDATE client
+             SET taxID = '11330555'
+             WHERE name = '聯廣'
              
           """
     cursor.execute(SQL)
     connection.commit()
 
 def insert_data():
-    SQL = """INSERT INTO central_data (product,material,process,plate,plate_thickness,others)
-             VALUES('標示牌','','','','','')"""
+    SQL = """INSERT INTO client (name,full_name,phone,address,taxID)
+             VALUES('JR東日本','捷福旅館管理顧問股份有限公司','','104台北市中山區南京東路三段133號','83530737')"""
     cursor.execute(SQL)
     connection.commit()
 
