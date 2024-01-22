@@ -1412,7 +1412,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 ws['G3'].font = font
                 ws['G3'].alignment = align
                 ws['I3'] = self.lineEdit_client_name.text()
-                ws['I3'].font = font
+                ws['I3'].font = Font('新細明體',size = 18)
                 ws['I3'].alignment = align
                 ws['K3'] = phone
                 ws['K3'].font = font
@@ -1421,7 +1421,7 @@ class Main(QMainWindow, ui.Ui_Form):
                 ws['C5'].font = font
                 ws['C5'].alignment = align
                 ws['I4'] = self.lineEdit_worktime.text()
-                ws['I4'].font = font
+                ws['I4'].font = Font('新細明體',size = 18)
                 ws['I4'].alignment = align
                 ws['K4'] = self.lineEdit_cleanup_time.text()
                 ws['K4'].font = font
