@@ -28,8 +28,10 @@ from sql import *
 import sql
 #import auto_login
 
-connection = pymysql.connect(host='192.168.101.64',
-                        port=3306,
+# 開發環境連線設定：Mac 上的 Docker MySQL（work-order-mysql）
+# 正式環境若有不同設定，之後可以透過 config 或環境變數切換
+connection = pymysql.connect(host='127.0.0.1',
+                        port=3307,
                         user='root',
                         passwd='jackey8869',
                         database='work_order',
