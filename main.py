@@ -1670,6 +1670,10 @@ if __name__ == '__main__':
     #QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.Floor)
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
+    # 調整整體字體大小，避免在 macOS 上控件被撐太大
+    font = app.font()
+    font.setPointSize(9)  # 你可以依實際效果再微調
+    app.setFont(font)
     window = Main()
     window.showMaximized()
     window.show()
