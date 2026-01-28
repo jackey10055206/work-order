@@ -410,9 +410,41 @@ class Main(QMainWindow, ui.Ui_Form):
         ###點擊儲存，直接生一個工單編號在三個表裡面
         def save_data():
             try:
+                worknum = self.lineEdit_worknum.text().strip()
+                if not worknum:
+                    QMessageBox.warning(self, 'Error', '請先輸入工單編號', QMessageBox.Ok)
+                    return
+
+                # 先檢查資料庫裡是否已經有這個工單編號
+                existing = sql.load_basic_summary(worknum)
+                if existing is not None:
+                    # 組一段摘要文字給使用者看
+                    company = existing.get('company_name', '')
+                    case_name = existing.get('case_name', '')
+                    msg = f"工單編號 {worknum} 已存在\\n\\n客戶：{company}\\n案名：{case_name}\\n\\n" \
+                          "若繼續儲存，將會覆蓋原有的工單內容。\\n\\n" \
+                          "請選擇："
+
+                    box = QMessageBox(self)
+                    box.setIcon(QMessageBox.Warning)
+                    box.setWindowTitle('工單已存在')
+                    box.setText(msg)
+
+                    btn_change = box.addButton('改用新工單編號', QMessageBox.ActionRole)
+                    btn_overwrite = box.addButton('仍然覆蓋這筆工單', QMessageBox.DestructiveRole)
+                    btn_cancel = box.addButton('取消', QMessageBox.RejectRole)
+
+                    box.exec_()
+                    clicked = box.clickedButton()
+
+                    # 改用新編號或取消都不繼續存檔
+                    if clicked is btn_change or clicked is btn_cancel:
+                        return
+                    # 只有使用者明確選擇「仍然覆蓋」時才往下走
+
                 reply = QMessageBox.information(self,'Check Again!','請確認你輸入的資料是否正確', QMessageBox.Ok | QMessageBox.Abort , QMessageBox.Abort)
                 if reply == QMessageBox.Ok:
-                    create_work_order(self.lineEdit_worknum.text())
+                    create_work_order(worknum)
                     save_basic_data()
                     save_central_data()
                     save_price_data()

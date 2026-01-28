@@ -421,6 +421,16 @@ def transport_name():
         store(name_in)
     return Tname
 
+
+def load_basic_summary(worknum):
+    """回傳已存在工單的一些摘要資訊，沒有則回傳 None"""
+    SQL = """SELECT worknum, case_name, company_name FROM save_basic_data WHERE worknum = %s"""
+    cursor.execute(SQL, (worknum,))
+    row = cursor.fetchone()
+    connection.commit()
+    return row
+
+
 def product_name():
     SQL = """SELECT product FROM central_data"""
     cursor.execute(SQL)
