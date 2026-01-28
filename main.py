@@ -1668,7 +1668,8 @@ if __name__ == '__main__':
     from PyQt5 import QtCore
     from PyQt5 import QtGui
     #QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.Floor)
-    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+    # 在 macOS 上先關掉 Qt 的 HighDpiScaling，避免額外縮放造成排版跑掉
+    #QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
     # 調整整體字體大小，避免在 macOS 上控件被撐太大
     font = app.font()
