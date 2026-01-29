@@ -421,9 +421,13 @@ class Main(QMainWindow, ui.Ui_Form):
                     # 組一段摘要文字給使用者看
                     company = existing.get('company_name', '')
                     case_name = existing.get('case_name', '')
-                    msg = f"工單編號 {worknum} 已存在\\n\\n客戶：{company}\\n案名：{case_name}\\n\\n" \
-                          "若繼續儲存，將會覆蓋原有的工單內容。\\n\\n" \
-                          "請選擇："
+                    msg = (
+                        f"工單編號 {worknum} 已存在。\n\n"
+                        f"客戶：{company}\n"
+                        f"案名：{case_name}\n\n"
+                        "若繼續儲存，將會覆蓋原有的工單內容。\n\n"
+                        "請選擇："
+                    )
 
                     box = QMessageBox(self)
                     box.setIcon(QMessageBox.Warning)
