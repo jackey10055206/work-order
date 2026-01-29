@@ -541,7 +541,7 @@ def Update_basic_data(data):
              WHERE worknum = '%s'
          """ % (data['worknum']  , data['case_name'] , data['company_name'] , data['phone'] ,data['client_name'] , data['worktime'] , data['cleanuptime'] , data['workaddress'] , data['pack'] , data['transport'] , data['cemployee1'] , data['cemployee2'] , data['cemployee3'] , data['cemployee4'] , data['cemployee5'] , data['crossbar_width'] , data['crossbar_amount'] , data['crossbar_remark'] , str(data['150shelter']) , str(data['180shelter']) , data['iron_Shelter_amount'] , data['iron_Shelter_remark'] , data['paper_Shelter_height'] , data['paper_Shelter_amount'] , data['paper_Shelter_remark'] , data['stand_style'] , data['stand_amount'] , data['stand_remark'] , data['rent1'] , data['rent2'] , data['remark'],data['worknum'])
     cursor.execute(SQL)
-    connection.commit
+    connection.commit()
 
 def call__basic_data(Wnum):
     SQL = """SELECT * FROM save_basic_data WHERE worknum = '%s'""" % Wnum
