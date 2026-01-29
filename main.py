@@ -28,8 +28,10 @@ from sql import *
 import sql
 #import auto_login
 
-connection = pymysql.connect(host='192.168.101.64',
-                        port=3306,
+# 開發環境連線設定：Mac 上的 Docker MySQL（work-order-mysql）
+# 正式環境若有不同設定，之後可以透過 config 或環境變數切換
+connection = pymysql.connect(host='127.0.0.1',
+                        port=3307,
                         user='root',
                         passwd='jackey8869',
                         database='work_order',
@@ -408,9 +410,45 @@ class Main(QMainWindow, ui.Ui_Form):
         ###點擊儲存，直接生一個工單編號在三個表裡面
         def save_data():
             try:
+                worknum = self.lineEdit_worknum.text().strip()
+                if not worknum:
+                    QMessageBox.warning(self, 'Error', '請先輸入工單編號', QMessageBox.Ok)
+                    return
+
+                # 先檢查資料庫裡是否已經有這個工單編號
+                existing = sql.load_basic_summary(worknum)
+                if existing is not None:
+                    # 組一段摘要文字給使用者看
+                    company = existing.get('company_name', '')
+                    case_name = existing.get('case_name', '')
+                    msg = (
+                        f"工單編號 {worknum} 已存在。\n\n"
+                        f"客戶：{company}\n"
+                        f"案名：{case_name}\n\n"
+                        "若繼續儲存，將會覆蓋原有的工單內容。\n\n"
+                        "請選擇："
+                    )
+
+                    box = QMessageBox(self)
+                    box.setIcon(QMessageBox.Warning)
+                    box.setWindowTitle('工單已存在')
+                    box.setText(msg)
+
+                    btn_change = box.addButton('改用新工單編號', QMessageBox.ActionRole)
+                    btn_overwrite = box.addButton('仍然覆蓋這筆工單', QMessageBox.DestructiveRole)
+                    btn_cancel = box.addButton('取消', QMessageBox.RejectRole)
+
+                    box.exec_()
+                    clicked = box.clickedButton()
+
+                    # 改用新編號或取消都不繼續存檔
+                    if clicked is btn_change or clicked is btn_cancel:
+                        return
+                    # 只有使用者明確選擇「仍然覆蓋」時才往下走
+
                 reply = QMessageBox.information(self,'Check Again!','請確認你輸入的資料是否正確', QMessageBox.Ok | QMessageBox.Abort , QMessageBox.Abort)
                 if reply == QMessageBox.Ok:
-                    create_work_order(self.lineEdit_worknum.text())
+                    create_work_order(worknum)
                     save_basic_data()
                     save_central_data()
                     save_price_data()
@@ -1634,8 +1672,13 @@ if __name__ == '__main__':
     from PyQt5 import QtCore
     from PyQt5 import QtGui
     #QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.Floor)
-    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+    # 在 macOS 上先關掉 Qt 的 HighDpiScaling，避免額外縮放造成排版跑掉
+    #QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
+    # 調整整體字體大小，避免在 macOS 上控件被撐太大
+    font = app.font()
+    font.setPointSize(9)  # 你可以依實際效果再微調
+    app.setFont(font)
     window = Main()
     window.showMaximized()
     window.show()

@@ -13,8 +13,10 @@ import project as ui
 import main as m
 
 
-connection = pymysql.connect(host='192.168.101.64',
-                             port=3306,
+# 開發環境連線設定：Mac 上的 Docker MySQL（work-order-mysql）
+# 正式環境若有不同設定，之後可以透過 config 或環境變數切換
+connection = pymysql.connect(host='127.0.0.1',
+                             port=3307,
                              user='root',
                              passwd='jackey8869',
                              database='work_order',
@@ -419,6 +421,16 @@ def transport_name():
         store(name_in)
     return Tname
 
+
+def load_basic_summary(worknum):
+    """回傳已存在工單的一些摘要資訊，沒有則回傳 None"""
+    SQL = """SELECT worknum, case_name, company_name FROM save_basic_data WHERE worknum = %s"""
+    cursor.execute(SQL, (worknum,))
+    row = cursor.fetchone()
+    connection.commit()
+    return row
+
+
 def product_name():
     SQL = """SELECT product FROM central_data"""
     cursor.execute(SQL)
@@ -529,7 +541,7 @@ def Update_basic_data(data):
              WHERE worknum = '%s'
          """ % (data['worknum']  , data['case_name'] , data['company_name'] , data['phone'] ,data['client_name'] , data['worktime'] , data['cleanuptime'] , data['workaddress'] , data['pack'] , data['transport'] , data['cemployee1'] , data['cemployee2'] , data['cemployee3'] , data['cemployee4'] , data['cemployee5'] , data['crossbar_width'] , data['crossbar_amount'] , data['crossbar_remark'] , str(data['150shelter']) , str(data['180shelter']) , data['iron_Shelter_amount'] , data['iron_Shelter_remark'] , data['paper_Shelter_height'] , data['paper_Shelter_amount'] , data['paper_Shelter_remark'] , data['stand_style'] , data['stand_amount'] , data['stand_remark'] , data['rent1'] , data['rent2'] , data['remark'],data['worknum'])
     cursor.execute(SQL)
-    connection.commit
+    connection.commit()
 
 def call__basic_data(Wnum):
     SQL = """SELECT * FROM save_basic_data WHERE worknum = '%s'""" % Wnum
