@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass
 
 from PySide6.QtCore import QDateTime, Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -14,11 +14,14 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QMainWindow,
     QPushButton,
     QSizePolicy,
+    QTableWidget,
+    QTableWidgetItem,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -37,12 +40,93 @@ class DemoData:
     transport_note: str = "3/31 上午送達，需先電話聯繫現場窗口"
 
 
+DETAIL_HEADERS = [
+    "製作項目",
+    "寬(cm)",
+    "長(cm)",
+    "數量",
+    "材質",
+    "加工",
+    "板材",
+    "厚度(mm)",
+    "其他",
+    "數量/才數",
+    "單價",
+    "計價",
+    "備註",
+]
+
+
+DETAIL_ROWS = [
+    [
+        "主舞台背板輸出裱板",
+        "500",
+        "240",
+        "2",
+        "PVC 貼圖",
+        "冷裱 + 修邊",
+        "KT 板",
+        "5",
+        "含收邊黑膠帶",
+        "80 才",
+        "2,800",
+        "5,600",
+        "需與舞台結構對位",
+    ],
+    [
+        "入口拱門雙面輸出",
+        "320",
+        "260",
+        "1",
+        "防水帆布",
+        "車縫 + 打銅扣",
+        "—",
+        "—",
+        "雙面對裱",
+        "22 才",
+        "6,500",
+        "6,500",
+        "現場綁束帶固定",
+    ],
+    [
+        "指引立牌裱板",
+        "90",
+        "180",
+        "6",
+        "PP 相紙",
+        "冷裱",
+        "豪卡板",
+        "10",
+        "含腳架孔位",
+        "67.5 才",
+        "950",
+        "5,700",
+        "依樓層分批包裝",
+    ],
+    [
+        "服務台字卡",
+        "60",
+        "20",
+        "4",
+        "彩色貼紙",
+        "割字",
+        "壓克力",
+        "3",
+        "白墨",
+        "4 組",
+        "450",
+        "1,800",
+        "字距依現場微調",
+    ],
+]
+
+
 class WorkOrderPrototypeWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.demo_data = DemoData()
         self.setWindowTitle("Work Order Prototype - PySide6")
-        self.resize(1280, 720)
+        self.resize(1440, 900)
         self._build_ui()
         self._apply_styles()
         self._apply_demo_data()
@@ -57,8 +141,8 @@ class WorkOrderPrototypeWindow(QMainWindow):
 
         page_layout.addWidget(self._create_header())
         page_layout.addWidget(self._create_basic_info_section())
+        page_layout.addWidget(self._create_detail_section(), 1)
         page_layout.addWidget(self._create_footer_hint())
-        page_layout.addStretch(1)
 
     def _create_header(self) -> QFrame:
         frame = QFrame()
@@ -73,7 +157,7 @@ class WorkOrderPrototypeWindow(QMainWindow):
         title_font.setBold(True)
         title.setFont(title_font)
 
-        subtitle = QLabel("以 layout 重做原工單上方基本資料區，保留原本分組與輸入節奏。")
+        subtitle = QLabel("第二版加入中間工單明細表區，改用表格資料結構重現原工單的閱讀節奏。")
         subtitle.setWordWrap(True)
         subtitle.setStyleSheet("color: #5b6472;")
 
@@ -221,13 +305,121 @@ class WorkOrderPrototypeWindow(QMainWindow):
         body.addWidget(self.transport_note_edit)
         return frame
 
+    def _create_detail_section(self) -> QGroupBox:
+        group = QGroupBox("工單明細表區")
+        outer = QVBoxLayout(group)
+        outer.setContentsMargins(16, 18, 16, 16)
+        outer.setSpacing(12)
+
+        top_row = QHBoxLayout()
+        title = QLabel("製作項目 / 尺寸 / 材質 / 計價")
+        title.setObjectName("sectionLead")
+        description = QLabel("用 QTableWidget 重做中段明細，保留原工單偏橫向展開、可快速掃描的資訊順序。")
+        description.setStyleSheet("color: #5b6472;")
+        description.setWordWrap(True)
+
+        title_stack = QVBoxLayout()
+        title_stack.addWidget(title)
+        title_stack.addWidget(description)
+        top_row.addLayout(title_stack, 1)
+
+        meta_box = QFrame()
+        meta_box.setObjectName("summaryChipBox")
+        meta_layout = QHBoxLayout(meta_box)
+        meta_layout.setContentsMargins(12, 8, 12, 8)
+        meta_layout.setSpacing(12)
+        meta_layout.addWidget(QLabel("件數 4"))
+        meta_layout.addWidget(QLabel("估算計價 NT$ 19,600"))
+        meta_layout.addWidget(QLabel("備註欄保留現場需求"))
+        top_row.addWidget(meta_box)
+
+        outer.addLayout(top_row)
+
+        self.detail_table = QTableWidget(len(DETAIL_ROWS), len(DETAIL_HEADERS))
+        self.detail_table.setHorizontalHeaderLabels(DETAIL_HEADERS)
+        self.detail_table.setAlternatingRowColors(True)
+        self.detail_table.setWordWrap(True)
+        self.detail_table.setShowGrid(True)
+        self.detail_table.verticalHeader().setVisible(False)
+        self.detail_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.detail_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.detail_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.detail_table.setMinimumHeight(300)
+        self.detail_table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        header = self.detail_table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        header.setStretchLastSection(False)
+
+        column_widths = {
+            0: 220,
+            1: 72,
+            2: 72,
+            3: 64,
+            4: 120,
+            5: 120,
+            6: 90,
+            7: 72,
+            8: 130,
+            9: 92,
+            10: 84,
+            11: 92,
+            12: 220,
+        }
+        for column, width in column_widths.items():
+            self.detail_table.setColumnWidth(column, width)
+
+        for row_index, row_data in enumerate(DETAIL_ROWS):
+            for column_index, value in enumerate(row_data):
+                item = QTableWidgetItem(value)
+                if column_index in {1, 2, 3, 7, 9, 10, 11}:
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                elif column_index == 0:
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+                else:
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                if column_index == 11:
+                    item.setForeground(QColor("#0f766e"))
+                self.detail_table.setItem(row_index, column_index, item)
+            self.detail_table.setRowHeight(row_index, 52)
+
+        outer.addWidget(self.detail_table, 1)
+        outer.addLayout(self._create_detail_summary())
+        return group
+
+    def _create_detail_summary(self) -> QHBoxLayout:
+        layout = QHBoxLayout()
+        layout.setSpacing(12)
+
+        left_card, left_body = self._create_card("明細區備註")
+        note = QLabel(
+            "保留原工單常見資訊：材質、加工、板材、厚度、數量/才數、單價與計價，\n"
+            "現在集中在同一張表內，後續若接資料庫或 Excel 匯出也比較好對應欄位。"
+        )
+        note.setWordWrap(True)
+        left_body.addWidget(note)
+
+        right_card, right_body = self._create_card("列印觀察")
+        print_hint = QLabel(
+            "這版先優先驗證桌面版瀏覽與欄位密度。若要再靠近原畫面，下一步可做：\n"
+            "1. 表頭分群 2. 合計列 3. 可編輯 cell delegate 4. 匯出欄位 mapping。"
+        )
+        print_hint.setWordWrap(True)
+        right_body.addWidget(print_hint)
+
+        layout.addWidget(left_card, 2)
+        layout.addWidget(right_card, 1)
+        return layout
+
     def _create_footer_hint(self) -> QFrame:
         frame = QFrame()
         frame.setObjectName("footerHint")
         layout = QHBoxLayout(frame)
         layout.setContentsMargins(16, 12, 16, 12)
 
-        label = QLabel("Prototype 範圍只重做工單上方基本資料區；未串接資料庫，也不改動既有 PyQt5 視窗。")
+        label = QLabel(
+            "Prototype 範圍：上方基本資料區 + 第二版中間工單明細表區；未串接資料庫、Excel、舊版 PyQt5 表單或儲存流程。"
+        )
         label.setWordWrap(True)
         layout.addWidget(label)
         return frame
@@ -279,12 +471,12 @@ class WorkOrderPrototypeWindow(QMainWindow):
                 left: 14px;
                 padding: 0 6px;
             }
-            QFrame#headerCard, QFrame#footerHint, QFrame[card="true"] {
+            QFrame#headerCard, QFrame#footerHint, QFrame[card="true"], QFrame#summaryChipBox {
                 background: #ffffff;
                 border: 1px solid #d7deea;
                 border-radius: 12px;
             }
-            QLabel#cardTitle {
+            QLabel#cardTitle, QLabel#sectionLead {
                 font-size: 14px;
                 font-weight: 700;
                 color: #1f2937;
@@ -298,6 +490,24 @@ class WorkOrderPrototypeWindow(QMainWindow):
                 padding: 8px 10px;
                 background: #fbfcfe;
                 min-height: 22px;
+            }
+            QTableWidget {
+                border: 1px solid #cfd7e4;
+                border-radius: 10px;
+                background: #ffffff;
+                gridline-color: #dbe3ee;
+                alternate-background-color: #f8fbff;
+                selection-background-color: #dbeafe;
+                selection-color: #0f172a;
+            }
+            QHeaderView::section {
+                background: #e9eff8;
+                color: #334155;
+                border: none;
+                border-right: 1px solid #d3dcea;
+                border-bottom: 1px solid #d3dcea;
+                padding: 10px 8px;
+                font-weight: 700;
             }
             QPushButton {
                 border: 1px solid #c8d3e1;
