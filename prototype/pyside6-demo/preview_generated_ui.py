@@ -104,25 +104,25 @@ class GeneratedUiPreviewWindow(QMainWindow):
         lower_buttons_layout = getattr(self.ui, "horizontalLayout_15", None)
         top_group = getattr(self.ui, "widget14", None)
 
-        summary_outer_width = 620
-        summary_inner_width = 600
-        button_group_width = 590
+        summary_outer_width = 646
+        summary_inner_width = 626
+        button_group_width = 612
 
         if amount_summary is not None:
-            amount_summary.setGeometry(10, 10, summary_inner_width, 60)
+            amount_summary.setGeometry(10, 10, summary_inner_width, 62)
         if action_buttons is not None:
-            action_buttons.setGeometry(10, 74, summary_inner_width, 98)
+            action_buttons.setGeometry(10, 76, summary_inner_width, 100)
         if top_group is not None:
-            top_group.setGeometry(0, 0, button_group_width, 92)
+            top_group.setGeometry(0, 0, button_group_width, 94)
 
         if amount_layout is not None:
             amount_layout.setContentsMargins(0, 0, 0, 0)
-            amount_layout.setSpacing(10)
+            amount_layout.setSpacing(6)
 
         summary_specs = [
-            ("wdg_productionAmountField", "widget11", "lbl_productionAmount", "le_productionAmount", 62, 132, 208),
-            ("wdg_taxAmountField", "widget12", "lbl_taxAmount", "le_taxAmount", 48, 124, 194),
-            ("wdg_totalAmountField", "widget13", "lbl_totalAmount", "le_totalAmount", 48, 132, 208),
+            ("wdg_productionAmountField", "widget11", "lbl_productionAmount", "le_productionAmount", 66, 136, 182),
+            ("wdg_taxAmountField", "widget12", "lbl_taxAmount", "le_taxAmount", 50, 134, 176),
+            ("wdg_totalAmountField", "widget13", "lbl_totalAmount", "le_totalAmount", 50, 136, 178),
         ]
         for field_name, inner_name, label_name, lineedit_name, label_width, lineedit_width, inner_width in summary_specs:
             field = getattr(self.ui, field_name, None)
@@ -154,35 +154,35 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 field_layout.setSpacing(6)
 
         button_specs = {
-            "btn_open": 74,
-            "btn_save": 74,
-            "btn_reset": 74,
-            "btn_billing": 74,
-            "btn_subtotal": 74,
-            "btn_calcuate": 74,
-            "btn_import": 108,
-            "btn_invoice": 108,
+            "btn_open": 92,
+            "btn_save": 92,
+            "btn_reset": 92,
+            "btn_billing": 92,
+            "btn_subtotal": 92,
+            "btn_calcuate": 92,
+            "btn_import": 92,
+            "btn_invoice": 92,
         }
         for button_name, width in button_specs.items():
             button = getattr(self.ui, button_name, None)
             if button is not None:
                 button.setMinimumWidth(width)
                 button.setMaximumWidth(width)
-                button.setMinimumHeight(32)
-                button.setMaximumHeight(32)
+                button.setMinimumHeight(34)
+                button.setMaximumHeight(34)
                 button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         if top_buttons_layout is not None:
             top_buttons_layout.setContentsMargins(0, 0, 0, 0)
-            top_buttons_layout.setSpacing(8)
+            top_buttons_layout.setSpacing(6)
         if lower_buttons_layout is not None:
-            lower_buttons_layout.setContentsMargins(0, 4, 0, 0)
-            lower_buttons_layout.setSpacing(10)
+            lower_buttons_layout.setContentsMargins(0, 6, 0, 0)
+            lower_buttons_layout.setSpacing(6)
 
         summary_actions.setMinimumWidth(summary_outer_width)
         summary_actions.setMaximumWidth(summary_outer_width)
-        summary_actions.setMinimumHeight(182)
-        summary_actions.setMaximumHeight(182)
+        summary_actions.setMinimumHeight(188)
+        summary_actions.setMaximumHeight(188)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         bottom_layout.setStretch(0, 5)
