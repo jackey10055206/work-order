@@ -134,7 +134,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._tune_line_items_table()
 
         if main_layout is not None:
-            main_layout.setSpacing(2)
+            main_layout.setSpacing(0)
             main_layout.setStretch(0, 0)
             main_layout.setStretch(1, 1)
             main_layout.setStretch(2, 0)
@@ -142,27 +142,32 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if line_items_section is not None:
             line_items_section.setMinimumHeight(0)
             line_items_section.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+
+        top_content = getattr(self.ui, "wdg_topContent", None)
+        if top_content is not None:
+            top_content.setMinimumHeight(81)
+            top_content.setMaximumHeight(81)
         if line_items_layout is not None:
-            line_items_layout.setContentsMargins(2, 2, 2, 2)
+            line_items_layout.setContentsMargins(0, 0, 0, 0)
             line_items_layout.setSpacing(0)
 
         if bottom_section is not None:
-            bottom_section.setMinimumHeight(176)
-            bottom_section.setMaximumHeight(176)
+            bottom_section.setMinimumHeight(148)
+            bottom_section.setMaximumHeight(148)
         if bottom_container is not None:
-            bottom_container.setGeometry(20, 0, 1481, 176)
+            bottom_container.setGeometry(20, 0, 1481, 148)
 
         remark_group.setMaximumWidth(16777215)
         remark_group.setMinimumWidth(600)
         remark_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        remark_group.setMinimumHeight(172)
-        remark_group.setMaximumHeight(172)
+        remark_group.setMinimumHeight(144)
+        remark_group.setMaximumHeight(144)
         remark_layout = getattr(self.ui, "horizontalLayout_9", None)
         if remark_layout is not None:
             remark_layout.setContentsMargins(6, 6, 6, 6)
         if remark_editor is not None:
-            remark_editor.setMinimumHeight(126)
-            remark_editor.setMaximumHeight(126)
+            remark_editor.setMinimumHeight(106)
+            remark_editor.setMaximumHeight(106)
 
         amount_summary = getattr(self.ui, "wdg_amountSummary", None)
         action_buttons = getattr(self.ui, "wdg_actionButtons", None)
@@ -179,9 +184,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if amount_summary is not None:
             amount_summary.setGeometry(10, 4, summary_inner_width, 54)
         if action_buttons is not None:
-            action_buttons.setGeometry(10, 58, summary_inner_width, 86)
+            action_buttons.setGeometry(10, 58, summary_inner_width, 82)
         if top_group is not None:
-            top_group.setGeometry(4, 0, button_group_width, 82)
+            top_group.setGeometry(4, 0, button_group_width, 80)
 
         if amount_layout is not None:
             amount_layout.setContentsMargins(0, 0, 0, 0)
@@ -252,8 +257,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         summary_actions.setMinimumWidth(summary_outer_width)
         summary_actions.setMaximumWidth(summary_outer_width)
-        summary_actions.setMinimumHeight(156)
-        summary_actions.setMaximumHeight(156)
+        summary_actions.setMinimumHeight(144)
+        summary_actions.setMaximumHeight(144)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         bottom_layout.setSpacing(2)
