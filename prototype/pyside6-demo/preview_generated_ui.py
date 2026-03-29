@@ -38,7 +38,7 @@ TABLE_HEADERS = [
 ]
 
 # Excel / 工具表格感：寬欄給描述類欄位，中欄給數值，x 欄極窄固定顯示。
-TABLE_COLUMN_WIDTHS = [220, 82, 36, 82, 68, 140, 136, 126, 86, 144, 68, 84, 88, 92, 104]
+TABLE_COLUMN_WIDTHS = [196, 82, 36, 82, 68, 140, 136, 126, 108, 144, 68, 84, 88, 92, 104]
 X_COLUMN_INDEX = 2
 NUMERIC_COLUMN_INDEXES = {1, 3, 4, 10, 11, 12, 13, 14}
 SELECT_LIKE_COLUMN_INDEXES = {0, 5, 6, 7, 8, 9}
@@ -318,14 +318,28 @@ class GeneratedUiPreviewWindow(QMainWindow):
             QComboBox {
                 background: #ffffff;
                 border: 1px solid #cfd5db;
-                padding: 1px 20px 1px 6px;
+                padding: 1px 28px 1px 6px;
                 margin: 0;
             }
             QComboBox::drop-down {
-                width: 18px;
+                width: 24px;
+                background: #f3f4f6;
                 border-left: 1px solid #d7dce1;
                 subcontrol-origin: padding;
                 subcontrol-position: top right;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                width: 0px;
+                height: 0px;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 7px solid #5f6368;
+                margin-right: 6px;
+            }
+            QComboBox:on {
+                padding-top: 1px;
+                padding-left: 6px;
             }
             """
         )
