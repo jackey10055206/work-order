@@ -8,6 +8,7 @@ from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QHeaderView,
     QMainWindow,
     QSizePolicy,
@@ -25,7 +26,7 @@ TABLE_HEADERS = [
     "長度",
     "數量",
     "材質",
-    "冷熱加工",
+    "冷裱加工",
     "板材種類",
     "板材厚度",
     "其他備料",
@@ -41,6 +42,14 @@ TABLE_COLUMN_WIDTHS = [220, 82, 36, 82, 68, 140, 136, 126, 86, 144, 68, 84, 88, 
 X_COLUMN_INDEX = 2
 NUMERIC_COLUMN_INDEXES = {1, 3, 4, 10, 11, 12, 13, 14}
 SELECT_LIKE_COLUMN_INDEXES = {0, 5, 6, 7, 8, 9}
+COMBO_COLUMN_OPTIONS = {
+    0: ["大圖輸出", "裱板施工", "立牌製作", "桌裙布置", "展場貼圖"],
+    5: ["PVC 貼圖", "PP 相紙", "防水帆布", "單透布", "背膠海報"],
+    6: ["冷裱", "冷裱 + 修邊", "不上膜", "雙面對裱", "包邊處理"],
+    7: ["KT 板", "豪卡板", "塑鋁板", "珍珠板", "發泡板"],
+    8: ["1mm", "2mm", "3mm", "5mm", "10mm"],
+    9: ["無", "黑膠帶收邊", "腳架孔位", "魔鬼氈", "補強條"],
+}
 
 
 def apply_light_preview_theme(app: QApplication) -> None:
@@ -306,6 +315,18 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 padding: 6px 4px;
                 font-weight: 700;
             }
+            QComboBox {
+                background: #ffffff;
+                border: 1px solid #cfd5db;
+                padding: 1px 20px 1px 6px;
+                margin: 0;
+            }
+            QComboBox::drop-down {
+                width: 18px;
+                border-left: 1px solid #d7dce1;
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+            }
             """
         )
 
@@ -346,6 +367,21 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         return item
 
+    def _make_combo_box(self, column: int, current_text: str) -> QComboBox:
+        combo = QComboBox()
+        combo.addItems(COMBO_COLUMN_OPTIONS[column])
+        if current_text and combo.findText(current_text) == -1:
+            combo.insertItem(0, current_text)
+        current_index = combo.findText(current_text)
+        if current_index >= 0:
+            combo.setCurrentIndex(current_index)
+        combo.setEditable(False)
+        combo.setFrame(False)
+        combo.setMaxVisibleItems(8)
+        combo.setMinimumHeight(28)
+        combo.setMaximumHeight(28)
+        return combo
+
     def _seed_demo_values(self) -> None:
         self.setWindowTitle("project.ui preview (generated)")
 
@@ -375,17 +411,25 @@ class GeneratedUiPreviewWindow(QMainWindow):
             self.ui.te_remark.setPlainText("現場施工前 30 分鐘需與窗口聯絡；材料依樓層分批搬運。")
 
         sample_rows = [
-            ["主舞台背板輸出裱板", "500", "x", "240", "2", "PVC 貼圖", "冷裱 + 修邊", "KT 板", "5mm", "含收邊黑膠帶", "2", "80", "2800", "5600", "300"],
-            ["入口拱門雙面輸出", "320", "x", "260", "1", "防水帆布", "車縫 + 打銅扣", "塑鋁板", "3mm", "雙面對裱", "1", "22", "6500", "6500", "0"],
-            ["指引立牌裱板", "90", "x", "180", "6", "PP 相紙", "冷裱", "豪卡板", "10mm", "含腳架孔位", "6", "67.5", "950", "5700", "480"],
-            ["服務台桌裙", "240", "x", "75", "1", "單透布", "包邊車縫", "珍珠板", "2mm", "魔鬼氈 + 補強條", "1", "12.5", "1800", "1800", "180"],
+            ["大圖輸出", "500", "x", "240", "2", "PVC 貼圖", "冷裱 + 修邊", "KT 板", "5mm", "黑膠帶收邊", "2", "80", "2800", "5600", "300"],
+            ["展場貼圖", "320", "x", "260", "1", "防水帆布", "雙面對裱", "塑鋁板", "3mm", "無", "1", "22", "6500", "6500", "0"],
+            ["立牌製作", "90", "x", "180", "6", "PP 相紙", "冷裱", "豪卡板", "10mm", "腳架孔位", "6", "67.5", "950", "5700", "480"],
+            ["桌裙布置", "240", "x", "75", "1", "單透布", "包邊處理", "珍珠板", "2mm", "魔鬼氈", "1", "12.5", "1800", "1800", "180"],
         ]
         if hasattr(self.ui, "tbl_lineItems"):
             table = self.ui.tbl_lineItems
             table.clearContents()
-            for row_idx, row in enumerate(sample_rows):
+            for row_idx in range(table.rowCount()):
+                row = sample_rows[row_idx] if row_idx < len(sample_rows) else ["", "", "x", "", "", "", "", "", "", "", "", "", "", "", ""]
                 for col_idx, value in enumerate(row):
-                    table.setItem(row_idx, col_idx, self._make_table_item(value, col_idx))
+                    if col_idx in COMBO_COLUMN_OPTIONS:
+                        table.setCellWidget(row_idx, col_idx, self._make_combo_box(col_idx, value))
+                        placeholder = self._make_table_item("", col_idx)
+                        placeholder.setFlags(placeholder.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+                        table.setItem(row_idx, col_idx, placeholder)
+                    else:
+                        table.setItem(row_idx, col_idx, self._make_table_item(value, col_idx))
+                table.setRowHeight(row_idx, 36)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
