@@ -103,18 +103,19 @@ class GeneratedUiPreviewWindow(QMainWindow):
         amount_layout = getattr(self.ui, "horizontalLayout_13", None)
         top_buttons_layout = getattr(self.ui, "horizontalLayout_14", None)
         lower_buttons_layout = getattr(self.ui, "horizontalLayout_15", None)
+        button_rows_layout = getattr(self.ui, "horizontalLayout_16", None)
         top_group = getattr(self.ui, "widget14", None)
 
-        summary_outer_width = 730
+        summary_outer_width = 718
         summary_inner_width = 706
-        button_group_width = 690
+        button_group_width = 674
 
         if amount_summary is not None:
             amount_summary.setGeometry(10, 10, summary_inner_width, 62)
         if action_buttons is not None:
-            action_buttons.setGeometry(10, 76, summary_inner_width, 100)
+            action_buttons.setGeometry(10, 72, summary_inner_width, 96)
         if top_group is not None:
-            top_group.setGeometry(0, 0, button_group_width, 94)
+            top_group.setGeometry(4, 0, button_group_width, 92)
 
         if amount_layout is not None:
             amount_layout.setContentsMargins(0, 0, 0, 0)
@@ -175,17 +176,21 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         if top_buttons_layout is not None:
             top_buttons_layout.setContentsMargins(0, 0, 0, 0)
-            top_buttons_layout.setSpacing(6)
+            top_buttons_layout.setSpacing(4)
         if lower_buttons_layout is not None:
-            lower_buttons_layout.setContentsMargins(0, 6, 0, 0)
-            lower_buttons_layout.setSpacing(6)
+            lower_buttons_layout.setContentsMargins(0, 4, 0, 0)
+            lower_buttons_layout.setSpacing(4)
+        if button_rows_layout is not None:
+            button_rows_layout.setContentsMargins(0, 0, 0, 0)
+            button_rows_layout.setSpacing(0)
 
         summary_actions.setMinimumWidth(summary_outer_width)
         summary_actions.setMaximumWidth(summary_outer_width)
-        summary_actions.setMinimumHeight(188)
-        summary_actions.setMaximumHeight(188)
+        summary_actions.setMinimumHeight(180)
+        summary_actions.setMaximumHeight(180)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        bottom_layout.setSpacing(4)
         bottom_layout.setStretch(0, 5)
         bottom_layout.setStretch(1, 0)
 
