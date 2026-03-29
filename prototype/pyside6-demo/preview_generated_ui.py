@@ -315,32 +315,6 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 padding: 6px 4px;
                 font-weight: 700;
             }
-            QComboBox {
-                background: #ffffff;
-                border: 1px solid #cfd5db;
-                padding: 1px 28px 1px 6px;
-                margin: 0;
-            }
-            QComboBox::drop-down {
-                width: 24px;
-                background: #f3f4f6;
-                border-left: 1px solid #d7dce1;
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-            }
-            QComboBox::down-arrow {
-                image: none;
-                width: 0px;
-                height: 0px;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 7px solid #5f6368;
-                margin-right: 6px;
-            }
-            QComboBox:on {
-                padding-top: 1px;
-                padding-left: 6px;
-            }
             """
         )
 
@@ -390,7 +364,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if current_index >= 0:
             combo.setCurrentIndex(current_index)
         combo.setEditable(False)
-        combo.setFrame(False)
+        combo.setFrame(True)
         combo.setMaxVisibleItems(8)
         combo.setMinimumHeight(28)
         combo.setMaximumHeight(28)
