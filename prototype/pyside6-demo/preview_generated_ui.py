@@ -95,9 +95,79 @@ class GeneratedUiPreviewWindow(QMainWindow):
             remark_editor.setMinimumHeight(160)
             remark_editor.setMaximumHeight(170)
 
-        summary_actions.setMinimumWidth(520)
-        summary_actions.setMaximumWidth(580)
-        summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        # Tighten the right panel from the inside first so the outer frame can
+        # shrink slightly without hiding the summary fields or action buttons.
+        amount_summary = getattr(self.ui, "wdg_amountSummary", None)
+        action_buttons = getattr(self.ui, "wdg_actionButtons", None)
+        amount_layout = getattr(self.ui, "horizontalLayout_13", None)
+        top_buttons_layout = getattr(self.ui, "horizontalLayout_14", None)
+        lower_buttons_layout = getattr(self.ui, "horizontalLayout_15", None)
+        top_group = getattr(self.ui, "widget14", None)
+
+        if amount_summary is not None:
+            amount_summary.setGeometry(10, 10, 480, 56)
+        if action_buttons is not None:
+            action_buttons.setGeometry(10, 70, 480, 82)
+        if top_group is not None:
+            top_group.setGeometry(0, 0, 470, 78)
+
+        if amount_layout is not None:
+            amount_layout.setContentsMargins(0, 0, 0, 0)
+            amount_layout.setSpacing(8)
+
+        summary_specs = [
+            ("lbl_productionAmount", "le_productionAmount", 56, 96),
+            ("lbl_taxAmount", "le_taxAmount", 42, 88),
+            ("lbl_totalAmount", "le_totalAmount", 42, 96),
+        ]
+        for label_name, lineedit_name, label_width, lineedit_width in summary_specs:
+            label = getattr(self.ui, label_name, None)
+            lineedit = getattr(self.ui, lineedit_name, None)
+            if label is not None:
+                label.setMinimumWidth(label_width)
+                label.setMaximumWidth(label_width)
+                label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+            if lineedit is not None:
+                lineedit.setMinimumWidth(lineedit_width)
+                lineedit.setMaximumWidth(lineedit_width)
+                lineedit.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+                lineedit.setAlignment(Qt.AlignmentFlag.AlignRight)
+
+        for layout_name in ("horizontalLayout_10", "horizontalLayout_11", "horizontalLayout_12"):
+            field_layout = getattr(self.ui, layout_name, None)
+            if field_layout is not None:
+                field_layout.setContentsMargins(0, 0, 0, 0)
+                field_layout.setSpacing(4)
+
+        button_widths = {
+            "btn_open": 64,
+            "btn_save": 64,
+            "btn_reset": 64,
+            "btn_billing": 64,
+            "btn_subtotal": 64,
+            "btn_calcuate": 64,
+            "btn_import": 92,
+            "btn_invoice": 92,
+        }
+        for button_name, width in button_widths.items():
+            button = getattr(self.ui, button_name, None)
+            if button is not None:
+                button.setMinimumWidth(width)
+                button.setMaximumWidth(width)
+                button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+        if top_buttons_layout is not None:
+            top_buttons_layout.setContentsMargins(0, 0, 0, 0)
+            top_buttons_layout.setSpacing(6)
+        if lower_buttons_layout is not None:
+            lower_buttons_layout.setContentsMargins(0, 0, 0, 0)
+            lower_buttons_layout.setSpacing(8)
+
+        summary_actions.setMinimumWidth(500)
+        summary_actions.setMaximumWidth(520)
+        summary_actions.setMinimumHeight(160)
+        summary_actions.setMaximumHeight(160)
+        summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         bottom_layout.setStretch(0, 5)
         bottom_layout.setStretch(1, 0)
