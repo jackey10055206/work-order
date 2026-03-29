@@ -152,22 +152,22 @@ class GeneratedUiPreviewWindow(QMainWindow):
             line_items_layout.setSpacing(0)
 
         if bottom_section is not None:
-            bottom_section.setMinimumHeight(148)
-            bottom_section.setMaximumHeight(148)
+            bottom_section.setMinimumHeight(156)
+            bottom_section.setMaximumHeight(156)
         if bottom_container is not None:
-            bottom_container.setGeometry(20, 0, 1481, 148)
+            bottom_container.setGeometry(20, 0, 1481, 156)
 
         remark_group.setMaximumWidth(16777215)
         remark_group.setMinimumWidth(600)
         remark_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        remark_group.setMinimumHeight(144)
-        remark_group.setMaximumHeight(144)
+        remark_group.setMinimumHeight(152)
+        remark_group.setMaximumHeight(152)
         remark_layout = getattr(self.ui, "horizontalLayout_9", None)
         if remark_layout is not None:
             remark_layout.setContentsMargins(6, 6, 6, 6)
         if remark_editor is not None:
-            remark_editor.setMinimumHeight(106)
-            remark_editor.setMaximumHeight(106)
+            remark_editor.setMinimumHeight(114)
+            remark_editor.setMaximumHeight(114)
 
         amount_summary = getattr(self.ui, "wdg_amountSummary", None)
         action_buttons = getattr(self.ui, "wdg_actionButtons", None)
@@ -257,8 +257,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         summary_actions.setMinimumWidth(summary_outer_width)
         summary_actions.setMaximumWidth(summary_outer_width)
-        summary_actions.setMinimumHeight(144)
-        summary_actions.setMaximumHeight(144)
+        summary_actions.setMinimumHeight(152)
+        summary_actions.setMaximumHeight(152)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         bottom_layout.setSpacing(2)
@@ -273,14 +273,14 @@ class GeneratedUiPreviewWindow(QMainWindow):
         table.clear()
         table.setColumnCount(len(TABLE_HEADERS))
         table.setHorizontalHeaderLabels(TABLE_HEADERS)
-        table.setRowCount(16)
+        table.setRowCount(15)
         table.setAlternatingRowColors(True)
         table.setWordWrap(False)
         table.setShowGrid(True)
         table.setCornerButtonEnabled(False)
         table.setSelectionBehavior(table.SelectionBehavior.SelectItems)
         table.setSelectionMode(table.SelectionMode.SingleSelection)
-        table.setMinimumHeight(454)
+        table.setMinimumHeight(418)
         table.setStyleSheet(
             """
             QTableWidget {
