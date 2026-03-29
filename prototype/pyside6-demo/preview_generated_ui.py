@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QTableWidgetItem
+from PySide6.QtWidgets import QApplication, QMainWindow, QSizePolicy, QTableWidgetItem
 
 from ui_project_generated import Ui_MainWindow
 
@@ -12,7 +12,21 @@ class GeneratedUiPreviewWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self._tune_generated_layout()
         self._seed_demo_values()
+
+    def _tune_generated_layout(self) -> None:
+        bottom_layout = getattr(self.ui, "horizontalLayout_17", None)
+        remark_group = getattr(self.ui, "grp_remark", None)
+        summary_actions = getattr(self.ui, "wdg_summaryActions", None)
+        if bottom_layout is None or remark_group is None or summary_actions is None:
+            return
+
+        remark_group.setMaximumWidth(420)
+        remark_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        summary_actions.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        bottom_layout.setStretch(0, 1)
+        bottom_layout.setStretch(1, 3)
 
     def _seed_demo_values(self) -> None:
         self.setWindowTitle("project.ui preview (generated)")
