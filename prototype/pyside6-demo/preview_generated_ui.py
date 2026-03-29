@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication, QMainWindow, QSizePolicy, QStyleFactory, QTableWidgetItem
 
@@ -94,11 +95,12 @@ class GeneratedUiPreviewWindow(QMainWindow):
             remark_editor.setMinimumHeight(160)
             remark_editor.setMaximumHeight(170)
 
-        summary_actions.setMinimumWidth(560)
-        summary_actions.setMaximumWidth(620)
+        summary_actions.setMinimumWidth(520)
+        summary_actions.setMaximumWidth(580)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
         bottom_layout.setStretch(0, 5)
-        bottom_layout.setStretch(1, 2)
+        bottom_layout.setStretch(1, 0)
 
     def _seed_demo_values(self) -> None:
         self.setWindowTitle("project.ui preview (generated)")
