@@ -95,8 +95,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
             remark_editor.setMinimumHeight(160)
             remark_editor.setMaximumHeight(170)
 
-        # Tighten the right panel from the inside first so the outer frame can
-        # shrink slightly without hiding the summary fields or action buttons.
+        # Prioritize usability over aggressively shrinking the right panel:
+        # keep the amount fields comfortably visible and the action buttons
+        # large enough to feel deliberate and easy to click.
         amount_summary = getattr(self.ui, "wdg_amountSummary", None)
         action_buttons = getattr(self.ui, "wdg_actionButtons", None)
         amount_layout = getattr(self.ui, "horizontalLayout_13", None)
@@ -104,9 +105,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
         lower_buttons_layout = getattr(self.ui, "horizontalLayout_15", None)
         top_group = getattr(self.ui, "widget14", None)
 
-        summary_outer_width = 646
-        summary_inner_width = 626
-        button_group_width = 612
+        summary_outer_width = 730
+        summary_inner_width = 706
+        button_group_width = 690
 
         if amount_summary is not None:
             amount_summary.setGeometry(10, 10, summary_inner_width, 62)
@@ -120,9 +121,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
             amount_layout.setSpacing(6)
 
         summary_specs = [
-            ("wdg_productionAmountField", "widget11", "lbl_productionAmount", "le_productionAmount", 66, 136, 182),
-            ("wdg_taxAmountField", "widget12", "lbl_taxAmount", "le_taxAmount", 50, 134, 176),
-            ("wdg_totalAmountField", "widget13", "lbl_totalAmount", "le_totalAmount", 50, 136, 178),
+            ("wdg_productionAmountField", "widget11", "lbl_productionAmount", "le_productionAmount", 68, 152, 220),
+            ("wdg_taxAmountField", "widget12", "lbl_taxAmount", "le_taxAmount", 56, 152, 218),
+            ("wdg_totalAmountField", "widget13", "lbl_totalAmount", "le_totalAmount", 56, 152, 218),
         ]
         for field_name, inner_name, label_name, lineedit_name, label_width, lineedit_width, inner_width in summary_specs:
             field = getattr(self.ui, field_name, None)
@@ -154,22 +155,22 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 field_layout.setSpacing(6)
 
         button_specs = {
-            "btn_open": 92,
-            "btn_save": 92,
-            "btn_reset": 92,
-            "btn_billing": 92,
-            "btn_subtotal": 92,
-            "btn_calcuate": 92,
-            "btn_import": 92,
-            "btn_invoice": 92,
+            "btn_open": 106,
+            "btn_save": 106,
+            "btn_reset": 106,
+            "btn_billing": 106,
+            "btn_subtotal": 106,
+            "btn_calcuate": 106,
+            "btn_import": 106,
+            "btn_invoice": 106,
         }
         for button_name, width in button_specs.items():
             button = getattr(self.ui, button_name, None)
             if button is not None:
                 button.setMinimumWidth(width)
                 button.setMaximumWidth(width)
-                button.setMinimumHeight(34)
-                button.setMaximumHeight(34)
+                button.setMinimumHeight(38)
+                button.setMaximumHeight(38)
                 button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         if top_buttons_layout is not None:
