@@ -2,9 +2,71 @@ from __future__ import annotations
 
 import sys
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QSizePolicy, QTableWidgetItem
+from PySide6.QtGui import QColor, QPalette
+from PySide6.QtWidgets import QApplication, QMainWindow, QSizePolicy, QStyleFactory, QTableWidgetItem
 
 from ui_project_generated import Ui_MainWindow
+
+
+def apply_light_preview_theme(app: QApplication) -> None:
+    app.setStyle(QStyleFactory.create("Fusion"))
+
+    palette = QPalette()
+    palette.setColor(QPalette.ColorRole.Window, QColor("#f5f5f5"))
+    palette.setColor(QPalette.ColorRole.WindowText, QColor("#202124"))
+    palette.setColor(QPalette.ColorRole.Base, QColor("#ffffff"))
+    palette.setColor(QPalette.ColorRole.AlternateBase, QColor("#f7f7f7"))
+    palette.setColor(QPalette.ColorRole.ToolTipBase, QColor("#ffffff"))
+    palette.setColor(QPalette.ColorRole.ToolTipText, QColor("#202124"))
+    palette.setColor(QPalette.ColorRole.Text, QColor("#202124"))
+    palette.setColor(QPalette.ColorRole.Button, QColor("#ffffff"))
+    palette.setColor(QPalette.ColorRole.ButtonText, QColor("#202124"))
+    palette.setColor(QPalette.ColorRole.BrightText, QColor("#ffffff"))
+    palette.setColor(QPalette.ColorRole.Highlight, QColor("#4c8bf5"))
+    palette.setColor(QPalette.ColorRole.HighlightedText, QColor("#ffffff"))
+    palette.setColor(QPalette.ColorRole.Light, QColor("#ffffff"))
+    palette.setColor(QPalette.ColorRole.Midlight, QColor("#e6e6e6"))
+    palette.setColor(QPalette.ColorRole.Mid, QColor("#cfcfcf"))
+    palette.setColor(QPalette.ColorRole.Dark, QColor("#9e9e9e"))
+    palette.setColor(QPalette.ColorRole.Shadow, QColor("#808080"))
+    app.setPalette(palette)
+
+    app.setStyleSheet(
+        """
+        QWidget {
+            background-color: #f5f5f5;
+            color: #202124;
+        }
+        QLineEdit, QTextEdit, QComboBox, QTableWidget {
+            background-color: #ffffff;
+            color: #202124;
+            border: 1px solid #cfcfcf;
+        }
+        QHeaderView::section {
+            background-color: #efefef;
+            color: #202124;
+            border: 1px solid #d8d8d8;
+            padding: 4px;
+        }
+        QPushButton {
+            background-color: #ffffff;
+            border: 1px solid #c5c5c5;
+            padding: 4px 10px;
+        }
+        QPushButton:hover {
+            background-color: #f0f0f0;
+        }
+        QGroupBox {
+            border: 1px solid #d0d0d0;
+            margin-top: 10px;
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 10px;
+            padding: 0 4px;
+        }
+        """
+    )
 
 
 class GeneratedUiPreviewWindow(QMainWindow):
@@ -70,6 +132,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
 def main() -> int:
     app = QApplication(sys.argv)
+    apply_light_preview_theme(app)
     window = GeneratedUiPreviewWindow()
     window.show()
     return app.exec()
