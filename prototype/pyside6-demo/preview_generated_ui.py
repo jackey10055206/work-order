@@ -86,14 +86,18 @@ class GeneratedUiPreviewWindow(QMainWindow):
             return
 
         remark_group.setMaximumWidth(16777215)
-        remark_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
-        remark_group.setMaximumHeight(150)
+        remark_group.setMinimumWidth(600)
+        remark_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        remark_group.setMinimumHeight(220)
+        remark_group.setMaximumHeight(225)
         if remark_editor is not None:
-            remark_editor.setMaximumHeight(95)
+            remark_editor.setMinimumHeight(160)
+            remark_editor.setMaximumHeight(170)
 
+        summary_actions.setMinimumWidth(680)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        bottom_layout.setStretch(0, 1)
-        bottom_layout.setStretch(1, 2)
+        bottom_layout.setStretch(0, 4)
+        bottom_layout.setStretch(1, 3)
 
     def _seed_demo_values(self) -> None:
         self.setWindowTitle("project.ui preview (generated)")
