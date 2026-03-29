@@ -119,6 +119,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._seed_demo_values()
 
     def _tune_generated_layout(self) -> None:
+        main_layout = getattr(self.ui, "verticalLayout_2", None)
+        line_items_section = getattr(self.ui, "wdg_lineItems", None)
+        line_items_layout = getattr(self.ui, "verticalLayout", None)
+        bottom_section = getattr(self.ui, "wdg_bottomSection", None)
+        bottom_container = getattr(self.ui, "widget10", None)
         bottom_layout = getattr(self.ui, "horizontalLayout_17", None)
         remark_group = getattr(self.ui, "grp_remark", None)
         summary_actions = getattr(self.ui, "wdg_summaryActions", None)
@@ -128,14 +133,33 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         self._tune_line_items_table()
 
+        if main_layout is not None:
+            main_layout.setSpacing(4)
+            main_layout.setStretch(0, 0)
+            main_layout.setStretch(1, 1)
+            main_layout.setStretch(2, 0)
+
+        if line_items_section is not None:
+            line_items_section.setMinimumHeight(0)
+            line_items_section.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        if line_items_layout is not None:
+            line_items_layout.setContentsMargins(4, 4, 4, 4)
+            line_items_layout.setSpacing(0)
+
+        if bottom_section is not None:
+            bottom_section.setMinimumHeight(192)
+            bottom_section.setMaximumHeight(192)
+        if bottom_container is not None:
+            bottom_container.setGeometry(24, 0, 1481, 192)
+
         remark_group.setMaximumWidth(16777215)
         remark_group.setMinimumWidth(600)
         remark_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        remark_group.setMinimumHeight(220)
-        remark_group.setMaximumHeight(225)
+        remark_group.setMinimumHeight(188)
+        remark_group.setMaximumHeight(188)
         if remark_editor is not None:
-            remark_editor.setMinimumHeight(160)
-            remark_editor.setMaximumHeight(170)
+            remark_editor.setMinimumHeight(138)
+            remark_editor.setMaximumHeight(138)
 
         amount_summary = getattr(self.ui, "wdg_amountSummary", None)
         action_buttons = getattr(self.ui, "wdg_actionButtons", None)
@@ -150,11 +174,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
         button_group_width = 674
 
         if amount_summary is not None:
-            amount_summary.setGeometry(10, 10, summary_inner_width, 62)
+            amount_summary.setGeometry(10, 8, summary_inner_width, 58)
         if action_buttons is not None:
-            action_buttons.setGeometry(10, 72, summary_inner_width, 96)
+            action_buttons.setGeometry(10, 68, summary_inner_width, 92)
         if top_group is not None:
-            top_group.setGeometry(4, 0, button_group_width, 92)
+            top_group.setGeometry(4, 0, button_group_width, 88)
 
         if amount_layout is not None:
             amount_layout.setContentsMargins(0, 0, 0, 0)
@@ -225,8 +249,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         summary_actions.setMinimumWidth(summary_outer_width)
         summary_actions.setMaximumWidth(summary_outer_width)
-        summary_actions.setMinimumHeight(180)
-        summary_actions.setMaximumHeight(180)
+        summary_actions.setMinimumHeight(172)
+        summary_actions.setMaximumHeight(172)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         bottom_layout.setSpacing(4)
@@ -248,7 +272,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         table.setCornerButtonEnabled(False)
         table.setSelectionBehavior(table.SelectionBehavior.SelectItems)
         table.setSelectionMode(table.SelectionMode.SingleSelection)
-        table.setMinimumHeight(430)
+        table.setMinimumHeight(448)
         table.setStyleSheet(
             """
             QTableWidget {
