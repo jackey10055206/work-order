@@ -1,12 +1,46 @@
 from __future__ import annotations
 
+import argparse
 import sys
+from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QColor, QPalette
-from PySide6.QtWidgets import QApplication, QMainWindow, QSizePolicy, QStyleFactory, QTableWidgetItem
+from PySide6.QtWidgets import (
+    QApplication,
+    QHeaderView,
+    QMainWindow,
+    QSizePolicy,
+    QStyleFactory,
+    QTableWidgetItem,
+)
 
 from ui_project_generated import Ui_MainWindow
+
+
+TABLE_HEADERS = [
+    "製作項目",
+    "寬度",
+    "x",
+    "長度",
+    "數量",
+    "材質",
+    "冷熱加工",
+    "板材種類",
+    "板材厚度",
+    "其他備料",
+    "數量",
+    "才數",
+    "單價",
+    "計價",
+    "備料計價",
+]
+
+# Excel / 工具表格感：寬欄給描述類欄位，中欄給數值，x 欄極窄固定顯示。
+TABLE_COLUMN_WIDTHS = [220, 82, 36, 82, 68, 140, 136, 126, 86, 144, 68, 84, 88, 92, 104]
+X_COLUMN_INDEX = 2
+NUMERIC_COLUMN_INDEXES = {1, 3, 4, 10, 11, 12, 13, 14}
+SELECT_LIKE_COLUMN_INDEXES = {0, 5, 6, 7, 8, 9}
 
 
 def apply_light_preview_theme(app: QApplication) -> None:
@@ -42,6 +76,12 @@ def apply_light_preview_theme(app: QApplication) -> None:
             background-color: #ffffff;
             color: #202124;
             border: 1px solid #cfcfcf;
+        }
+        QTableWidget {
+            gridline-color: #bfc5cc;
+            alternate-background-color: #fafafa;
+            selection-background-color: #dbe7ff;
+            selection-color: #202124;
         }
         QHeaderView::section {
             background-color: #efefef;
@@ -86,6 +126,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if bottom_layout is None or remark_group is None or summary_actions is None:
             return
 
+        self._tune_line_items_table()
+
         remark_group.setMaximumWidth(16777215)
         remark_group.setMinimumWidth(600)
         remark_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -95,9 +137,6 @@ class GeneratedUiPreviewWindow(QMainWindow):
             remark_editor.setMinimumHeight(160)
             remark_editor.setMaximumHeight(170)
 
-        # Prioritize usability over aggressively shrinking the right panel:
-        # keep the amount fields comfortably visible and the action buttons
-        # large enough to feel deliberate and easy to click.
         amount_summary = getattr(self.ui, "wdg_amountSummary", None)
         action_buttons = getattr(self.ui, "wdg_actionButtons", None)
         amount_layout = getattr(self.ui, "horizontalLayout_13", None)
@@ -194,6 +233,87 @@ class GeneratedUiPreviewWindow(QMainWindow):
         bottom_layout.setStretch(0, 5)
         bottom_layout.setStretch(1, 0)
 
+    def _tune_line_items_table(self) -> None:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return
+
+        table.clear()
+        table.setColumnCount(len(TABLE_HEADERS))
+        table.setHorizontalHeaderLabels(TABLE_HEADERS)
+        table.setRowCount(max(table.rowCount(), 15))
+        table.setAlternatingRowColors(True)
+        table.setWordWrap(False)
+        table.setShowGrid(True)
+        table.setCornerButtonEnabled(False)
+        table.setSelectionBehavior(table.SelectionBehavior.SelectItems)
+        table.setSelectionMode(table.SelectionMode.SingleSelection)
+        table.setMinimumHeight(430)
+        table.setStyleSheet(
+            """
+            QTableWidget {
+                border: 1px solid #b9c0c7;
+                background: #ffffff;
+                gridline-color: #bcc3ca;
+                alternate-background-color: #fafafa;
+                selection-background-color: #dbe7ff;
+                selection-color: #202124;
+            }
+            QTableWidget::item {
+                padding: 4px 6px;
+                border-right: 1px solid #d7dce1;
+                border-bottom: 1px solid #d7dce1;
+            }
+            QHeaderView::section {
+                background: #ececec;
+                color: #202124;
+                border-top: 1px solid #c4c8cc;
+                border-left: 1px solid #c4c8cc;
+                border-right: 1px solid #c4c8cc;
+                border-bottom: 1px solid #adb3b9;
+                padding: 6px 4px;
+                font-weight: 700;
+            }
+            """
+        )
+
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        header.setMinimumSectionSize(28)
+        header.setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
+        header.setStretchLastSection(False)
+        header.setHighlightSections(False)
+        header.setFixedHeight(34)
+
+        v_header = table.verticalHeader()
+        v_header.setVisible(False)
+        v_header.setDefaultSectionSize(36)
+        v_header.setMinimumSectionSize(36)
+
+        for index, width in enumerate(TABLE_COLUMN_WIDTHS):
+            table.setColumnWidth(index, width)
+
+        for row in range(table.rowCount()):
+            table.setRowHeight(row, 36)
+
+    def _make_table_item(self, text: str, column: int) -> QTableWidgetItem:
+        item = QTableWidgetItem(text)
+        item.setForeground(QColor("#202124"))
+
+        if column == X_COLUMN_INDEX:
+            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            item.setBackground(QColor("#efefef"))
+            item.setForeground(QColor("#6b7280"))
+        elif column in NUMERIC_COLUMN_INDEXES:
+            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        elif column in SELECT_LIKE_COLUMN_INDEXES:
+            item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        else:
+            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        return item
+
     def _seed_demo_values(self) -> None:
         self.setWindowTitle("project.ui preview (generated)")
 
@@ -207,7 +327,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             "le_contactName": "王小姐",
             "le_phone": "02-8647-8840",
             "le_caseName": "南港展場春季活動主視覺",
-            "le_workTime": "2026/03/31 09:00",
+            "le_startTime": "2026/03/31 09:00",
             "le_endTime": "2026/03/31 18:00",
             "lle_address": "台北市南港區經貿二路 186 號 4 樓",
             "le_productionAmount": "13600",
@@ -223,22 +343,45 @@ class GeneratedUiPreviewWindow(QMainWindow):
             self.ui.te_remark.setPlainText("現場施工前 30 分鐘需與窗口聯絡；材料依樓層分批搬運。")
 
         sample_rows = [
-            ["主舞台背板輸出裱板", "500", "240", "2", "PVC 貼圖", "冷裱 + 修邊", "KT 板", "5", "含收邊黑膠帶", "80 才", "2800", "5600", "需與舞台結構對位", ""],
-            ["入口拱門雙面輸出", "320", "260", "1", "防水帆布", "車縫 + 打銅扣", "—", "—", "雙面對裱", "22 才", "6500", "6500", "現場綁束帶固定", ""],
-            ["指引立牌裱板", "90", "180", "6", "PP 相紙", "冷裱", "豪卡板", "10", "含腳架孔位", "67.5 才", "950", "5700", "依樓層分批包裝", ""],
+            ["主舞台背板輸出裱板", "500", "x", "240", "2", "PVC 貼圖", "冷裱 + 修邊", "KT 板", "5mm", "含收邊黑膠帶", "2", "80", "2800", "5600", "300"],
+            ["入口拱門雙面輸出", "320", "x", "260", "1", "防水帆布", "車縫 + 打銅扣", "塑鋁板", "3mm", "雙面對裱", "1", "22", "6500", "6500", "0"],
+            ["指引立牌裱板", "90", "x", "180", "6", "PP 相紙", "冷裱", "豪卡板", "10mm", "含腳架孔位", "6", "67.5", "950", "5700", "480"],
+            ["服務台桌裙", "240", "x", "75", "1", "單透布", "包邊車縫", "珍珠板", "2mm", "魔鬼氈 + 補強條", "1", "12.5", "1800", "1800", "180"],
         ]
         if hasattr(self.ui, "tbl_lineItems"):
+            table = self.ui.tbl_lineItems
+            table.clearContents()
             for row_idx, row in enumerate(sample_rows):
                 for col_idx, value in enumerate(row):
-                    self.ui.tbl_lineItems.setItem(row_idx, col_idx, QTableWidgetItem(value))
-            self.ui.tbl_lineItems.resizeColumnsToContents()
+                    table.setItem(row_idx, col_idx, self._make_table_item(value, col_idx))
 
 
-def main() -> int:
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--screenshot", type=Path, help="Save a screenshot to this path and exit.")
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv or sys.argv[1:])
+
     app = QApplication(sys.argv)
     apply_light_preview_theme(app)
     window = GeneratedUiPreviewWindow()
     window.show()
+
+    if args.screenshot:
+        target = args.screenshot.expanduser().resolve()
+        target.parent.mkdir(parents=True, exist_ok=True)
+
+        def save_and_quit() -> None:
+            window.repaint()
+            app.processEvents()
+            window.grab().save(str(target))
+            app.quit()
+
+        QTimer.singleShot(250, save_and_quit)
+
     return app.exec()
 
 
