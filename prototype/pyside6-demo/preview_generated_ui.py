@@ -147,19 +147,22 @@ class GeneratedUiPreviewWindow(QMainWindow):
             line_items_layout.setSpacing(0)
 
         if bottom_section is not None:
-            bottom_section.setMinimumHeight(186)
-            bottom_section.setMaximumHeight(186)
+            bottom_section.setMinimumHeight(176)
+            bottom_section.setMaximumHeight(176)
         if bottom_container is not None:
-            bottom_container.setGeometry(20, 0, 1481, 186)
+            bottom_container.setGeometry(20, 0, 1481, 176)
 
         remark_group.setMaximumWidth(16777215)
         remark_group.setMinimumWidth(600)
         remark_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        remark_group.setMinimumHeight(182)
-        remark_group.setMaximumHeight(182)
+        remark_group.setMinimumHeight(172)
+        remark_group.setMaximumHeight(172)
+        remark_layout = getattr(self.ui, "horizontalLayout_9", None)
+        if remark_layout is not None:
+            remark_layout.setContentsMargins(6, 6, 6, 6)
         if remark_editor is not None:
-            remark_editor.setMinimumHeight(134)
-            remark_editor.setMaximumHeight(134)
+            remark_editor.setMinimumHeight(126)
+            remark_editor.setMaximumHeight(126)
 
         amount_summary = getattr(self.ui, "wdg_amountSummary", None)
         action_buttons = getattr(self.ui, "wdg_actionButtons", None)
@@ -174,11 +177,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
         button_group_width = 674
 
         if amount_summary is not None:
-            amount_summary.setGeometry(10, 6, summary_inner_width, 56)
+            amount_summary.setGeometry(10, 4, summary_inner_width, 54)
         if action_buttons is not None:
-            action_buttons.setGeometry(10, 64, summary_inner_width, 90)
+            action_buttons.setGeometry(10, 58, summary_inner_width, 86)
         if top_group is not None:
-            top_group.setGeometry(4, 0, button_group_width, 86)
+            top_group.setGeometry(4, 0, button_group_width, 82)
 
         if amount_layout is not None:
             amount_layout.setContentsMargins(0, 0, 0, 0)
@@ -241,7 +244,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             top_buttons_layout.setContentsMargins(0, 0, 0, 0)
             top_buttons_layout.setSpacing(4)
         if lower_buttons_layout is not None:
-            lower_buttons_layout.setContentsMargins(0, 4, 0, 0)
+            lower_buttons_layout.setContentsMargins(0, 2, 0, 0)
             lower_buttons_layout.setSpacing(4)
         if button_rows_layout is not None:
             button_rows_layout.setContentsMargins(0, 0, 0, 0)
@@ -249,8 +252,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         summary_actions.setMinimumWidth(summary_outer_width)
         summary_actions.setMaximumWidth(summary_outer_width)
-        summary_actions.setMinimumHeight(166)
-        summary_actions.setMaximumHeight(166)
+        summary_actions.setMinimumHeight(156)
+        summary_actions.setMaximumHeight(156)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         bottom_layout.setSpacing(2)
