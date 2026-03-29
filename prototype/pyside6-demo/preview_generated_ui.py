@@ -134,7 +134,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._tune_line_items_table()
 
         if main_layout is not None:
-            main_layout.setSpacing(4)
+            main_layout.setSpacing(2)
             main_layout.setStretch(0, 0)
             main_layout.setStretch(1, 1)
             main_layout.setStretch(2, 0)
@@ -143,23 +143,23 @@ class GeneratedUiPreviewWindow(QMainWindow):
             line_items_section.setMinimumHeight(0)
             line_items_section.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         if line_items_layout is not None:
-            line_items_layout.setContentsMargins(4, 4, 4, 4)
+            line_items_layout.setContentsMargins(2, 2, 2, 2)
             line_items_layout.setSpacing(0)
 
         if bottom_section is not None:
-            bottom_section.setMinimumHeight(192)
-            bottom_section.setMaximumHeight(192)
+            bottom_section.setMinimumHeight(186)
+            bottom_section.setMaximumHeight(186)
         if bottom_container is not None:
-            bottom_container.setGeometry(24, 0, 1481, 192)
+            bottom_container.setGeometry(20, 0, 1481, 186)
 
         remark_group.setMaximumWidth(16777215)
         remark_group.setMinimumWidth(600)
         remark_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        remark_group.setMinimumHeight(188)
-        remark_group.setMaximumHeight(188)
+        remark_group.setMinimumHeight(182)
+        remark_group.setMaximumHeight(182)
         if remark_editor is not None:
-            remark_editor.setMinimumHeight(138)
-            remark_editor.setMaximumHeight(138)
+            remark_editor.setMinimumHeight(134)
+            remark_editor.setMaximumHeight(134)
 
         amount_summary = getattr(self.ui, "wdg_amountSummary", None)
         action_buttons = getattr(self.ui, "wdg_actionButtons", None)
@@ -174,11 +174,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
         button_group_width = 674
 
         if amount_summary is not None:
-            amount_summary.setGeometry(10, 8, summary_inner_width, 58)
+            amount_summary.setGeometry(10, 6, summary_inner_width, 56)
         if action_buttons is not None:
-            action_buttons.setGeometry(10, 68, summary_inner_width, 92)
+            action_buttons.setGeometry(10, 64, summary_inner_width, 90)
         if top_group is not None:
-            top_group.setGeometry(4, 0, button_group_width, 88)
+            top_group.setGeometry(4, 0, button_group_width, 86)
 
         if amount_layout is not None:
             amount_layout.setContentsMargins(0, 0, 0, 0)
@@ -249,11 +249,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         summary_actions.setMinimumWidth(summary_outer_width)
         summary_actions.setMaximumWidth(summary_outer_width)
-        summary_actions.setMinimumHeight(172)
-        summary_actions.setMaximumHeight(172)
+        summary_actions.setMinimumHeight(166)
+        summary_actions.setMaximumHeight(166)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-        bottom_layout.setSpacing(4)
+        bottom_layout.setSpacing(2)
         bottom_layout.setStretch(0, 5)
         bottom_layout.setStretch(1, 0)
 
@@ -265,14 +265,14 @@ class GeneratedUiPreviewWindow(QMainWindow):
         table.clear()
         table.setColumnCount(len(TABLE_HEADERS))
         table.setHorizontalHeaderLabels(TABLE_HEADERS)
-        table.setRowCount(max(table.rowCount(), 15))
+        table.setRowCount(16)
         table.setAlternatingRowColors(True)
         table.setWordWrap(False)
         table.setShowGrid(True)
         table.setCornerButtonEnabled(False)
         table.setSelectionBehavior(table.SelectionBehavior.SelectItems)
         table.setSelectionMode(table.SelectionMode.SingleSelection)
-        table.setMinimumHeight(448)
+        table.setMinimumHeight(454)
         table.setStyleSheet(
             """
             QTableWidget {
