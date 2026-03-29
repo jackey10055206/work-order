@@ -105,24 +105,28 @@ class GeneratedUiPreviewWindow(QMainWindow):
         top_group = getattr(self.ui, "widget14", None)
 
         if amount_summary is not None:
-            amount_summary.setGeometry(10, 10, 480, 56)
+            amount_summary.setGeometry(10, 10, 540, 58)
         if action_buttons is not None:
-            action_buttons.setGeometry(10, 70, 480, 82)
+            action_buttons.setGeometry(10, 72, 540, 98)
         if top_group is not None:
-            top_group.setGeometry(0, 0, 470, 78)
+            top_group.setGeometry(0, 0, 530, 92)
 
         if amount_layout is not None:
             amount_layout.setContentsMargins(0, 0, 0, 0)
-            amount_layout.setSpacing(8)
+            amount_layout.setSpacing(10)
 
         summary_specs = [
-            ("lbl_productionAmount", "le_productionAmount", 56, 96),
-            ("lbl_taxAmount", "le_taxAmount", 42, 88),
-            ("lbl_totalAmount", "le_totalAmount", 42, 96),
+            ("wdg_productionAmountField", "lbl_productionAmount", "le_productionAmount", 58, 118),
+            ("wdg_taxAmountField", "lbl_taxAmount", "le_taxAmount", 44, 108),
+            ("wdg_totalAmountField", "lbl_totalAmount", "le_totalAmount", 44, 118),
         ]
-        for label_name, lineedit_name, label_width, lineedit_width in summary_specs:
+        for field_name, label_name, lineedit_name, label_width, lineedit_width in summary_specs:
+            field = getattr(self.ui, field_name, None)
             label = getattr(self.ui, label_name, None)
             lineedit = getattr(self.ui, lineedit_name, None)
+            if field is not None:
+                field.setMinimumWidth(label_width + lineedit_width + 32)
+                field.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
             if label is not None:
                 label.setMinimumWidth(label_width)
                 label.setMaximumWidth(label_width)
@@ -130,6 +134,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             if lineedit is not None:
                 lineedit.setMinimumWidth(lineedit_width)
                 lineedit.setMaximumWidth(lineedit_width)
+                lineedit.setMinimumHeight(30)
                 lineedit.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
                 lineedit.setAlignment(Qt.AlignmentFlag.AlignRight)
 
@@ -137,36 +142,38 @@ class GeneratedUiPreviewWindow(QMainWindow):
             field_layout = getattr(self.ui, layout_name, None)
             if field_layout is not None:
                 field_layout.setContentsMargins(0, 0, 0, 0)
-                field_layout.setSpacing(4)
+                field_layout.setSpacing(6)
 
-        button_widths = {
-            "btn_open": 64,
-            "btn_save": 64,
-            "btn_reset": 64,
-            "btn_billing": 64,
-            "btn_subtotal": 64,
-            "btn_calcuate": 64,
-            "btn_import": 92,
-            "btn_invoice": 92,
+        button_specs = {
+            "btn_open": 74,
+            "btn_save": 74,
+            "btn_reset": 74,
+            "btn_billing": 74,
+            "btn_subtotal": 74,
+            "btn_calcuate": 74,
+            "btn_import": 108,
+            "btn_invoice": 108,
         }
-        for button_name, width in button_widths.items():
+        for button_name, width in button_specs.items():
             button = getattr(self.ui, button_name, None)
             if button is not None:
                 button.setMinimumWidth(width)
                 button.setMaximumWidth(width)
+                button.setMinimumHeight(32)
+                button.setMaximumHeight(32)
                 button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         if top_buttons_layout is not None:
             top_buttons_layout.setContentsMargins(0, 0, 0, 0)
-            top_buttons_layout.setSpacing(6)
+            top_buttons_layout.setSpacing(8)
         if lower_buttons_layout is not None:
-            lower_buttons_layout.setContentsMargins(0, 0, 0, 0)
-            lower_buttons_layout.setSpacing(8)
+            lower_buttons_layout.setContentsMargins(0, 4, 0, 0)
+            lower_buttons_layout.setSpacing(10)
 
-        summary_actions.setMinimumWidth(500)
-        summary_actions.setMaximumWidth(520)
-        summary_actions.setMinimumHeight(160)
-        summary_actions.setMaximumHeight(160)
+        summary_actions.setMinimumWidth(560)
+        summary_actions.setMaximumWidth(580)
+        summary_actions.setMinimumHeight(178)
+        summary_actions.setMaximumHeight(178)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         bottom_layout.setStretch(0, 5)
