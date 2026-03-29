@@ -98,7 +98,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         summary_actions.setMinimumWidth(520)
         summary_actions.setMaximumWidth(580)
         summary_actions.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        bottom_layout.setAlignment(summary_actions, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         bottom_layout.setStretch(0, 5)
         bottom_layout.setStretch(1, 0)
 
