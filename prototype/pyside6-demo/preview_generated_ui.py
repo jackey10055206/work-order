@@ -58,6 +58,9 @@ HEADER_YELLOW_BG = QColor("#f6e7a6")
 HEADER_YELLOW_FG = QColor("#3f3110")
 HEADER_PURPLE_BG = QColor("#c9b1ea")
 HEADER_PURPLE_FG = QColor("#31204a")
+SUMMARY_LABEL_BG = "#e8dcf8"
+SUMMARY_LABEL_FG = "#4b3566"
+SUMMARY_LABEL_BORDER = "#c9b1ea"
 HEADER_DEFAULT_BG = QColor("#ececec")
 HEADER_DEFAULT_FG = QColor("#202124")
 HEADER_BORDER_TOP = QColor("#c4c8cc")
@@ -275,6 +278,12 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 label.setMinimumWidth(label_width)
                 label.setMaximumWidth(label_width)
                 label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+                label.setStyleSheet(
+                    f"background-color: {SUMMARY_LABEL_BG}; color: {SUMMARY_LABEL_FG}; "
+                    f"border: 1px solid {SUMMARY_LABEL_BORDER}; border-radius: 4px; "
+                    "font-weight: 600; padding: 0 10px;"
+                )
+                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             if lineedit is not None:
                 lineedit.setMinimumWidth(lineedit_width)
                 lineedit.setMaximumWidth(lineedit_width)
