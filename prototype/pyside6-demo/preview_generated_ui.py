@@ -50,6 +50,12 @@ COMBO_COLUMN_OPTIONS = {
     8: ["1mm", "2mm", "3mm", "5mm", "10mm"],
     9: ["無", "黑膠帶收邊", "腳架孔位", "魔鬼氈", "補強條"],
 }
+HEADER_YELLOW_COLUMNS = range(0, 11)
+HEADER_PURPLE_COLUMNS = range(11, len(TABLE_HEADERS))
+HEADER_YELLOW_BG = QColor("#f3e7ab")
+HEADER_YELLOW_FG = QColor("#4f4420")
+HEADER_PURPLE_BG = QColor("#e4daf4")
+HEADER_PURPLE_FG = QColor("#43345d")
 
 
 def apply_light_preview_theme(app: QApplication) -> None:
@@ -282,6 +288,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         table.clear()
         table.setColumnCount(len(TABLE_HEADERS))
         table.setHorizontalHeaderLabels(TABLE_HEADERS)
+        self._apply_line_items_header_colors(table)
         table.setRowCount(15)
         table.setAlternatingRowColors(True)
         table.setWordWrap(False)
@@ -336,6 +343,19 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         for row in range(table.rowCount()):
             table.setRowHeight(row, 36)
+
+    def _apply_line_items_header_colors(self, table) -> None:
+        for column in HEADER_YELLOW_COLUMNS:
+            item = table.horizontalHeaderItem(column)
+            if item is not None:
+                item.setBackground(HEADER_YELLOW_BG)
+                item.setForeground(HEADER_YELLOW_FG)
+
+        for column in HEADER_PURPLE_COLUMNS:
+            item = table.horizontalHeaderItem(column)
+            if item is not None:
+                item.setBackground(HEADER_PURPLE_BG)
+                item.setForeground(HEADER_PURPLE_FG)
 
     def _make_table_item(self, text: str, column: int) -> QTableWidgetItem:
         item = QTableWidgetItem(text)
