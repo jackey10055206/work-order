@@ -5,14 +5,16 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtGui import QColor, QPalette, QPainter
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QHeaderView,
     QMainWindow,
     QSizePolicy,
+    QStyle,
     QStyleFactory,
+    QStyleOptionHeader,
     QTableWidgetItem,
 )
 
@@ -52,10 +54,56 @@ COMBO_COLUMN_OPTIONS = {
 }
 HEADER_YELLOW_COLUMNS = range(0, 11)
 HEADER_PURPLE_COLUMNS = range(11, len(TABLE_HEADERS))
-HEADER_YELLOW_BG = QColor("#f3e7ab")
-HEADER_YELLOW_FG = QColor("#4f4420")
-HEADER_PURPLE_BG = QColor("#e4daf4")
-HEADER_PURPLE_FG = QColor("#43345d")
+HEADER_YELLOW_BG = QColor("#e6c85c")
+HEADER_YELLOW_FG = QColor("#3b2f08")
+HEADER_PURPLE_BG = QColor("#c9b1ea")
+HEADER_PURPLE_FG = QColor("#31204a")
+HEADER_DEFAULT_BG = QColor("#ececec")
+HEADER_DEFAULT_FG = QColor("#202124")
+HEADER_BORDER_TOP = QColor("#c4c8cc")
+HEADER_BORDER_BOTTOM = QColor("#adb3b9")
+
+
+class BandHeaderView(QHeaderView):
+    def __init__(self, orientation, parent=None) -> None:
+        super().__init__(orientation, parent)
+        self.setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setHighlightSections(False)
+
+    def paintSection(self, painter: QPainter, rect, logical_index: int) -> None:
+        if not rect.isValid():
+            return
+
+        painter.save()
+
+        if logical_index in HEADER_YELLOW_COLUMNS:
+            bg = HEADER_YELLOW_BG
+            fg = HEADER_YELLOW_FG
+        elif logical_index in HEADER_PURPLE_COLUMNS:
+            bg = HEADER_PURPLE_BG
+            fg = HEADER_PURPLE_FG
+        else:
+            bg = HEADER_DEFAULT_BG
+            fg = HEADER_DEFAULT_FG
+
+        painter.fillRect(rect, bg)
+        painter.setPen(HEADER_BORDER_TOP)
+        painter.drawLine(rect.topLeft(), rect.topRight())
+        painter.drawLine(rect.topLeft(), rect.bottomLeft())
+        painter.drawLine(rect.topRight(), rect.bottomRight())
+        painter.setPen(HEADER_BORDER_BOTTOM)
+        painter.drawLine(rect.bottomLeft(), rect.bottomRight())
+
+        option = QStyleOptionHeader()
+        self.initStyleOption(option)
+        option.rect = rect.adjusted(4, 0, -4, 0)
+        option.section = logical_index
+        option.text = self.model().headerData(logical_index, self.orientation(), Qt.ItemDataRole.DisplayRole) or ""
+        option.state &= ~QStyle.StateFlag.State_Sunken
+        painter.setPen(fg)
+        painter.drawText(option.rect, int(Qt.AlignmentFlag.AlignCenter), option.text)
+
+        painter.restore()
 
 
 def apply_light_preview_theme(app: QApplication) -> None:
@@ -287,6 +335,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         table.clear()
         table.setColumnCount(len(TABLE_HEADERS))
+        table.setHorizontalHeader(BandHeaderView(Qt.Orientation.Horizontal, table))
         table.setHorizontalHeaderLabels(TABLE_HEADERS)
         self._apply_line_items_header_colors(table)
         table.setRowCount(15)
