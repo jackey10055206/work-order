@@ -576,11 +576,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
             if watched is getattr(self.ui, "tbl_lineItems", None) and event.key() in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab):
                 forward = event.key() == Qt.Key.Key_Tab and not bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
-                if forward:
-                    self.focus_first_table_cell()
-                else:
-                    self.focus_last_top_field()
-                return True
+                return self._focus_table_boundary_cell(forward=forward)
 
         return super().eventFilter(watched, event)
 
@@ -596,6 +592,38 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if table is None:
             return None
         return self.table_tab_navigator._find_next_editable_cell(table.rowCount() - 1, table.columnCount(), forward=False)
+
+    def _focus_table_boundary_cell(self, *, forward: bool) -> bool:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        navigator = self.table_tab_navigator
+        if table is None or navigator is None:
+            return False
+
+        current_row = table.currentRow()
+        current_column = table.currentColumn()
+        has_current_cell = current_row >= 0 and current_column >= 0
+
+        if has_current_cell and navigator._is_focusable_cell(current_row, current_column):
+            target_cell = navigator._find_next_editable_cell(current_row, current_column, forward=forward)
+            if target_cell is not None:
+                row, column = target_cell
+                table.setCurrentCell(row, column)
+                QTimer.singleShot(0, lambda: navigator._focus_cell(row, column))
+                return True
+
+            self.focus_after_table(forward=forward)
+            return True
+
+        boundary_cell = self._first_focusable_table_cell() if forward else self._last_focusable_table_cell()
+        if boundary_cell is None:
+            self.focus_after_table(forward=forward)
+            return True
+
+        row, column = boundary_cell
+        table.setFocus(Qt.FocusReason.TabFocusReason if forward else Qt.FocusReason.BacktabFocusReason)
+        table.setCurrentCell(row, column)
+        QTimer.singleShot(0, lambda: navigator._focus_cell(row, column))
+        return True
 
     def focus_first_table_cell(self) -> None:
         table = getattr(self.ui, "tbl_lineItems", None)
