@@ -52,8 +52,11 @@ TABLE_HEADERS = [
 # Excel / 工具表格感：寬欄給描述類欄位，中欄給數值，x 欄極窄固定顯示。
 TABLE_COLUMN_WIDTHS = [196, 82, 36, 82, 68, 140, 136, 126, 108, 144, 68, 84, 88, 92, 104]
 X_COLUMN_INDEX = 2
+TABLE_LOCKED_COLUMN_INDEXES = {11, 13}
+TABLE_SKIP_FOCUS_COLUMN_INDEXES = {X_COLUMN_INDEX, *TABLE_LOCKED_COLUMN_INDEXES}
 NUMERIC_COLUMN_INDEXES = {1, 3, 4, 10, 11, 12, 13, 14}
 SELECT_LIKE_COLUMN_INDEXES = {0, 5, 6, 7, 8, 9}
+SUMMARY_LOCKED_FIELD_NAMES = {"le_productionAmount", "le_taxAmount", "le_totalAmount"}
 COMBO_COLUMN_OPTIONS = {
     0: ["大圖輸出", "裱板施工", "立牌製作", "桌裙布置", "展場貼圖"],
     5: ["PVC 貼圖", "PP 相紙", "防水帆布", "單透布", "背膠海報"],
@@ -245,9 +248,14 @@ class TableCellTabNavigator(QObject):
         widget.setProperty("table_column", column)
         widget.installEventFilter(self)
 
+        if widget.focusPolicy() == Qt.FocusPolicy.NoFocus and column not in TABLE_SKIP_FOCUS_COLUMN_INDEXES:
+            widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
         if isinstance(widget, QComboBox):
+            widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             line_edit = widget.lineEdit()
             if line_edit is not None:
+                line_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
                 self.register_widget(line_edit, row, column)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
@@ -296,6 +304,9 @@ class TableCellTabNavigator(QObject):
         return None
 
     def _is_focusable_cell(self, row: int, column: int) -> bool:
+        if column in TABLE_SKIP_FOCUS_COLUMN_INDEXES:
+            return False
+
         cell_widget = self.table.cellWidget(row, column)
         if cell_widget is not None:
             return cell_widget.isEnabled() and cell_widget.focusPolicy() != Qt.FocusPolicy.NoFocus
@@ -453,6 +464,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 lineedit.setTextMargins(8, 0, 10, 0)
                 lineedit.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
                 lineedit.setAlignment(Qt.AlignmentFlag.AlignRight)
+                if lineedit_name in SUMMARY_LOCKED_FIELD_NAMES:
+                    lineedit.setReadOnly(True)
+                    lineedit.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         for layout_name in ("horizontalLayout_10", "horizontalLayout_11", "horizontalLayout_12"):
             field_layout = getattr(self.ui, layout_name, None)
@@ -517,6 +531,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         table.setCornerButtonEnabled(False)
         table.setSelectionBehavior(table.SelectionBehavior.SelectItems)
         table.setSelectionMode(table.SelectionMode.SingleSelection)
+        table.setTabKeyNavigation(False)
         table.setMinimumHeight(418)
         table.setStyleSheet(
             """
@@ -586,6 +601,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
             item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             item.setBackground(QColor("#efefef"))
+            item.setForeground(QColor("#6b7280"))
+        elif column in TABLE_LOCKED_COLUMN_INDEXES:
+            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            item.setBackground(QColor("#f5f5f5"))
             item.setForeground(QColor("#6b7280"))
         elif column in NUMERIC_COLUMN_INDEXES:
             item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
