@@ -239,9 +239,10 @@ def apply_light_preview_theme(app: QApplication) -> None:
 
 
 class TableCellTabNavigator(QObject):
-    def __init__(self, table: QTableWidget) -> None:
+    def __init__(self, table: QTableWidget, parent_window: "GeneratedUiPreviewWindow | None" = None) -> None:
         super().__init__(table)
         self.table = table
+        self.parent_window = parent_window
 
     def register_widget(self, widget: QWidget, row: int, column: int) -> None:
         widget.setProperty("table_row", row)
@@ -278,6 +279,9 @@ class TableCellTabNavigator(QObject):
 
         next_cell = self._find_next_editable_cell(int(row), int(column), forward=forward)
         if next_cell is None:
+            if self.parent_window is not None:
+                self.parent_window.focus_after_table(forward=forward)
+                return True
             return False
 
         next_row, next_column = next_cell
@@ -348,6 +352,28 @@ class TableCellTabNavigator(QObject):
 
 
 class GeneratedUiPreviewWindow(QMainWindow):
+    TOP_TAB_ORDER = [
+        "le_worknum",
+        "cb_customerName",
+        "le_contactName",
+        "le_startTime",
+        "le_caseName",
+        "le_phone",
+        "lle_address",
+        "le_endTime",
+    ]
+    BOTTOM_TAB_ORDER = [
+        "te_remark",
+        "btn_open",
+        "btn_save",
+        "btn_reset",
+        "btn_billing",
+        "btn_subtotal",
+        "btn_calcuate",
+        "btn_import",
+        "btn_invoice",
+    ]
+
     def __init__(self) -> None:
         super().__init__()
         self.combo_column_options = load_combo_options_from_v2()
@@ -356,6 +382,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self.ui.setupUi(self)
         self._tune_generated_layout()
         self._seed_demo_values()
+        self._configure_focus_chain()
 
     def _tune_generated_layout(self) -> None:
         main_layout = getattr(self.ui, "verticalLayout_2", None)
@@ -513,6 +540,88 @@ class GeneratedUiPreviewWindow(QMainWindow):
         bottom_layout.setStretch(0, 5)
         bottom_layout.setStretch(1, 0)
 
+    def _ordered_focus_widgets(self, names: list[str]) -> list[QWidget]:
+        widgets: list[QWidget] = []
+        for name in names:
+            widget = getattr(self.ui, name, None)
+            if isinstance(widget, QWidget) and widget.focusPolicy() != Qt.FocusPolicy.NoFocus:
+                widgets.append(widget)
+        return widgets
+
+    def _configure_focus_chain(self) -> None:
+        top_widgets = self._ordered_focus_widgets(self.TOP_TAB_ORDER)
+        bottom_widgets = self._ordered_focus_widgets(self.BOTTOM_TAB_ORDER)
+        table = getattr(self.ui, "tbl_lineItems", None)
+        ordered_widgets = [*top_widgets]
+        if isinstance(table, QWidget) and table.focusPolicy() != Qt.FocusPolicy.NoFocus:
+            ordered_widgets.append(table)
+        ordered_widgets.extend(bottom_widgets)
+
+        for first, second in zip(ordered_widgets, ordered_widgets[1:]):
+            QWidget.setTabOrder(first, second)
+
+        for widget in top_widgets:
+            widget.installEventFilter(self)
+
+        if table is not None:
+            table.installEventFilter(self)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.KeyPress and isinstance(event, QKeyEvent):
+            if watched is getattr(self.ui, "le_endTime", None) and event.key() in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab):
+                forward = event.key() == Qt.Key.Key_Tab and not bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+                if forward:
+                    self.focus_first_table_cell()
+                    return True
+
+            if watched is getattr(self.ui, "tbl_lineItems", None) and event.key() in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab):
+                forward = event.key() == Qt.Key.Key_Tab and not bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+                if forward:
+                    self.focus_first_table_cell()
+                else:
+                    self.focus_last_top_field()
+                return True
+
+        return super().eventFilter(watched, event)
+
+    def _first_focusable_table_cell(self) -> tuple[int, int] | None:
+        if self.table_tab_navigator is None:
+            return None
+        return self.table_tab_navigator._find_next_editable_cell(0, -1, forward=True)
+
+    def _last_focusable_table_cell(self) -> tuple[int, int] | None:
+        if self.table_tab_navigator is None:
+            return None
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return None
+        return self.table_tab_navigator._find_next_editable_cell(table.rowCount() - 1, table.columnCount(), forward=False)
+
+    def focus_first_table_cell(self) -> None:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        first_cell = self._first_focusable_table_cell()
+        if table is None or first_cell is None or self.table_tab_navigator is None:
+            return
+
+        row, column = first_cell
+        table.setFocus(Qt.FocusReason.TabFocusReason)
+        table.setCurrentCell(row, column)
+        QTimer.singleShot(0, lambda: self.table_tab_navigator._focus_cell(row, column))
+
+    def focus_last_top_field(self) -> None:
+        top_widgets = self._ordered_focus_widgets(self.TOP_TAB_ORDER)
+        if top_widgets:
+            top_widgets[-1].setFocus(Qt.FocusReason.BacktabFocusReason)
+
+    def focus_after_table(self, *, forward: bool) -> None:
+        if not forward:
+            self.focus_last_top_field()
+            return
+
+        bottom_widgets = self._ordered_focus_widgets(self.BOTTOM_TAB_ORDER)
+        if bottom_widgets:
+            bottom_widgets[0].setFocus(Qt.FocusReason.TabFocusReason)
+
     def _tune_line_items_table(self) -> None:
         table = getattr(self.ui, "tbl_lineItems", None)
         if table is None:
@@ -520,7 +629,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         table.clear()
         table.setColumnCount(len(TABLE_HEADERS))
-        self.table_tab_navigator = TableCellTabNavigator(table)
+        self.table_tab_navigator = TableCellTabNavigator(table, self)
         table.setHorizontalHeader(BandHeaderView(Qt.Orientation.Horizontal, table))
         table.setHorizontalHeaderLabels(TABLE_HEADERS)
         self._apply_line_items_header_colors(table)
