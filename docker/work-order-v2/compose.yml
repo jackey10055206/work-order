@@ -1,0 +1,29 @@
+services:
+  work-order-v2-db:
+    image: mysql:8.0
+    container_name: work-order-v2-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: work_order_v2
+      MYSQL_USER: workorder_v2
+      MYSQL_PASSWORD: 123456
+      TZ: Asia/Taipei
+    ports:
+      - "3308:3306"
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - work_order_v2_mysql_data:/var/lib/mysql
+      - ../../sql/work_order_v2_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  work_order_v2_mysql_data:
