@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor, QPalette, QPainter
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
+    QCompleter,
     QHeaderView,
     QMainWindow,
     QSizePolicy,
@@ -492,16 +493,27 @@ class GeneratedUiPreviewWindow(QMainWindow):
     def _make_combo_box(self, column: int, current_text: str) -> QComboBox:
         combo = QComboBox()
         combo.addItems(self.combo_column_options[column])
-        if current_text and combo.findText(current_text) == -1:
-            combo.insertItem(0, current_text)
-        current_index = combo.findText(current_text)
-        if current_index >= 0:
-            combo.setCurrentIndex(current_index)
-        combo.setEditable(False)
+        combo.setEditable(True)
+        combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         combo.setFrame(True)
         combo.setMaxVisibleItems(8)
         combo.setMinimumHeight(28)
         combo.setMaximumHeight(28)
+
+        completer = QCompleter(combo.model(), combo)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        combo.setCompleter(completer)
+
+        current_index = combo.findText(current_text)
+        if current_index >= 0:
+            combo.setCurrentIndex(current_index)
+        elif current_text:
+            combo.setEditText(current_text)
+        else:
+            combo.setCurrentIndex(-1)
+            combo.clearEditText()
         return combo
 
     def _seed_demo_values(self) -> None:
