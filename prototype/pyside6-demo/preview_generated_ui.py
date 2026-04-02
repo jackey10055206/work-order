@@ -5,19 +5,22 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QColor, QPalette, QPainter
+from PySide6.QtCore import QEvent, QObject, QTimer, Qt
+from PySide6.QtGui import QColor, QKeyEvent, QPalette, QPainter
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QCompleter,
     QHeaderView,
+    QLineEdit,
     QMainWindow,
     QSizePolicy,
     QStyle,
     QStyleFactory,
     QStyleOptionHeader,
+    QTableWidget,
     QTableWidgetItem,
+    QWidget,
 )
 
 from ui_project_generated import Ui_MainWindow
@@ -232,10 +235,112 @@ def apply_light_preview_theme(app: QApplication) -> None:
     )
 
 
+class TableCellTabNavigator(QObject):
+    def __init__(self, table: QTableWidget) -> None:
+        super().__init__(table)
+        self.table = table
+
+    def register_widget(self, widget: QWidget, row: int, column: int) -> None:
+        widget.setProperty("table_row", row)
+        widget.setProperty("table_column", column)
+        widget.installEventFilter(self)
+
+        if isinstance(widget, QComboBox):
+            line_edit = widget.lineEdit()
+            if line_edit is not None:
+                self.register_widget(line_edit, row, column)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() != QEvent.Type.KeyPress or not isinstance(event, QKeyEvent):
+            return super().eventFilter(watched, event)
+
+        if event.key() == Qt.Key.Key_Backtab:
+            return self._focus_relative_cell(watched, forward=False)
+        if event.key() == Qt.Key.Key_Tab:
+            forward = not bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+            return self._focus_relative_cell(watched, forward=forward)
+
+        return super().eventFilter(watched, event)
+
+    def _focus_relative_cell(self, watched: QObject, *, forward: bool) -> bool:
+        row = watched.property("table_row")
+        column = watched.property("table_column")
+        if row is None or column is None:
+            return False
+
+        next_cell = self._find_next_editable_cell(int(row), int(column), forward=forward)
+        if next_cell is None:
+            return False
+
+        next_row, next_column = next_cell
+        self.table.setCurrentCell(next_row, next_column)
+        QTimer.singleShot(0, lambda: self._focus_cell(next_row, next_column))
+        return True
+
+    def _find_next_editable_cell(self, row: int, column: int, *, forward: bool) -> tuple[int, int] | None:
+        column_count = self.table.columnCount()
+        row_count = self.table.rowCount()
+        if column_count <= 0 or row_count <= 0:
+            return None
+
+        flat_index = row * column_count + column
+        step = 1 if forward else -1
+        next_index = flat_index + step
+        max_index = row_count * column_count
+
+        while 0 <= next_index < max_index:
+            next_row, next_column = divmod(next_index, column_count)
+            if self._is_focusable_cell(next_row, next_column):
+                return next_row, next_column
+            next_index += step
+        return None
+
+    def _is_focusable_cell(self, row: int, column: int) -> bool:
+        cell_widget = self.table.cellWidget(row, column)
+        if cell_widget is not None:
+            return cell_widget.isEnabled() and cell_widget.focusPolicy() != Qt.FocusPolicy.NoFocus
+
+        item = self.table.item(row, column)
+        if item is None:
+            return False
+        flags = item.flags()
+        return bool((flags & Qt.ItemFlag.ItemIsEnabled) and (flags & Qt.ItemFlag.ItemIsEditable))
+
+    def _focus_cell(self, row: int, column: int) -> None:
+        cell_widget = self.table.cellWidget(row, column)
+        if cell_widget is not None:
+            focus_target = self._preferred_focus_target(cell_widget)
+            if focus_target is not None:
+                focus_target.setFocus(Qt.FocusReason.TabFocusReason)
+            return
+
+        self.table.editItem(self.table.item(row, column))
+
+    def _preferred_focus_target(self, widget: QWidget) -> QWidget | None:
+        if isinstance(widget, QComboBox):
+            line_edit = widget.lineEdit()
+            if line_edit is not None:
+                line_edit.selectAll()
+                return line_edit
+            return widget
+
+        if isinstance(widget, QLineEdit):
+            widget.selectAll()
+            return widget
+
+        focus_widget = widget.focusProxy()
+        if isinstance(focus_widget, QWidget):
+            return focus_widget
+        if widget.focusPolicy() != Qt.FocusPolicy.NoFocus:
+            return widget
+        return widget.findChild(QWidget)
+
+
 class GeneratedUiPreviewWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.combo_column_options = load_combo_options_from_v2()
+        self.table_tab_navigator: TableCellTabNavigator | None = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self._tune_generated_layout()
@@ -401,6 +506,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         table.clear()
         table.setColumnCount(len(TABLE_HEADERS))
+        self.table_tab_navigator = TableCellTabNavigator(table)
         table.setHorizontalHeader(BandHeaderView(Qt.Orientation.Horizontal, table))
         table.setHorizontalHeaderLabels(TABLE_HEADERS)
         self._apply_line_items_header_colors(table)
@@ -516,6 +622,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
             combo.clearEditText()
         return combo
 
+    def _register_table_cell_widget(self, widget: QWidget, row: int, column: int) -> QWidget:
+        if self.table_tab_navigator is not None:
+            self.table_tab_navigator.register_widget(widget, row, column)
+        return widget
+
     def _seed_demo_values(self) -> None:
         self.setWindowTitle("project.ui preview (generated)")
 
@@ -563,7 +674,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 row = sample_rows[row_idx] if row_idx < len(sample_rows) else ["", "", "x", "", "", "", "", "", "", "", "", "", "", "", ""]
                 for col_idx, value in enumerate(row):
                     if col_idx in COMBO_COLUMN_OPTIONS:
-                        table.setCellWidget(row_idx, col_idx, self._make_combo_box(col_idx, value))
+                        table.setCellWidget(
+                            row_idx,
+                            col_idx,
+                            self._register_table_cell_widget(self._make_combo_box(col_idx, value), row_idx, col_idx),
+                        )
                         placeholder = self._make_table_item("", col_idx)
                         placeholder.setFlags(placeholder.flags() & ~Qt.ItemFlag.ItemIsEnabled)
                         table.setItem(row_idx, col_idx, placeholder)
