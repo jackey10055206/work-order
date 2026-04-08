@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QStyle,
     QStyleFactory,
     QStyleOptionHeader,
+    QStyledItemDelegate,
     QTableWidget,
     QTableWidgetItem,
     QWidget,
@@ -349,6 +350,21 @@ class TableCellTabNavigator(QObject):
         if widget.focusPolicy() != Qt.FocusPolicy.NoFocus:
             return widget
         return widget.findChild(QWidget)
+
+
+class TableItemDelegate(QStyledItemDelegate):
+    def __init__(self, navigator: TableCellTabNavigator, parent: QTableWidget) -> None:
+        super().__init__(parent)
+        self.navigator = navigator
+
+    def createEditor(self, parent: QWidget, option, index):
+        if not index.isValid() or index.column() in TABLE_SKIP_FOCUS_COLUMN_INDEXES:
+            return None
+
+        editor = super().createEditor(parent, option, index)
+        if isinstance(editor, QWidget):
+            self.navigator.register_widget(editor, index.row(), index.column())
+        return editor
 
 
 class GeneratedUiPreviewWindow(QMainWindow):
@@ -686,6 +702,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         table.clear()
         table.setColumnCount(len(TABLE_HEADERS))
         self.table_tab_navigator = TableCellTabNavigator(table, self)
+        table.setItemDelegate(TableItemDelegate(self.table_tab_navigator, table))
         table.setHorizontalHeader(BandHeaderView(Qt.Orientation.Horizontal, table))
         table.setHorizontalHeaderLabels(TABLE_HEADERS)
         self._apply_line_items_header_colors(table)
