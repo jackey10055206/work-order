@@ -570,7 +570,10 @@ class GeneratedUiPreviewWindow(QMainWindow):
             line_edit = widget.lineEdit()
             if line_edit is not None:
                 line_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-                return line_edit
+            # Editable QComboBox 會把焦點代理到內部 lineEdit。
+            # Tab chain 必須綁在 combo 本體上，Qt 才會正確停在這個欄位，
+            # 並在離開後接到下一個外部 widget，而不是把 customerName 略過。
+            return widget
         return widget
 
     def _configure_focus_chain(self) -> None:
