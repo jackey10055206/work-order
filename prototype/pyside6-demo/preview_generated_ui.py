@@ -548,14 +548,23 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 widgets.append(widget)
         return widgets
 
+    def _tab_target_widget(self, widget: QWidget) -> QWidget:
+        if isinstance(widget, QComboBox):
+            widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            line_edit = widget.lineEdit()
+            if line_edit is not None:
+                line_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+                return line_edit
+        return widget
+
     def _configure_focus_chain(self) -> None:
         top_widgets = self._ordered_focus_widgets(self.TOP_TAB_ORDER)
         bottom_widgets = self._ordered_focus_widgets(self.BOTTOM_TAB_ORDER)
         table = getattr(self.ui, "tbl_lineItems", None)
-        ordered_widgets = [*top_widgets]
+        ordered_widgets = [self._tab_target_widget(widget) for widget in top_widgets]
         if isinstance(table, QWidget) and table.focusPolicy() != Qt.FocusPolicy.NoFocus:
             ordered_widgets.append(table)
-        ordered_widgets.extend(bottom_widgets)
+        ordered_widgets.extend(self._tab_target_widget(widget) for widget in bottom_widgets)
 
         for first, second in zip(ordered_widgets, ordered_widgets[1:]):
             QWidget.setTabOrder(first, second)
