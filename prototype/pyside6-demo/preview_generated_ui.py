@@ -380,9 +380,25 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self.table_tab_navigator: TableCellTabNavigator | None = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self._configure_customer_name_combo()
         self._tune_generated_layout()
         self._seed_demo_values()
         self._configure_focus_chain()
+
+    def _configure_customer_name_combo(self) -> None:
+        combo = getattr(self.ui, "cb_customerName", None)
+        if not isinstance(combo, QComboBox):
+            return
+
+        combo.setEditable(True)
+        combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        combo.setMaxVisibleItems(8)
+
+        completer = QCompleter(combo.model(), combo)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        combo.setCompleter(completer)
 
     def _tune_generated_layout(self) -> None:
         main_layout = getattr(self.ui, "verticalLayout_2", None)
