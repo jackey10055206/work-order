@@ -54,8 +54,8 @@ TABLE_HEADERS = [
 # Excel / 工具表格感：寬欄給描述類欄位，中欄給數值，x 欄極窄固定顯示。
 TABLE_COLUMN_WIDTHS = [196, 82, 36, 82, 68, 140, 136, 126, 108, 144, 68, 84, 88, 92, 104]
 X_COLUMN_INDEX = 2
-LENGTH_COLUMN_INDEX = 3
 TABLE_LOCKED_COLUMN_INDEXES = {11, 13}
+MIDDLE_TAB_COLUMN_ORDER = [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14]
 TABLE_SKIP_FOCUS_COLUMN_INDEXES = {X_COLUMN_INDEX, *TABLE_LOCKED_COLUMN_INDEXES}
 NUMERIC_COLUMN_INDEXES = {1, 3, 4, 10, 11, 12, 13, 14}
 SELECT_LIKE_COLUMN_INDEXES = {0, 5, 6, 7, 8, 9}
@@ -98,7 +98,7 @@ HEADER_DEFAULT_BG = QColor("#ececec")
 HEADER_DEFAULT_FG = QColor("#202124")
 HEADER_BORDER_TOP = QColor("#c4c8cc")
 HEADER_BORDER_BOTTOM = QColor("#adb3b9")
-BUILD_COMMIT_HASH = "60fc210"
+BUILD_COMMIT_HASH = "47c1141"
 BUILD_LABEL_TEXT = f"build: {BUILD_COMMIT_HASH}"
 
 
@@ -248,6 +248,7 @@ class TableCellTabNavigator(QObject):
         super().__init__(table)
         self.table = table
         self.parent_window = parent_window
+        self.column_order = [column for column in MIDDLE_TAB_COLUMN_ORDER if column < table.columnCount()]
 
     def register_widget(self, widget: QWidget, row: int, column: int) -> None:
         widget.setProperty("table_row", row)
@@ -295,22 +296,51 @@ class TableCellTabNavigator(QObject):
         return True
 
     def _find_next_editable_cell(self, row: int, column: int, *, forward: bool) -> tuple[int, int] | None:
-        column_count = self.table.columnCount()
         row_count = self.table.rowCount()
-        if column_count <= 0 or row_count <= 0:
+        if row_count <= 0 or not self.column_order:
             return None
 
-        flat_index = row * column_count + column
-        step = 1 if forward else -1
-        next_index = flat_index + step
-        max_index = row_count * column_count
+        if forward:
+            return self._find_next_cell_forward(row, column)
+        return self._find_next_cell_backward(row, column)
 
-        while 0 <= next_index < max_index:
-            next_row, next_column = divmod(next_index, column_count)
-            if self._is_focusable_cell(next_row, next_column):
-                return next_row, next_column
-            next_index += step
+    def _find_next_cell_forward(self, row: int, column: int) -> tuple[int, int] | None:
+        start_row = max(row, 0)
+        if start_row >= self.table.rowCount():
+            return None
+
+        current_position = self._column_position(column)
+        for row_index in range(start_row, self.table.rowCount()):
+            columns = self.column_order
+            if row_index == start_row and current_position is not None:
+                columns = self.column_order[current_position + 1 :]
+            for candidate_column in columns:
+                if self._is_focusable_cell(row_index, candidate_column):
+                    return row_index, candidate_column
+            current_position = None
         return None
+
+    def _find_next_cell_backward(self, row: int, column: int) -> tuple[int, int] | None:
+        start_row = min(row, self.table.rowCount() - 1)
+        if start_row < 0:
+            return None
+
+        current_position = self._column_position(column)
+        for row_index in range(start_row, -1, -1):
+            columns = list(reversed(self.column_order))
+            if row_index == start_row and current_position is not None:
+                columns = list(reversed(self.column_order[:current_position]))
+            for candidate_column in columns:
+                if self._is_focusable_cell(row_index, candidate_column):
+                    return row_index, candidate_column
+            current_position = None
+        return None
+
+    def _column_position(self, column: int) -> int | None:
+        try:
+            return self.column_order.index(column)
+        except ValueError:
+            return None
 
     def _is_focusable_cell(self, row: int, column: int) -> bool:
         if column in TABLE_SKIP_FOCUS_COLUMN_INDEXES:
@@ -662,10 +692,6 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
             if watched is getattr(self.ui, "tbl_lineItems", None) and event.key() in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab):
                 forward = event.key() == Qt.Key.Key_Tab and not bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
-                if forward and getattr(self.ui, "tbl_lineItems", None) is not None:
-                    table = self.ui.tbl_lineItems
-                    if table.currentColumn() == X_COLUMN_INDEX and self._redirect_x_column_focus(table.currentRow()):
-                        return True
                 return self._focus_table_boundary_cell(forward=forward)
 
         return super().eventFilter(watched, event)
@@ -682,24 +708,6 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if table is None:
             return None
         return self.table_tab_navigator._find_next_editable_cell(table.rowCount() - 1, table.columnCount(), forward=False)
-
-    def _redirect_x_column_focus(self, row: int) -> bool:
-        table = getattr(self.ui, "tbl_lineItems", None)
-        navigator = self.table_tab_navigator
-        if table is None or navigator is None or row < 0:
-            return False
-
-        if navigator._is_focusable_cell(row, LENGTH_COLUMN_INDEX):
-            target_row, target_column = row, LENGTH_COLUMN_INDEX
-        else:
-            target_cell = navigator._find_next_editable_cell(row, X_COLUMN_INDEX, forward=True)
-            if target_cell is None:
-                return False
-            target_row, target_column = target_cell
-
-        table.setCurrentCell(target_row, target_column)
-        QTimer.singleShot(0, lambda: navigator._focus_cell(target_row, target_column))
-        return True
 
     def _focus_table_boundary_cell(self, *, forward: bool) -> bool:
         table = getattr(self.ui, "tbl_lineItems", None)
@@ -758,11 +766,6 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if bottom_widgets:
             bottom_widgets[0].setFocus(Qt.FocusReason.TabFocusReason)
 
-    def _handle_line_items_current_cell_changed(self, current_row: int, current_column: int, _previous_row: int, _previous_column: int) -> None:
-        if current_column != X_COLUMN_INDEX:
-            return
-        self._redirect_x_column_focus(current_row)
-
     def _tune_line_items_table(self) -> None:
         table = getattr(self.ui, "tbl_lineItems", None)
         if table is None:
@@ -783,7 +786,6 @@ class GeneratedUiPreviewWindow(QMainWindow):
         table.setSelectionBehavior(table.SelectionBehavior.SelectItems)
         table.setSelectionMode(table.SelectionMode.SingleSelection)
         table.setTabKeyNavigation(False)
-        table.currentCellChanged.connect(self._handle_line_items_current_cell_changed)
         table.setMinimumHeight(418)
         table.setStyleSheet(
             """
