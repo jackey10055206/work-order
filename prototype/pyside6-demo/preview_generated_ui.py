@@ -338,7 +338,10 @@ class TableCellTabNavigator(QObject):
             line_edit = widget.lineEdit()
             if line_edit is not None:
                 line_edit.selectAll()
-                return line_edit
+            # Table 內 editable QComboBox 若直接把焦點代理到內部 lineEdit，
+            # Qt 會把整個 combo 視為已經「進入又離開」，導致下一次 Tab
+            # 直接跳過後續同列的 combo 欄位。這裡必須停在 combo 本體，
+            # 才能讓材質/冷裱加工/板材種類/板材厚度/其他備料都成為可停留點。
             return widget
 
         if isinstance(widget, QLineEdit):
