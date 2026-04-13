@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QCompleter,
     QHeaderView,
+    QLabel,
     QLineEdit,
     QMainWindow,
     QSizePolicy,
@@ -97,6 +98,8 @@ HEADER_DEFAULT_BG = QColor("#ececec")
 HEADER_DEFAULT_FG = QColor("#202124")
 HEADER_BORDER_TOP = QColor("#c4c8cc")
 HEADER_BORDER_BOTTOM = QColor("#adb3b9")
+BUILD_COMMIT_HASH = "60fc210"
+BUILD_LABEL_TEXT = f"build: {BUILD_COMMIT_HASH}"
 
 
 def load_combo_options_from_v2() -> dict[int, list[str]]:
@@ -400,6 +403,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self.table_tab_navigator: TableCellTabNavigator | None = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.build_label: QLabel | None = None
         self._configure_customer_name_combo()
         self._tune_generated_layout()
         self._seed_demo_values()
@@ -470,6 +474,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if remark_editor is not None:
             remark_editor.setMinimumHeight(114)
             remark_editor.setMaximumHeight(114)
+        self._ensure_build_label(remark_group)
+        self._position_build_label()
 
         amount_summary = getattr(self.ui, "wdg_amountSummary", None)
         action_buttons = getattr(self.ui, "wdg_actionButtons", None)
@@ -575,6 +581,38 @@ class GeneratedUiPreviewWindow(QMainWindow):
         bottom_layout.setSpacing(2)
         bottom_layout.setStretch(0, 5)
         bottom_layout.setStretch(1, 0)
+
+    def _ensure_build_label(self, remark_group: QWidget) -> None:
+        if self.build_label is not None:
+            return
+
+        self.build_label = QLabel(BUILD_LABEL_TEXT, remark_group)
+        self.build_label.setObjectName("lbl_buildVersion")
+        self.build_label.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.build_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.build_label.setStyleSheet(
+            "color: rgba(32, 33, 36, 0.55); "
+            "background-color: rgba(245, 245, 245, 0.88); "
+            "border: 1px solid rgba(201, 177, 234, 0.65); "
+            "border-radius: 4px; "
+            "padding: 1px 6px;"
+        )
+        self.build_label.adjustSize()
+        self.build_label.raise_()
+
+    def _position_build_label(self) -> None:
+        if self.build_label is None:
+            return
+
+        label_margin_left = 14
+        label_margin_bottom = 8
+        x = label_margin_left
+        y = max(24, self.ui.grp_remark.height() - self.build_label.sizeHint().height() - label_margin_bottom)
+        self.build_label.move(x, y)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._position_build_label()
 
     def _ordered_focus_widgets(self, names: list[str]) -> list[QWidget]:
         widgets: list[QWidget] = []
