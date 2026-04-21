@@ -10,6 +10,7 @@ from PySide6.QtCore import QEvent, QObject, QTimer, Qt
 from PySide6.QtGui import QColor, QKeyEvent, QPalette, QPainter
 from PySide6.QtWidgets import (
     QApplication,
+    QAbstractItemView,
     QComboBox,
     QCompleter,
     QHeaderView,
@@ -840,6 +841,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         table.setCornerButtonEnabled(False)
         table.setSelectionBehavior(table.SelectionBehavior.SelectItems)
         table.setSelectionMode(table.SelectionMode.SingleSelection)
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.setTabKeyNavigation(False)
         table.setMinimumHeight(418)
         table.setStyleSheet(
@@ -951,6 +953,23 @@ class GeneratedUiPreviewWindow(QMainWindow):
             combo.clearEditText()
         return combo
 
+    def _make_line_edit(self, column: int, text: str) -> QLineEdit:
+        line_edit = QLineEdit(text)
+        line_edit.setFrame(False)
+        line_edit.setMinimumHeight(28)
+        line_edit.setMaximumHeight(28)
+        line_edit.setTextMargins(6, 0, 6, 0)
+        if column in NUMERIC_COLUMN_INDEXES:
+            line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        else:
+            line_edit.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        return line_edit
+
+    def _make_widget_backing_item(self, column: int) -> QTableWidgetItem:
+        item = self._make_table_item("", column)
+        item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+        return item
+
     def _register_table_cell_widget(self, widget: QWidget, row: int, column: int) -> QWidget:
         if self.table_tab_navigator is not None:
             self.table_tab_navigator.register_widget(widget, row, column)
@@ -1008,11 +1027,16 @@ class GeneratedUiPreviewWindow(QMainWindow):
                             col_idx,
                             self._register_table_cell_widget(self._make_combo_box(col_idx, value), row_idx, col_idx),
                         )
-                        placeholder = self._make_table_item("", col_idx)
-                        placeholder.setFlags(placeholder.flags() & ~Qt.ItemFlag.ItemIsEnabled)
-                        table.setItem(row_idx, col_idx, placeholder)
-                    else:
+                        table.setItem(row_idx, col_idx, self._make_widget_backing_item(col_idx))
+                    elif col_idx in TABLE_SKIP_FOCUS_COLUMN_INDEXES:
                         table.setItem(row_idx, col_idx, self._make_table_item(value, col_idx))
+                    else:
+                        table.setCellWidget(
+                            row_idx,
+                            col_idx,
+                            self._register_table_cell_widget(self._make_line_edit(col_idx, value), row_idx, col_idx),
+                        )
+                        table.setItem(row_idx, col_idx, self._make_widget_backing_item(col_idx))
                 table.setRowHeight(row_idx, 36)
 
 
