@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -99,7 +100,21 @@ HEADER_DEFAULT_BG = QColor("#ececec")
 HEADER_DEFAULT_FG = QColor("#202124")
 HEADER_BORDER_TOP = QColor("#c4c8cc")
 HEADER_BORDER_BOTTOM = QColor("#adb3b9")
-BUILD_COMMIT_HASH = "8811611"
+
+
+def resolve_build_commit_hash() -> str:
+    repo_root = Path(__file__).resolve().parents[2]
+    try:
+        return subprocess.check_output(
+            ["git", "-C", str(repo_root), "rev-parse", "--short", "HEAD"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip() or "unknown"
+    except Exception:
+        return "unknown"
+
+
+BUILD_COMMIT_HASH = resolve_build_commit_hash()
 BUILD_LABEL_TEXT = f"build: {BUILD_COMMIT_HASH}"
 
 
