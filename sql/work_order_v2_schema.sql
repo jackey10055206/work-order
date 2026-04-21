@@ -103,6 +103,7 @@ CREATE TABLE IF NOT EXISTS work_order_lines (
   height_mm DECIMAL(10,2) NULL,
   quantity INT NULL,
   extra_material_quantity INT NULL,
+  extra_material_total DECIMAL(12,2) NULL,
   cbm DECIMAL(10,2) NULL,
   cbm_unit_price DECIMAL(10,2) NULL,
   line_total DECIMAL(12,2) NULL,

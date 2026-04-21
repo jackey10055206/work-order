@@ -53,7 +53,7 @@
 | 11 | 才數 | locked/display | `cbm` | 目前 UI 是唯讀計算欄 |
 | 12 | 單價 | line edit | `cbm_unit_price` | 才數單價 |
 | 13 | 計價 | locked/display | `line_total` | 主計價，目前 UI 是唯讀計算欄 |
-| 14 | 備料計價 | line edit/display | **待確認** | schema 目前沒有獨立欄位 |
+| 14 | 備料計價 | line edit/display | `extra_material_total` | 對應「其他備料」的獨立計價金額，不與主項 `line_total` 共用 |
 
 ### 明細一定要補的系統欄位
 
@@ -63,15 +63,14 @@
 | `line_no` | 以畫面列序 `row_index + 1` |
 | `created_at` / `updated_at` | DB 自動維護 |
 
-### 目前 schema / UI 還有一個落差
+### 已補齊的 schema 對位
 
-`tbl_lineItems` 的最後一欄「備料計價」目前在畫面上存在，但 `work_order_v2.work_order_lines` 還沒有專屬欄位。
+`tbl_lineItems` 的最後一欄「備料計價」現在對應 `work_order_v2.work_order_lines.extra_material_total`。
 
-可選方向：
-1. **短期**：先不入庫，或先併入 `note` / 暫存計算結果（不太理想）。
-2. **較正規**：schema 後續補一個類似 `extra_material_line_total` 的 decimal 欄位。
-
-如果下一輪要正式接存檔，這欄要先定義規則，不然 mapping 會留下洞。
+定義規則：
+1. 這欄專門存「其他備料」的獨立計價結果。
+2. `line_total` 仍保留給主品項 / 才數計價，不和備料金額混用。
+3. 若該列沒有其他備料，`extra_material_total` 可為 `NULL`。
 
 ## 3. 客戶自動帶入策略
 
@@ -100,4 +99,4 @@
 4. 掃 `tbl_lineItems` 非空列
 5. 各 combo 文字再 lookup 對應 `option_items.id`
 6. 逐列寫入 `work_order_lines`
-7. 對於「備料計價」先決定 schema 去向，再一起收斂
+7. 將「備料計價」寫入 `extra_material_total`

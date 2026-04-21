@@ -14,7 +14,8 @@
 ## 目錄
 
 - `docker/work-order-v2/compose.yml`：MySQL 8 容器
-- `sql/work_order_v2_schema.sql`：v2 第一版 schema
+- `sql/work_order_v2_schema.sql`：v2 schema
+- `sql/migrations/2026-04-21_add_extra_material_total_to_work_order_lines.sql`：替既有 v2 DB 補上 `extra_material_total`
 - `scripts/import_work_order_v2.py`：從舊 dump 匯入基礎資料
 
 ## 啟動 DB
@@ -42,6 +43,14 @@ docker compose -f docker/work-order-v2/compose.yml ps
 docker compose -f docker/work-order-v2/compose.yml down -v
 docker compose -f docker/work-order-v2/compose.yml up -d
 ```
+
+若 DB 已經建立、但只想補上新版欄位（例如這次新增的 `work_order_lines.extra_material_total`），可手動執行：
+
+```bash
+docker exec -i work-order-v2-db mysql -uworkorder_v2 -p123456 < sql/migrations/2026-04-21_add_extra_material_total_to_work_order_lines.sql
+```
+
+這個 migration 只針對 `work_order_v2`，不要對舊 `work_order` 執行。
 
 ## 匯入舊資料
 
@@ -113,6 +122,11 @@ docker exec -it work-order-v2-db mysql -uworkorder_v2 -p123456 -D work_order_v2 
 
 ### `work_order_lines`
 新工單明細表，採正規化欄位，直接指向各類 `option_items`。
+
+其中：
+- UI 的「計價」對應 `work_order_lines.line_total`
+- UI 的「備料計價」對應 `work_order_lines.extra_material_total`
+- `extra_material_total` 用來存每筆明細中「其他備料」那一段的獨立計價結果，避免和主品項的 `line_total` 混在一起
 
 ## 備註
 
