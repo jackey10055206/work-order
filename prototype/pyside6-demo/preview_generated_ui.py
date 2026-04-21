@@ -119,6 +119,45 @@ BUILD_COMMIT_HASH = resolve_build_commit_hash()
 BUILD_LABEL_TEXT = f"build: {BUILD_COMMIT_HASH}"
 
 
+def _connect_kwargs() -> dict:
+    return {key: value for key, value in DB_V2_CONFIG.items() if value is not None}
+
+
+def load_clients_from_v2() -> list[dict[str, str | int | None]]:
+    if pymysql is None:
+        return []
+
+    query = """
+        SELECT id, short_name, full_name, phone, address
+        FROM clients
+        WHERE is_active = 1
+        ORDER BY short_name, id
+    """
+    try:
+        with pymysql.connect(**_connect_kwargs()) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                rows = cur.fetchall()
+    except Exception:
+        return []
+
+    normalized_rows: list[dict[str, str | int | None]] = []
+    for row in rows:
+        short_name = (row.get("short_name") or "").strip()
+        if not short_name:
+            continue
+        normalized_rows.append(
+            {
+                "id": row.get("id"),
+                "short_name": short_name,
+                "full_name": (row.get("full_name") or "").strip() or None,
+                "phone": (row.get("phone") or "").strip() or None,
+                "address": (row.get("address") or "").strip() or None,
+            }
+        )
+    return normalized_rows
+
+
 def load_combo_options_from_v2() -> dict[int, list[str]]:
     if pymysql is None:
         return {column: list(options) for column, options in COMBO_COLUMN_OPTIONS.items()}
@@ -133,8 +172,7 @@ def load_combo_options_from_v2() -> dict[int, list[str]]:
     options_by_group = {group: [] for group in COMBO_COLUMN_GROUPS.values()}
 
     try:
-        connect_kwargs = {key: value for key, value in DB_V2_CONFIG.items() if value is not None}
-        with pymysql.connect(**connect_kwargs) as conn:
+        with pymysql.connect(**_connect_kwargs()) as conn:
             with conn.cursor() as cur:
                 cur.execute(query, tuple(COMBO_COLUMN_GROUPS.values()))
                 for row in cur.fetchall():
@@ -462,6 +500,12 @@ class GeneratedUiPreviewWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.combo_column_options = load_combo_options_from_v2()
+        self.clients = load_clients_from_v2()
+        self.client_rows_by_short_name = {
+            str(row["short_name"]): row for row in self.clients if row.get("short_name")
+        }
+        self._last_auto_filled_phone = ""
+        self._last_auto_filled_address = ""
         self.table_tab_navigator: TableCellTabNavigator | None = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -479,12 +523,50 @@ class GeneratedUiPreviewWindow(QMainWindow):
         combo.setEditable(True)
         combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         combo.setMaxVisibleItems(8)
+        combo.clear()
+        for row in self.clients:
+            combo.addItem(str(row["short_name"]), row)
 
         completer = QCompleter(combo.model(), combo)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         completer.setFilterMode(Qt.MatchFlag.MatchContains)
         completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         combo.setCompleter(completer)
+        combo.currentTextChanged.connect(self._handle_customer_name_changed)
+
+    def _handle_customer_name_changed(self, customer_name: str) -> None:
+        row = self.client_rows_by_short_name.get(customer_name.strip())
+        if row is None:
+            return
+        self._apply_customer_contact_defaults(row)
+
+    def _apply_customer_contact_defaults(self, row: dict[str, str | int | None]) -> None:
+        phone_widget = getattr(self.ui, "le_phone", None)
+        address_widget = getattr(self.ui, "lle_address", None)
+        if not isinstance(phone_widget, QLineEdit) or not isinstance(address_widget, QLineEdit):
+            return
+
+        next_phone = str(row.get("phone") or "")
+        next_address = str(row.get("address") or "")
+
+        current_phone = phone_widget.text().strip()
+        current_address = address_widget.text().strip()
+        can_fill_phone = not current_phone or current_phone == self._last_auto_filled_phone
+        can_fill_address = not current_address or current_address == self._last_auto_filled_address
+
+        if next_phone and can_fill_phone:
+            phone_widget.setText(next_phone)
+            self._last_auto_filled_phone = next_phone
+        elif not next_phone and current_phone == self._last_auto_filled_phone:
+            phone_widget.clear()
+            self._last_auto_filled_phone = ""
+
+        if next_address and can_fill_address:
+            address_widget.setText(next_address)
+            self._last_auto_filled_address = next_address
+        elif not next_address and current_address == self._last_auto_filled_address:
+            address_widget.clear()
+            self._last_auto_filled_address = ""
 
     def _tune_generated_layout(self) -> None:
         main_layout = getattr(self.ui, "verticalLayout_2", None)
@@ -978,10 +1060,14 @@ class GeneratedUiPreviewWindow(QMainWindow):
     def _seed_demo_values(self) -> None:
         self.setWindowTitle("project.ui preview (generated)")
 
-        customers = ["采月廣告有限公司", "萬榮國際", "KING", "就肆電競"]
-        if hasattr(self.ui, "cb_customerName"):
-            self.ui.cb_customerName.addItems(customers)
-            self.ui.cb_customerName.setCurrentIndex(0)
+        customer_combo = getattr(self.ui, "cb_customerName", None)
+        if isinstance(customer_combo, QComboBox):
+            if self.clients:
+                customer_combo.setCurrentIndex(0)
+            else:
+                customers = ["采月廣告有限公司", "萬榮國際", "KING", "就肆電競"]
+                customer_combo.addItems(customers)
+                customer_combo.setCurrentIndex(0)
 
         defaults = {
             "le_worknum": "26-03-29-01",
@@ -997,8 +1083,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
         }
         for attr, value in defaults.items():
             widget = getattr(self.ui, attr, None)
-            if widget is not None:
-                widget.setText(value)
+            if widget is None:
+                continue
+            if attr in {"le_phone", "lle_address"} and widget.text().strip():
+                continue
+            widget.setText(value)
 
         if hasattr(self.ui, "te_remark"):
             self.ui.te_remark.setPlainText("現場施工前 30 分鐘需與窗口聯絡；材料依樓層分批搬運。")
