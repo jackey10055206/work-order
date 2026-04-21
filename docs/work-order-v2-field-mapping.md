@@ -121,11 +121,49 @@
 
 這樣可以避免工單先落庫、客戶卻是模糊字串，後續不好補救。
 
-## 5. 下一輪接明細的最小路徑
+## 5. 目前已接上的明細存檔規則（prototype 現況）
 
-1. 存完 / 更新 `work_orders`
+`btn_save` 現在會在同一次存檔流程內：
+
+1. upsert `work_orders`
 2. 取得 `work_orders.id`
-3. 掃 `tbl_lineItems` 非空列
-4. 各 combo 文字再 lookup 對應 `option_items.id`
-5. 逐列寫入 `work_order_lines`
-6. 將「備料計價」寫入 `extra_material_total`
+3. 掃 `tbl_lineItems`
+4. 依 `option_group + item_name` lookup `option_items.id`
+5. 先刪除該工單舊的 `work_order_lines`
+6. 再把本次畫面上的有效列整批重寫進 `work_order_lines`
+
+### 空列判定規則
+
+只要以下任一欄位有非空文字，就視為「這列有資料」並會嘗試存檔：
+- 製作項目
+- 寬度 / 長度 / 數量
+- 材質 / 冷裱加工 / 板材種類 / 板材厚度 / 其他備料
+- 備料數量 / 才數 / 單價 / 計價 / 備料計價
+
+若上述欄位全部為空，該列會直接略過，不建立 `work_order_lines`。
+
+### `option_items` lookup 規則
+
+- combo 欄位一律依 `option_group + item_name` 精準查 FK
+- 空白值可存 `NULL`
+- **只要使用者輸入了非空文字，但 DB 查不到對應項目，就直接阻擋整次儲存並報錯**
+- 不允許 fallback 到錯的 id，也不靜默寫入自由字串
+
+### 明細寫入欄位
+
+每筆有效列會寫入：
+- `line_no`
+- `production_item_id`
+- `width_mm`
+- `height_mm`
+- `quantity`
+- `material_id`
+- `lamination_id`
+- `board_type_id`
+- `board_thickness_id`
+- `extra_material_id`
+- `extra_material_quantity`
+- `cbm`
+- `cbm_unit_price`
+- `line_total`
+- `extra_material_total`

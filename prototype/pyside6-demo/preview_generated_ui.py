@@ -4,6 +4,7 @@ import argparse
 import os
 import subprocess
 import sys
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QObject, QTimer, Qt
@@ -487,6 +488,55 @@ def normalize_text_edit_value(widget: object) -> str | None:
     return value or None
 
 
+def parse_decimal_or_none(raw_value: str | None) -> Decimal | None:
+    if raw_value is None:
+        return None
+    normalized = raw_value.strip().replace(",", "")
+    if not normalized:
+        return None
+    try:
+        return Decimal(normalized)
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError(f"數值格式錯誤：{raw_value}") from exc
+
+
+def parse_int_or_none(raw_value: str | None) -> int | None:
+    decimal_value = parse_decimal_or_none(raw_value)
+    if decimal_value is None:
+        return None
+    if decimal_value != decimal_value.to_integral_value():
+        raise ValueError(f"整數欄位不可輸入小數：{raw_value}")
+    return int(decimal_value)
+
+
+def load_option_item_ids_from_v2() -> dict[str, dict[str, int]]:
+    lookup = {group: {} for group in COMBO_COLUMN_GROUPS.values()}
+    if pymysql is None:
+        return lookup
+
+    query = """
+        SELECT id, option_group, item_name
+        FROM option_items
+        WHERE is_active = 1
+          AND option_group IN (%s, %s, %s, %s, %s, %s)
+        ORDER BY option_group, sort_order, id
+    """
+    try:
+        with pymysql.connect(**_connect_kwargs()) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, tuple(COMBO_COLUMN_GROUPS.values()))
+                for row in cur.fetchall():
+                    group = str(row["option_group"])
+                    item_name = (row.get("item_name") or "").strip()
+                    item_id = row.get("id")
+                    if group and item_name and item_id is not None:
+                        lookup.setdefault(group, {})[item_name] = int(item_id)
+    except Exception:
+        return lookup
+
+    return lookup
+
+
 class GeneratedUiPreviewWindow(QMainWindow):
     TOP_TAB_ORDER = [
         "le_worknum",
@@ -513,6 +563,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.combo_column_options = load_combo_options_from_v2()
+        self.option_item_ids_by_group = load_option_item_ids_from_v2()
         self.clients = load_clients_from_v2()
         self.client_rows_by_short_name = {
             str(row["short_name"]): row for row in self.clients if row.get("short_name")
@@ -589,11 +640,88 @@ class GeneratedUiPreviewWindow(QMainWindow):
             "status": "draft",
         }
 
-    def save_header_to_work_orders(self) -> int:
-        if pymysql is None:
-            raise RuntimeError("缺少 PyMySQL，無法儲存到 work_order_v2。")
+    def _table_cell_text(self, row: int, column: int) -> str:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return ""
 
-        payload = self._header_payload()
+        cell_widget = table.cellWidget(row, column)
+        if isinstance(cell_widget, QComboBox):
+            return cell_widget.currentText().strip()
+        if isinstance(cell_widget, QLineEdit):
+            return cell_widget.text().strip()
+
+        item = table.item(row, column)
+        return item.text().strip() if item is not None else ""
+
+    def _line_row_has_meaningful_data(self, row: int) -> bool:
+        meaningful_columns = [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        for column in meaningful_columns:
+            if self._table_cell_text(row, column):
+                return True
+        return False
+
+    def _lookup_option_item_id(self, option_group: str, item_name: str, row_number: int, column_label: str) -> int | None:
+        normalized_name = item_name.strip()
+        if not normalized_name:
+            return None
+
+        item_id = self.option_item_ids_by_group.get(option_group, {}).get(normalized_name)
+        if item_id is None:
+            raise ValueError(
+                f"第 {row_number} 列「{column_label}」找不到 option_items 對應：group={option_group}, item_name={normalized_name}"
+            )
+        return item_id
+
+    def _collect_line_payloads(self) -> list[dict[str, object | None]]:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return []
+
+        line_payloads: list[dict[str, object | None]] = []
+        for row in range(table.rowCount()):
+            row_number = row + 1
+            if not self._line_row_has_meaningful_data(row):
+                continue
+
+            production_item = self._table_cell_text(row, 0)
+            width_mm = self._table_cell_text(row, 1)
+            height_mm = self._table_cell_text(row, 3)
+            quantity = self._table_cell_text(row, 4)
+            material = self._table_cell_text(row, 5)
+            lamination = self._table_cell_text(row, 6)
+            board_type = self._table_cell_text(row, 7)
+            board_thickness = self._table_cell_text(row, 8)
+            extra_material = self._table_cell_text(row, 9)
+            extra_material_quantity = self._table_cell_text(row, 10)
+            cbm = self._table_cell_text(row, 11)
+            cbm_unit_price = self._table_cell_text(row, 12)
+            line_total = self._table_cell_text(row, 13)
+            extra_material_total = self._table_cell_text(row, 14)
+
+            line_payloads.append(
+                {
+                    "line_no": row_number,
+                    "production_item_id": self._lookup_option_item_id("production_item", production_item, row_number, "製作項目"),
+                    "width_mm": parse_decimal_or_none(width_mm),
+                    "height_mm": parse_decimal_or_none(height_mm),
+                    "quantity": parse_int_or_none(quantity),
+                    "material_id": self._lookup_option_item_id("material", material, row_number, "材質"),
+                    "lamination_id": self._lookup_option_item_id("lamination", lamination, row_number, "冷裱加工"),
+                    "board_type_id": self._lookup_option_item_id("board_type", board_type, row_number, "板材種類"),
+                    "board_thickness_id": self._lookup_option_item_id("board_thickness", board_thickness, row_number, "板材厚度"),
+                    "extra_material_id": self._lookup_option_item_id("extra_material", extra_material, row_number, "其他備料"),
+                    "extra_material_quantity": parse_int_or_none(extra_material_quantity),
+                    "cbm": parse_decimal_or_none(cbm),
+                    "cbm_unit_price": parse_decimal_or_none(cbm_unit_price),
+                    "line_total": parse_decimal_or_none(line_total),
+                    "extra_material_total": parse_decimal_or_none(extra_material_total),
+                }
+            )
+
+        return line_payloads
+
+    def _upsert_work_order_header(self, cur, payload: dict[str, str | int | None]) -> int:
         insert_sql = """
             INSERT INTO work_orders (
                 work_number, case_name, client_id, company_phone,
@@ -614,16 +742,61 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 status = VALUES(status),
                 id = LAST_INSERT_ID(id)
         """
+        cur.execute(insert_sql, payload)
+        return int(cur.lastrowid)
+
+    def _replace_work_order_lines(self, cur, work_order_id: int, line_payloads: list[dict[str, object | None]]) -> None:
+        cur.execute("DELETE FROM work_order_lines WHERE work_order_id = %s", (work_order_id,))
+        if not line_payloads:
+            return
+
+        insert_sql = """
+            INSERT INTO work_order_lines (
+                work_order_id, line_no, production_item_id, width_mm, height_mm, quantity,
+                material_id, lamination_id, board_type_id, board_thickness_id,
+                extra_material_id, extra_material_quantity, cbm, cbm_unit_price,
+                line_total, extra_material_total
+            ) VALUES (
+                %(work_order_id)s, %(line_no)s, %(production_item_id)s, %(width_mm)s, %(height_mm)s, %(quantity)s,
+                %(material_id)s, %(lamination_id)s, %(board_type_id)s, %(board_thickness_id)s,
+                %(extra_material_id)s, %(extra_material_quantity)s, %(cbm)s, %(cbm_unit_price)s,
+                %(line_total)s, %(extra_material_total)s
+            )
+        """
+        rows = []
+        for payload in line_payloads:
+            row_payload = dict(payload)
+            row_payload["work_order_id"] = work_order_id
+            rows.append(row_payload)
+        cur.executemany(insert_sql, rows)
+
+    def save_header_to_work_orders(self) -> int:
+        if pymysql is None:
+            raise RuntimeError("缺少 PyMySQL，無法儲存到 work_order_v2。")
+
+        payload = self._header_payload()
         with pymysql.connect(**_connect_kwargs()) as conn:
             with conn.cursor() as cur:
-                cur.execute(insert_sql, payload)
-                work_order_id = int(cur.lastrowid)
+                work_order_id = self._upsert_work_order_header(cur, payload)
             conn.commit()
         return work_order_id
 
+    def save_work_order_with_lines(self) -> tuple[int, int]:
+        if pymysql is None:
+            raise RuntimeError("缺少 PyMySQL，無法儲存到 work_order_v2。")
+
+        header_payload = self._header_payload()
+        line_payloads = self._collect_line_payloads()
+        with pymysql.connect(**_connect_kwargs()) as conn:
+            with conn.cursor() as cur:
+                work_order_id = self._upsert_work_order_header(cur, header_payload)
+                self._replace_work_order_lines(cur, work_order_id, line_payloads)
+            conn.commit()
+        return work_order_id, len(line_payloads)
+
     def _handle_save_clicked(self) -> None:
         try:
-            work_order_id = self.save_header_to_work_orders()
+            work_order_id, line_count = self.save_work_order_with_lines()
         except Exception as exc:
             message = str(exc) or exc.__class__.__name__
             QMessageBox.warning(self, "儲存失敗", message)
@@ -631,7 +804,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             return
 
         work_number = normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or "-"
-        success_message = f"已儲存 work_orders #{work_order_id}（工單 {work_number}）"
+        success_message = f"已儲存 work_orders #{work_order_id}（工單 {work_number}，明細 {line_count} 筆）"
         QMessageBox.information(self, "儲存成功", success_message)
         self._set_status_message(success_message)
 
@@ -1227,7 +1400,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--screenshot", type=Path, help="Save a screenshot to this path and exit.")
-    parser.add_argument("--save-demo", action="store_true", help="Save the seeded header fields into work_orders and print the inserted id.")
+    parser.add_argument("--save-demo", action="store_true", help="Save the seeded header + line fields into work_orders/work_order_lines and print the inserted id.")
     return parser.parse_args(argv)
 
 
@@ -1242,13 +1415,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.save_demo:
         def save_demo_and_quit() -> None:
             try:
-                work_order_id = window.save_header_to_work_orders()
+                work_order_id, line_count = window.save_work_order_with_lines()
             except Exception as exc:
                 print(f"SAVE_DEMO_ERROR: {exc}", file=sys.stderr)
                 app.exit(1)
                 return
 
-            print(f"SAVE_DEMO_OK:{work_order_id}")
+            print(f"SAVE_DEMO_OK:{work_order_id}:{line_count}")
             app.exit(0)
 
         QTimer.singleShot(0, save_demo_and_quit)
