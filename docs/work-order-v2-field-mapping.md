@@ -91,12 +91,41 @@
 - 不破壞 editable UX
 - 不搶寫使用者手動輸入
 
-## 4. 下一輪接存檔的最小路徑
+## 4. 已接上的表頭存檔流程（prototype 現況）
 
-1. `cb_customerName.currentText()` → 查 `clients.id`
-2. 先 insert / update `work_orders`
-3. 取得 `work_orders.id`
-4. 掃 `tbl_lineItems` 非空列
-5. 各 combo 文字再 lookup 對應 `option_items.id`
-6. 逐列寫入 `work_order_lines`
-7. 將「備料計價」寫入 `extra_material_total`
+目前 `preview_generated_ui.py` 已把既有 `btn_save` 掛上表頭存檔：
+
+1. 讀取 TOP 區欄位
+2. `cb_customerName.currentText()` → lookup `clients.short_name` → 取得 `clients.id`
+3. 以 `work_number` 為唯一鍵對 `work_orders` 做 upsert
+4. 若同工單號已存在，更新既有 `work_orders`；若不存在，建立新資料
+5. `status` 先固定寫 `draft`
+
+實際寫入欄位：
+- `le_worknum` -> `work_orders.work_number`
+- `le_caseName` -> `work_orders.case_name`
+- `cb_customerName` -> `work_orders.client_id`
+- `le_phone` -> `work_orders.company_phone`
+- `le_contactName` -> `work_orders.contact_name`
+- `le_startTime` -> `work_orders.work_time`
+- `le_endTime` -> `work_orders.cleanup_time`
+- `lle_address` -> `work_orders.work_address`
+- `te_remark` -> `work_orders.remark`
+
+### `cb_customerName` 查不到時的定義
+
+若使用者在 editable combo 輸入了新名字，但 `clients.short_name` 查不到：
+- **本輪不自動建客戶**
+- **也不存 `NULL client_id` 混過去**
+- 直接阻擋存檔並回報：`客戶「xxx」不存在 clients，請先建立客戶再儲存。`
+
+這樣可以避免工單先落庫、客戶卻是模糊字串，後續不好補救。
+
+## 5. 下一輪接明細的最小路徑
+
+1. 存完 / 更新 `work_orders`
+2. 取得 `work_orders.id`
+3. 掃 `tbl_lineItems` 非空列
+4. 各 combo 文字再 lookup 對應 `option_items.id`
+5. 逐列寫入 `work_order_lines`
+6. 將「備料計價」寫入 `extra_material_total`

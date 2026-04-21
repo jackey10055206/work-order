@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QMessageBox,
     QSizePolicy,
     QStyle,
     QStyleFactory,
@@ -474,6 +475,18 @@ class TableItemDelegate(QStyledItemDelegate):
         return editor
 
 
+def normalize_line_edit_value(widget: object) -> str | None:
+    if isinstance(widget, QLineEdit):
+        value = widget.text().strip()
+        return value or None
+    return None
+
+
+def normalize_text_edit_value(widget: object) -> str | None:
+    value = widget.toPlainText().strip() if widget is not None and hasattr(widget, "toPlainText") else ""
+    return value or None
+
+
 class GeneratedUiPreviewWindow(QMainWindow):
     TOP_TAB_ORDER = [
         "le_worknum",
@@ -513,6 +526,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._configure_customer_name_combo()
         self._tune_generated_layout()
         self._seed_demo_values()
+        self._configure_save_flow()
         self._configure_focus_chain()
 
     def _configure_customer_name_combo(self) -> None:
@@ -539,6 +553,87 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if row is None:
             return
         self._apply_customer_contact_defaults(row)
+
+    def _configure_save_flow(self) -> None:
+        save_button = getattr(self.ui, "btn_save", None)
+        if save_button is not None:
+            save_button.clicked.connect(self._handle_save_clicked)
+
+    def _set_status_message(self, message: str, timeout_ms: int = 8000) -> None:
+        self.statusBar().showMessage(message, timeout_ms)
+
+    def _header_payload(self) -> dict[str, str | int | None]:
+        customer_name = ""
+        customer_combo = getattr(self.ui, "cb_customerName", None)
+        if isinstance(customer_combo, QComboBox):
+            customer_name = customer_combo.currentText().strip()
+
+        client_row = self.client_rows_by_short_name.get(customer_name) if customer_name else None
+        if customer_name and client_row is None:
+            raise ValueError(f"客戶「{customer_name}」不存在 clients，請先建立客戶再儲存。")
+
+        work_number = normalize_line_edit_value(getattr(self.ui, "le_worknum", None))
+        if not work_number:
+            raise ValueError("工單號不可為空。")
+
+        return {
+            "work_number": work_number,
+            "case_name": normalize_line_edit_value(getattr(self.ui, "le_caseName", None)),
+            "client_id": client_row.get("id") if client_row else None,
+            "company_phone": normalize_line_edit_value(getattr(self.ui, "le_phone", None)),
+            "contact_name": normalize_line_edit_value(getattr(self.ui, "le_contactName", None)),
+            "work_time": normalize_line_edit_value(getattr(self.ui, "le_startTime", None)),
+            "cleanup_time": normalize_line_edit_value(getattr(self.ui, "le_endTime", None)),
+            "work_address": normalize_line_edit_value(getattr(self.ui, "lle_address", None)),
+            "remark": normalize_text_edit_value(getattr(self.ui, "te_remark", None)),
+            "status": "draft",
+        }
+
+    def save_header_to_work_orders(self) -> int:
+        if pymysql is None:
+            raise RuntimeError("缺少 PyMySQL，無法儲存到 work_order_v2。")
+
+        payload = self._header_payload()
+        insert_sql = """
+            INSERT INTO work_orders (
+                work_number, case_name, client_id, company_phone,
+                contact_name, work_time, cleanup_time, work_address, remark, status
+            ) VALUES (
+                %(work_number)s, %(case_name)s, %(client_id)s, %(company_phone)s,
+                %(contact_name)s, %(work_time)s, %(cleanup_time)s, %(work_address)s, %(remark)s, %(status)s
+            )
+            ON DUPLICATE KEY UPDATE
+                case_name = VALUES(case_name),
+                client_id = VALUES(client_id),
+                company_phone = VALUES(company_phone),
+                contact_name = VALUES(contact_name),
+                work_time = VALUES(work_time),
+                cleanup_time = VALUES(cleanup_time),
+                work_address = VALUES(work_address),
+                remark = VALUES(remark),
+                status = VALUES(status),
+                id = LAST_INSERT_ID(id)
+        """
+        with pymysql.connect(**_connect_kwargs()) as conn:
+            with conn.cursor() as cur:
+                cur.execute(insert_sql, payload)
+                work_order_id = int(cur.lastrowid)
+            conn.commit()
+        return work_order_id
+
+    def _handle_save_clicked(self) -> None:
+        try:
+            work_order_id = self.save_header_to_work_orders()
+        except Exception as exc:
+            message = str(exc) or exc.__class__.__name__
+            QMessageBox.warning(self, "儲存失敗", message)
+            self._set_status_message(f"儲存失敗：{message}")
+            return
+
+        work_number = normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or "-"
+        success_message = f"已儲存 work_orders #{work_order_id}（工單 {work_number}）"
+        QMessageBox.information(self, "儲存成功", success_message)
+        self._set_status_message(success_message)
 
     def _apply_customer_contact_defaults(self, row: dict[str, str | int | None]) -> None:
         phone_widget = getattr(self.ui, "le_phone", None)
@@ -1132,6 +1227,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--screenshot", type=Path, help="Save a screenshot to this path and exit.")
+    parser.add_argument("--save-demo", action="store_true", help="Save the seeded header fields into work_orders and print the inserted id.")
     return parser.parse_args(argv)
 
 
@@ -1143,7 +1239,20 @@ def main(argv: list[str] | None = None) -> int:
     window = GeneratedUiPreviewWindow()
     window.show()
 
-    if args.screenshot:
+    if args.save_demo:
+        def save_demo_and_quit() -> None:
+            try:
+                work_order_id = window.save_header_to_work_orders()
+            except Exception as exc:
+                print(f"SAVE_DEMO_ERROR: {exc}", file=sys.stderr)
+                app.exit(1)
+                return
+
+            print(f"SAVE_DEMO_OK:{work_order_id}")
+            app.exit(0)
+
+        QTimer.singleShot(0, save_demo_and_quit)
+    elif args.screenshot:
         target = args.screenshot.expanduser().resolve()
         target.parent.mkdir(parents=True, exist_ok=True)
 
