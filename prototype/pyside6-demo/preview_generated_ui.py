@@ -7,8 +7,8 @@ import sys
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-from PySide6.QtCore import QEvent, QObject, QTimer, Qt
-from PySide6.QtGui import QColor, QKeyEvent, QPalette, QPainter
+from PySide6.QtCore import QEvent, QObject, QPoint, QTimer, Qt
+from PySide6.QtGui import QAction, QColor, QKeyEvent, QPalette, QPainter
 from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QSizePolicy,
     QStyle,
@@ -592,6 +593,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._initialize_blank_work_order()
         self._configure_save_flow()
         self._configure_open_flow()
+        self._configure_line_row_actions()
         self._configure_focus_chain()
 
     def _configure_customer_name_combo(self) -> None:
@@ -635,6 +637,13 @@ class GeneratedUiPreviewWindow(QMainWindow):
         open_button = getattr(self.ui, "btn_open", None)
         if open_button is not None:
             open_button.clicked.connect(self._handle_open_clicked)
+
+    def _configure_line_row_actions(self) -> None:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return
+        table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        table.customContextMenuRequested.connect(self._show_line_row_context_menu)
 
     def _set_status_message(self, message: str, timeout_ms: int = 8000) -> None:
         self.statusBar().showMessage(message, timeout_ms)
@@ -1612,6 +1621,126 @@ class GeneratedUiPreviewWindow(QMainWindow):
             return
         self._ensure_trailing_blank_line()
 
+    def _table_all_rows_snapshot(self) -> list[list[str]]:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return []
+        return [
+            [self._table_cell_text(row, column) for column in range(table.columnCount())]
+            for row in range(table.rowCount())
+        ]
+
+    def _apply_row_values(self, row_index: int, row_values: list[str]) -> None:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None or row_index < 0 or row_index >= table.rowCount():
+            return
+
+        normalized_values = list(row_values[: len(TABLE_HEADERS)])
+        if len(normalized_values) < len(TABLE_HEADERS):
+            normalized_values.extend([""] * (len(TABLE_HEADERS) - len(normalized_values)))
+        normalized_values[X_COLUMN_INDEX] = "x"
+
+        for column, value in enumerate(normalized_values):
+            if column == X_COLUMN_INDEX:
+                item = table.item(row_index, column)
+                if item is not None:
+                    item.setText("x")
+                continue
+
+            cell_widget = table.cellWidget(row_index, column)
+            if isinstance(cell_widget, QComboBox):
+                found_index = cell_widget.findText(value)
+                if found_index >= 0:
+                    cell_widget.setCurrentIndex(found_index)
+                else:
+                    cell_widget.setEditText(value)
+            elif isinstance(cell_widget, QLineEdit):
+                cell_widget.setText(value)
+            else:
+                item = table.item(row_index, column)
+                if item is not None:
+                    item.setText(value)
+
+    def clear_line_item_row(self, row_index: int) -> bool:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None or row_index < 0 or row_index >= table.rowCount():
+            return False
+
+        if not self._line_row_has_meaningful_data(row_index):
+            self._set_status_message(f"第 {row_index + 1} 列目前是空白列，無需清列。")
+            return False
+
+        self._suspend_auto_append_checks = True
+        try:
+            self._apply_row_values(row_index, list(BLANK_LINE_ROW_TEMPLATE))
+        finally:
+            self._suspend_auto_append_checks = False
+        self._ensure_trailing_blank_line()
+        table.setCurrentCell(row_index, 0)
+        self._set_status_message(f"已清空第 {row_index + 1} 列；此空列不會存入 DB。")
+        return True
+
+    def delete_line_item_row(self, row_index: int) -> bool:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None or row_index < 0 or row_index >= table.rowCount():
+            return False
+
+        total_rows = table.rowCount()
+        is_meaningful_row = self._line_row_has_meaningful_data(row_index)
+        is_last_row = row_index == total_rows - 1
+        if not is_meaningful_row and is_last_row and total_rows <= DEFAULT_LINE_ITEM_ROW_COUNT:
+            self._set_status_message("最後預備列會保留 1 列空白，不再往下刪。")
+            return False
+
+        rows = self._table_all_rows_snapshot()
+        del rows[row_index]
+        if not rows:
+            rows = [list(BLANK_LINE_ROW_TEMPLATE)]
+
+        while len(rows) < DEFAULT_LINE_ITEM_ROW_COUNT:
+            rows.append(list(BLANK_LINE_ROW_TEMPLATE))
+
+        meaningful_count = sum(1 for row in rows if any((row[column] or "").strip() for column in [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]))
+        if not rows or any((rows[-1][column] or "").strip() for column in [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]):
+            rows.append(list(BLANK_LINE_ROW_TEMPLATE))
+
+        self._populate_line_items_table_with_rows(rows)
+        next_row = min(row_index, max(table.rowCount() - 1, 0))
+        table.setCurrentCell(next_row, 0)
+        if is_meaningful_row:
+            self._set_status_message(f"已刪除第 {row_index + 1} 列；其後資料已往上遞補，line_no 會依有效列重排。")
+        else:
+            self._set_status_message(f"已移除第 {row_index + 1} 列空白列，目前保留 {meaningful_count} 列有效資料與 1 列預備列。")
+        return True
+
+    def _show_line_row_context_menu(self, pos: QPoint) -> None:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return
+
+        item = table.itemAt(pos)
+        row_index = item.row() if item is not None else table.rowAt(pos.y())
+        if row_index < 0:
+            return
+
+        table.setCurrentCell(row_index, 0)
+        is_meaningful_row = self._line_row_has_meaningful_data(row_index)
+        is_last_row = row_index == table.rowCount() - 1
+        can_delete = is_meaningful_row or table.rowCount() > DEFAULT_LINE_ITEM_ROW_COUNT or not is_last_row
+
+        menu = QMenu(table)
+        clear_action = QAction("清除此列", menu)
+        clear_action.setEnabled(is_meaningful_row)
+        clear_action.triggered.connect(lambda: self.clear_line_item_row(row_index))
+        menu.addAction(clear_action)
+
+        delete_action = QAction("刪除此列", menu)
+        delete_action.setEnabled(can_delete)
+        delete_action.triggered.connect(lambda: self.delete_line_item_row(row_index))
+        menu.addAction(delete_action)
+
+        menu.exec(table.viewport().mapToGlobal(pos))
+
     def _initialize_blank_work_order(self) -> None:
         self.setWindowTitle("project.ui preview (generated)")
 
@@ -1978,12 +2107,95 @@ def run_roundtrip_verification(window: GeneratedUiPreviewWindow, work_number: st
     }
 
 
+def run_row_action_verification(window: GeneratedUiPreviewWindow, work_number: str) -> dict[str, object]:
+    window._seed_demo_values()
+    worknum_widget = getattr(window.ui, "le_worknum", None)
+    if isinstance(worknum_widget, QLineEdit):
+        worknum_widget.setText(work_number)
+
+    baseline_work_order_id, baseline_line_count = window.save_work_order_with_lines()
+    baseline_table_rows = window.ui.tbl_lineItems.rowCount()
+
+    cleared = window.clear_line_item_row(1)
+    if not cleared:
+        raise AssertionError("failed to clear row 2")
+    cleared_work_order_id, cleared_line_count = window.save_work_order_with_lines()
+    if cleared_work_order_id != baseline_work_order_id:
+        raise AssertionError("work_order_id changed after clear-row save")
+    if cleared_line_count != baseline_line_count - 1:
+        raise AssertionError(f"clear-row should reduce line count by 1: {cleared_line_count} vs {baseline_line_count}")
+
+    reloaded_work_order_id, reloaded_line_count = window.load_work_order_by_number(work_number)
+    if reloaded_work_order_id != baseline_work_order_id:
+        raise AssertionError("work_order_id changed after clear-row reload")
+    if reloaded_line_count != cleared_line_count:
+        raise AssertionError("reloaded line count mismatch after clear-row flow")
+    if len(_window_line_snapshot(window)) != cleared_line_count:
+        raise AssertionError("cleared blank row was unexpectedly preserved in UI meaningful snapshot")
+
+    window._seed_demo_values()
+    if isinstance(worknum_widget, QLineEdit):
+        worknum_widget.setText(work_number)
+    window.save_work_order_with_lines()
+
+    deleted_middle = window.delete_line_item_row(1)
+    if not deleted_middle:
+        raise AssertionError("failed to delete middle valid row")
+    middle_tab_sequence = _verify_table_navigation(window)
+    middle_work_order_id, middle_line_count = window.save_work_order_with_lines()
+    if middle_work_order_id != baseline_work_order_id:
+        raise AssertionError("work_order_id changed after middle delete")
+
+    window.load_work_order_by_number(work_number)
+    ui_lines_after_middle_delete = _window_line_snapshot(window)
+    db_header, db_lines_after_middle_delete, db_meta = _db_bundle_snapshot(work_number)
+    if ui_lines_after_middle_delete != db_lines_after_middle_delete:
+        raise AssertionError("UI/DB mismatch after middle delete round-trip")
+    if db_meta["duplicated_line_nos"] != 0:
+        raise AssertionError(f"duplicate line_no after middle delete: {db_meta}")
+
+    deleted_last = window.delete_line_item_row(len(ui_lines_after_middle_delete) - 1)
+    if not deleted_last:
+        raise AssertionError("failed to delete last valid row")
+    final_tab_sequence = _verify_table_navigation(window)
+    last_delete_work_order_id, last_delete_line_count = window.save_work_order_with_lines()
+    if last_delete_work_order_id != baseline_work_order_id:
+        raise AssertionError("work_order_id changed after last-line delete")
+
+    window.load_work_order_by_number(work_number)
+    table = window.ui.tbl_lineItems
+    if window._line_row_has_meaningful_data(table.rowCount() - 1):
+        raise AssertionError("last row should remain a blank preparatory row after delete+reload")
+    final_ui_lines = _window_line_snapshot(window)
+    _final_db_header, final_db_lines, final_db_meta = _db_bundle_snapshot(work_number)
+    if final_ui_lines != final_db_lines:
+        raise AssertionError("UI/DB mismatch after last valid row delete round-trip")
+    if final_db_meta["duplicated_line_nos"] != 0:
+        raise AssertionError(f"duplicate line_no after last delete: {final_db_meta}")
+
+    return {
+        "work_order_id": baseline_work_order_id,
+        "baseline_line_count": baseline_line_count,
+        "baseline_table_rows": baseline_table_rows,
+        "after_clear_line_count": cleared_line_count,
+        "after_middle_delete_line_count": middle_line_count,
+        "after_last_delete_line_count": last_delete_line_count,
+        "reloaded_line_count": len(final_ui_lines),
+        "db_line_count": final_db_meta["line_count"],
+        "header_customer_name": db_header["customer_name"],
+        "middle_delete_tab_sequence": middle_tab_sequence,
+        "final_tab_sequence": final_tab_sequence,
+        "build_label": BUILD_LABEL_TEXT,
+    }
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--screenshot", type=Path, help="Save a screenshot to this path and exit.")
     parser.add_argument("--save-demo", action="store_true", help="Save the seeded header + line fields into work_orders/work_order_lines and print the inserted id.")
     parser.add_argument("--load-work-number", help="Load this work number after window init, print the loaded id/count, and exit.")
     parser.add_argument("--roundtrip-verify", help="Load an existing work number, edit header/lines, save, reload, verify DB/UI consistency, and exit.")
+    parser.add_argument("--row-ux-verify", help="Seed demo data into this work number, verify clear/delete row UX, save/reload, and exit.")
     return parser.parse_args(argv)
 
 
@@ -2037,6 +2249,19 @@ def main(argv: list[str] | None = None) -> int:
             app.exit(0)
 
         QTimer.singleShot(0, verify_and_quit)
+    elif args.row_ux_verify:
+        def verify_row_ux_and_quit() -> None:
+            try:
+                result = run_row_action_verification(window, args.row_ux_verify)
+            except Exception as exc:
+                print(f"ROW_UX_VERIFY_ERROR: {exc}", file=sys.stderr)
+                app.exit(1)
+                return
+
+            print(f"ROW_UX_VERIFY_OK:{result}")
+            app.exit(0)
+
+        QTimer.singleShot(0, verify_row_ux_and_quit)
     elif args.screenshot:
         target = args.screenshot.expanduser().resolve()
         target.parent.mkdir(parents=True, exist_ok=True)

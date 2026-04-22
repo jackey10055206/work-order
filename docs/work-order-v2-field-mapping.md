@@ -353,3 +353,107 @@ ROUNDTRIP_VERIFY_OK:{
 - 不受中間保留空白列影響
 - 更符合 UI 視角下的第 1 / 2 / 3 ... 筆明細
 
+## 9. middle table 清列 / 刪列 UX（2026-04-22）
+
+這輪在 `tbl_lineItems` 補上 **row-level 右鍵選單**，不新增額外常駐按鈕，盡量維持現有白底工作單畫面與 bottom 區塊不變。
+
+### 觸發方式
+
+對 middle table 任一列按右鍵，會出現兩個動作：
+
+- `清除此列`
+- `刪除此列`
+
+### 行為定義
+
+#### 1. 清列（clear row）
+
+適用情境：
+- 某一列打錯很多欄位，想快速清空重打
+- 想保留目前列位置，不做整體重排
+
+規則：
+- **有效列**：把該列所有可編輯欄位清空，`x` 欄維持固定字樣 `x`
+- **空白列 / 最後預備列**：不執行，status bar 提示「目前是空白列，無需清列」
+- 清列後該列會變成空列；存檔時依既有規則 **不會存進 DB**
+- 若清的是中間有效列，畫面上暫時可能留下空洞；真正需要重排時應使用 `刪除此列`
+
+#### 2. 刪列（delete row）
+
+適用情境：
+- 多打一列有效列，想直接移除
+- 中間某列不要了，希望後面列往上補齊
+- auto-append 後多出來的空白列，想把 table 列數縮回來
+
+規則：
+- **中間有效列**：直接移除該列，後面列整體上移；之後存檔時 `line_no` 仍會依有效列重新連續編號
+- **最後一筆有效列**：可直接刪掉；刪完後仍會自動保留 1 列空白預備列
+- **中間空白列**：允許刪除，適合把多餘空白列縮掉
+- **最後預備列**：
+  - 若目前總列數 **大於** 預設 15 列，可刪除，用來把 auto-append 造成的多餘空白列縮回來
+  - 若目前總列數已經是基準 15 列，則不再往下刪，永遠保留至少 1 列最後預備列
+
+### 為什麼分成清列 / 刪列兩個動作
+
+- `清列` 是 **快速修正輸入錯誤**，不動其他列
+- `刪列` 是 **改變明細結構**，會讓後續列往上遞補並縮減列數
+
+這樣比較符合實際使用：
+- 打錯內容 -> 清列
+- 這筆不要了 / 多打一列 -> 刪列
+
+## 10. 清列 / 刪列驗證（2026-04-22）
+
+新增自動驗證入口：
+
+```bash
+QT_QPA_PLATFORM=offscreen prototype/pyside6-demo/.venv/bin/python \
+  prototype/pyside6-demo/preview_generated_ui.py \
+  --row-ux-verify 26-04-22-ux01
+```
+
+實測輸出：
+
+```text
+ROW_UX_VERIFY_OK:{
+  'work_order_id': 12,
+  'baseline_line_count': 4,
+  'baseline_table_rows': 15,
+  'after_clear_line_count': 3,
+  'after_middle_delete_line_count': 3,
+  'after_last_delete_line_count': 2,
+  'reloaded_line_count': 2,
+  'db_line_count': 2,
+  'middle_delete_tab_sequence': [(0,0)...(0,14),(1,0)],
+  'final_tab_sequence': [(0,0)...(0,14),(1,0)],
+  'build_label': 'build: 070b61a'
+}
+```
+
+### 本輪驗證重點
+
+1. **清列後不會把空列存進 DB**
+   - 先存 4 筆 demo 明細
+   - 對第 2 列執行 `清除此列`
+   - 再存後 DB 只剩 3 筆有效明細
+
+2. **刪除中間有效列後，UI / DB 順序正確**
+   - 重新載入 baseline
+   - 對中間有效列執行 `刪除此列`
+   - 再存 / 再開後，UI meaningful rows 與 DB `ORDER BY line_no` 結果一致
+   - `duplicated_line_nos = 0`
+
+3. **刪除最後一筆有效列後仍保留空白預備列**
+   - 刪除最後一筆有效明細後
+   - reload 後 table 最後一列仍是空白列，不會整張表被刪光或失去預備列
+
+4. **Tab 順序沒有壞**
+   - middle table 驗證序列仍為：
+     `(0,0) -> (0,1) -> (0,3) -> (0,4) -> (0,5) -> (0,6) -> (0,7) -> (0,8) -> (0,9) -> (0,10) -> (0,12) -> (0,14) -> (1,0)`
+   - `x` 欄仍會跳過
+   - locked 欄（才數 / 計價）仍不進 tab chain
+
+5. **auto-append / save-open round-trip 沒壞**
+   - 既有 `--roundtrip-verify 26-03-29-01` 仍可通過
+   - 代表新增 row UX 後，最後一列有效時自動補新列、存檔只存有效列、開啟再載回、build label 保留等行為都仍正常
+
