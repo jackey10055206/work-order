@@ -167,3 +167,79 @@
 - `cbm_unit_price`
 - `line_total`
 - `extra_material_total`
+
+## 6. 實測驗證（2026-04-22）
+
+### 執行方式
+
+使用 preview 內建 demo 資料直接走既有 `btn_save` 同路徑的存檔流程：
+
+```bash
+QT_QPA_PLATFORM=offscreen prototype/pyside6-demo/.venv/bin/python \
+  prototype/pyside6-demo/preview_generated_ui.py --save-demo
+```
+
+實際輸出：
+
+```text
+SAVE_DEMO_OK:3:4
+```
+
+代表：
+- `work_orders.id = 3` 成功 upsert
+- 同次流程成功寫入 `work_order_lines` 共 4 筆
+
+### DB 查詢驗證
+
+```sql
+SELECT id, work_number, client_id, company_phone, contact_name, work_time,
+       cleanup_time, work_address, status
+FROM work_orders
+WHERE id = 3;
+
+SELECT work_order_id, line_no, production_item_id, width_mm, height_mm, quantity,
+       material_id, lamination_id, board_type_id, board_thickness_id,
+       extra_material_id, extra_material_quantity, cbm, cbm_unit_price,
+       line_total, extra_material_total
+FROM work_order_lines
+WHERE work_order_id = 3
+ORDER BY line_no;
+
+SELECT COUNT(*) AS blank_rows_saved
+FROM work_order_lines
+WHERE work_order_id = 3
+  AND production_item_id IS NULL
+  AND width_mm IS NULL
+  AND height_mm IS NULL
+  AND quantity IS NULL
+  AND material_id IS NULL
+  AND lamination_id IS NULL
+  AND board_type_id IS NULL
+  AND board_thickness_id IS NULL
+  AND extra_material_id IS NULL
+  AND extra_material_quantity IS NULL
+  AND cbm IS NULL
+  AND cbm_unit_price IS NULL
+  AND line_total IS NULL
+  AND extra_material_total IS NULL;
+```
+
+實測結果重點：
+- header 成功落到 `work_orders`
+- lines 成功落到 `work_order_lines`
+- `extra_material_total` 四筆分別為 `300.00 / 0.00 / 480.00 / 180.00`
+- `blank_rows_saved = 0`，代表空白列沒有被誤存
+
+### UI / build 標記驗證
+
+另以 offscreen screenshot 驗證 preview 可正常啟動且保留既有白底 UI：
+
+```bash
+QT_QPA_PLATFORM=offscreen prototype/pyside6-demo/.venv/bin/python \
+  prototype/pyside6-demo/preview_generated_ui.py \
+  --screenshot prototype/pyside6-demo/out/verify-build-label.png
+```
+
+build label 來自：
+- `git rev-parse --short HEAD`
+- 畫面左下顯示格式：`build: <short-hash>`
