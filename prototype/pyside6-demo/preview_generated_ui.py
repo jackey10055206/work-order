@@ -576,7 +576,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self.build_label: QLabel | None = None
         self._configure_customer_name_combo()
         self._tune_generated_layout()
-        self._seed_demo_values()
+        self._initialize_blank_work_order()
         self._configure_save_flow()
         self._configure_focus_chain()
 
@@ -1325,8 +1325,73 @@ class GeneratedUiPreviewWindow(QMainWindow):
             self.table_tab_navigator.register_widget(widget, row, column)
         return widget
 
-    def _seed_demo_values(self) -> None:
+    def _initialize_blank_work_order(self) -> None:
         self.setWindowTitle("project.ui preview (generated)")
+
+        self._last_auto_filled_phone = ""
+        self._last_auto_filled_address = ""
+
+        customer_combo = getattr(self.ui, "cb_customerName", None)
+        if isinstance(customer_combo, QComboBox):
+            customer_combo.setCurrentIndex(-1)
+            customer_combo.clearEditText()
+
+        for attr in (
+            "le_worknum",
+            "le_contactName",
+            "le_phone",
+            "le_caseName",
+            "le_startTime",
+            "le_endTime",
+            "lle_address",
+            "le_productionAmount",
+            "le_taxAmount",
+            "le_totalAmount",
+        ):
+            widget = getattr(self.ui, attr, None)
+            if widget is not None:
+                widget.clear()
+
+        if hasattr(self.ui, "te_remark"):
+            self.ui.te_remark.clear()
+
+        table = getattr(self.ui, "tbl_lineItems", None)
+        row_count = table.rowCount() if table is not None else 0
+        self._populate_line_items_table_with_rows([
+            ["", "", "x", "", "", "", "", "", "", "", "", "", "", "", ""]
+            for _ in range(row_count)
+        ])
+
+    def _populate_line_items_table_with_rows(self, rows: list[list[str]]) -> None:
+        if not hasattr(self.ui, "tbl_lineItems"):
+            return
+
+        table = self.ui.tbl_lineItems
+        table.clearContents()
+        self.table_tab_navigator = TableCellTabNavigator(table, self)
+        for row_idx in range(table.rowCount()):
+            row = rows[row_idx] if row_idx < len(rows) else ["", "", "x", "", "", "", "", "", "", "", "", "", "", "", ""]
+            for col_idx, value in enumerate(row):
+                if col_idx in COMBO_COLUMN_OPTIONS:
+                    table.setCellWidget(
+                        row_idx,
+                        col_idx,
+                        self._register_table_cell_widget(self._make_combo_box(col_idx, value), row_idx, col_idx),
+                    )
+                    table.setItem(row_idx, col_idx, self._make_widget_backing_item(col_idx))
+                elif col_idx in TABLE_SKIP_FOCUS_COLUMN_INDEXES:
+                    table.setItem(row_idx, col_idx, self._make_table_item(value, col_idx))
+                else:
+                    table.setCellWidget(
+                        row_idx,
+                        col_idx,
+                        self._register_table_cell_widget(self._make_line_edit(col_idx, value), row_idx, col_idx),
+                    )
+                    table.setItem(row_idx, col_idx, self._make_widget_backing_item(col_idx))
+            table.setRowHeight(row_idx, 36)
+
+    def _seed_demo_values(self) -> None:
+        self._initialize_blank_work_order()
 
         customer_combo = getattr(self.ui, "cb_customerName", None)
         if isinstance(customer_combo, QComboBox):
@@ -1372,29 +1437,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             [option_at(0, 2, "立牌製作"), "90", "x", "180", "6", option_at(5, 2, "PP 相紙"), option_at(6, 2, "冷裱"), option_at(7, 2, "豪卡板"), option_at(8, 2, "10mm"), option_at(9, 2, "腳架孔位"), "6", "67.5", "950", "5700", "480"],
             [option_at(0, 3, "桌裙布置"), "240", "x", "75", "1", option_at(5, 3, "單透布"), option_at(6, 3, "包邊處理"), option_at(7, 3, "珍珠板"), option_at(8, 3, "2mm"), option_at(9, 3, "魔鬼氈"), "1", "12.5", "1800", "1800", "180"],
         ]
-        if hasattr(self.ui, "tbl_lineItems"):
-            table = self.ui.tbl_lineItems
-            table.clearContents()
-            for row_idx in range(table.rowCount()):
-                row = sample_rows[row_idx] if row_idx < len(sample_rows) else ["", "", "x", "", "", "", "", "", "", "", "", "", "", "", ""]
-                for col_idx, value in enumerate(row):
-                    if col_idx in COMBO_COLUMN_OPTIONS:
-                        table.setCellWidget(
-                            row_idx,
-                            col_idx,
-                            self._register_table_cell_widget(self._make_combo_box(col_idx, value), row_idx, col_idx),
-                        )
-                        table.setItem(row_idx, col_idx, self._make_widget_backing_item(col_idx))
-                    elif col_idx in TABLE_SKIP_FOCUS_COLUMN_INDEXES:
-                        table.setItem(row_idx, col_idx, self._make_table_item(value, col_idx))
-                    else:
-                        table.setCellWidget(
-                            row_idx,
-                            col_idx,
-                            self._register_table_cell_widget(self._make_line_edit(col_idx, value), row_idx, col_idx),
-                        )
-                        table.setItem(row_idx, col_idx, self._make_widget_backing_item(col_idx))
-                table.setRowHeight(row_idx, 36)
+        self._populate_line_items_table_with_rows(sample_rows)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -1414,6 +1457,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.save_demo:
         def save_demo_and_quit() -> None:
+            window._seed_demo_values()
             try:
                 work_order_id, line_count = window.save_work_order_with_lines()
             except Exception as exc:
