@@ -727,7 +727,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
             line_payloads.append(
                 {
-                    "line_no": row_number,
+                    "line_no": len(line_payloads) + 1,
                     "production_item_id": self._lookup_option_item_id("production_item", production_item, row_number, "製作項目"),
                     "width_mm": parse_decimal_or_none(width_mm),
                     "height_mm": parse_decimal_or_none(height_mm),
@@ -1716,11 +1716,274 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._populate_line_items_table_with_rows(sample_rows)
 
 
+def _window_header_snapshot(window: GeneratedUiPreviewWindow) -> dict[str, str]:
+    customer_combo = getattr(window.ui, "cb_customerName", None)
+    return {
+        "work_number": normalize_line_edit_value(getattr(window.ui, "le_worknum", None)) or "",
+        "case_name": normalize_line_edit_value(getattr(window.ui, "le_caseName", None)) or "",
+        "customer_name": customer_combo.currentText().strip() if isinstance(customer_combo, QComboBox) else "",
+        "phone": normalize_line_edit_value(getattr(window.ui, "le_phone", None)) or "",
+        "contact_name": normalize_line_edit_value(getattr(window.ui, "le_contactName", None)) or "",
+        "start_time": normalize_line_edit_value(getattr(window.ui, "le_startTime", None)) or "",
+        "end_time": normalize_line_edit_value(getattr(window.ui, "le_endTime", None)) or "",
+        "address": normalize_line_edit_value(getattr(window.ui, "lle_address", None)) or "",
+        "remark": normalize_text_edit_value(getattr(window.ui, "te_remark", None)) or "",
+    }
+
+
+def _window_line_snapshot(window: GeneratedUiPreviewWindow) -> list[list[str]]:
+    table = getattr(window.ui, "tbl_lineItems", None)
+    if table is None:
+        return []
+
+    rows: list[list[str]] = []
+    for row in range(table.rowCount()):
+        if not window._line_row_has_meaningful_data(row):
+            continue
+        rows.append([window._table_cell_text(row, column) for column in range(table.columnCount())])
+    return rows
+
+
+def _db_bundle_snapshot(work_number: str) -> tuple[dict[str, str], list[list[str]], dict[str, int]]:
+    with pymysql.connect(**_connect_kwargs()) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT wo.id, wo.work_number, wo.case_name, c.short_name AS customer_name,
+                       wo.company_phone, wo.contact_name, wo.work_time, wo.cleanup_time,
+                       wo.work_address, wo.remark
+                FROM work_orders wo
+                LEFT JOIN clients c ON c.id = wo.client_id
+                WHERE wo.work_number = %s
+                """,
+                (work_number,),
+            )
+            header_rows = cur.fetchall()
+            if len(header_rows) != 1:
+                raise AssertionError(f"expected exactly 1 work_orders row for {work_number}, got {len(header_rows)}")
+            header_row = header_rows[0]
+
+            cur.execute(
+                """
+                SELECT wol.line_no,
+                       pi.item_name AS production_item_name,
+                       wol.width_mm,
+                       wol.height_mm,
+                       wol.quantity,
+                       mi.item_name AS material_name,
+                       li.item_name AS lamination_name,
+                       bti.item_name AS board_type_name,
+                       bthi.item_name AS board_thickness_name,
+                       emi.item_name AS extra_material_name,
+                       wol.extra_material_quantity,
+                       wol.cbm,
+                       wol.cbm_unit_price,
+                       wol.line_total,
+                       wol.extra_material_total
+                FROM work_order_lines wol
+                LEFT JOIN option_items pi ON pi.id = wol.production_item_id
+                LEFT JOIN option_items mi ON mi.id = wol.material_id
+                LEFT JOIN option_items li ON li.id = wol.lamination_id
+                LEFT JOIN option_items bti ON bti.id = wol.board_type_id
+                LEFT JOIN option_items bthi ON bthi.id = wol.board_thickness_id
+                LEFT JOIN option_items emi ON emi.id = wol.extra_material_id
+                WHERE wol.work_order_id = %s
+                ORDER BY wol.line_no, wol.id
+                """,
+                (header_row["id"],),
+            )
+            line_rows = cur.fetchall()
+            cur.execute("SELECT COUNT(*) AS c FROM work_orders WHERE work_number = %s", (work_number,))
+            header_count = int(cur.fetchone()["c"])
+            cur.execute(
+                "SELECT COUNT(*) AS c FROM (SELECT line_no, COUNT(*) AS dup_count FROM work_order_lines WHERE work_order_id = %s GROUP BY line_no HAVING COUNT(*) > 1) AS dup",
+                (header_row["id"],),
+            )
+            duplicated_line_nos = int(cur.fetchone()["c"])
+
+    header_snapshot = {
+        "work_number": str(header_row.get("work_number") or ""),
+        "case_name": str(header_row.get("case_name") or ""),
+        "customer_name": str(header_row.get("customer_name") or ""),
+        "phone": str(header_row.get("company_phone") or ""),
+        "contact_name": str(header_row.get("contact_name") or ""),
+        "start_time": str(header_row.get("work_time") or ""),
+        "end_time": str(header_row.get("cleanup_time") or ""),
+        "address": str(header_row.get("work_address") or ""),
+        "remark": str(header_row.get("remark") or ""),
+    }
+    line_snapshot = [
+        [
+            str(line_row.get("production_item_name") or ""),
+            format_decimal_for_ui(line_row.get("width_mm")),
+            "x",
+            format_decimal_for_ui(line_row.get("height_mm")),
+            format_decimal_for_ui(line_row.get("quantity")),
+            str(line_row.get("material_name") or ""),
+            str(line_row.get("lamination_name") or ""),
+            str(line_row.get("board_type_name") or ""),
+            str(line_row.get("board_thickness_name") or ""),
+            str(line_row.get("extra_material_name") or ""),
+            format_decimal_for_ui(line_row.get("extra_material_quantity")),
+            format_decimal_for_ui(line_row.get("cbm")),
+            format_decimal_for_ui(line_row.get("cbm_unit_price")),
+            format_decimal_for_ui(line_row.get("line_total")),
+            format_decimal_for_ui(line_row.get("extra_material_total")),
+        ]
+        for line_row in line_rows
+    ]
+    meta = {
+        "work_order_id": int(header_row["id"]),
+        "header_count": header_count,
+        "line_count": len(line_rows),
+        "duplicated_line_nos": duplicated_line_nos,
+    }
+    return header_snapshot, line_snapshot, meta
+
+
+def _verify_table_navigation(window: GeneratedUiPreviewWindow) -> list[tuple[int, int]]:
+    navigator = window.table_tab_navigator
+    table = getattr(window.ui, "tbl_lineItems", None)
+    if navigator is None or table is None:
+        raise AssertionError("table navigator is not ready")
+
+    sequence: list[tuple[int, int]] = []
+    cell = navigator._find_next_editable_cell(0, -1, forward=True)
+    for _ in range(len(navigator.column_order) * 2):
+        if cell is None:
+            break
+        sequence.append(cell)
+        cell = navigator._find_next_editable_cell(cell[0], cell[1], forward=True)
+
+    expected_first_row = [(0, column) for column in navigator.column_order]
+    if sequence[: len(expected_first_row)] != expected_first_row:
+        raise AssertionError(f"unexpected first-row tab order: {sequence[:len(expected_first_row)]}")
+    if len(sequence) <= len(expected_first_row) or sequence[len(expected_first_row)] != (1, navigator.column_order[0]):
+        raise AssertionError(f"unexpected row wrap after tab order: {sequence}")
+    return sequence[: len(expected_first_row) + 1]
+
+
+def run_roundtrip_verification(window: GeneratedUiPreviewWindow, work_number: str) -> dict[str, object]:
+    work_order_id, original_line_count = window.load_work_order_by_number(work_number)
+
+    case_widget = getattr(window.ui, "le_caseName", None)
+    remark_widget = getattr(window.ui, "te_remark", None)
+    contact_widget = getattr(window.ui, "le_contactName", None)
+    if isinstance(case_widget, QLineEdit):
+        case_widget.setText(f"{case_widget.text().strip()}｜RT".strip("｜"))
+    if isinstance(contact_widget, QLineEdit):
+        contact_widget.setText("陳小美")
+    if hasattr(remark_widget, "setPlainText"):
+        remark_widget.setPlainText("round-trip verify / edit-save-open / no duplicate lines")
+
+    table = window.ui.tbl_lineItems
+
+    def set_row_values(row_index: int, row_values: list[str]) -> None:
+        for column, value in enumerate(row_values):
+            if column == X_COLUMN_INDEX:
+                continue
+            cell_widget = table.cellWidget(row_index, column)
+            if isinstance(cell_widget, QComboBox):
+                found_index = cell_widget.findText(value)
+                if found_index >= 0:
+                    cell_widget.setCurrentIndex(found_index)
+                else:
+                    cell_widget.setEditText(value)
+            elif isinstance(cell_widget, QLineEdit):
+                cell_widget.setText(value)
+            else:
+                item = table.item(row_index, column)
+                if item is not None:
+                    item.setText(value)
+
+    first_row_values = [
+        window._table_cell_text(0, 0) or (window.combo_column_options.get(0) or ["大圖輸出"])[0],
+        "777",
+        "x",
+        "333",
+        "9",
+        window._table_cell_text(0, 5) or (window.combo_column_options.get(5) or [""])[0],
+        window._table_cell_text(0, 6) or (window.combo_column_options.get(6) or [""])[0],
+        window._table_cell_text(0, 7) or (window.combo_column_options.get(7) or [""])[0],
+        window._table_cell_text(0, 8) or (window.combo_column_options.get(8) or [""])[0],
+        window._table_cell_text(0, 9) or (window.combo_column_options.get(9) or [""])[0],
+        "3",
+        "55.5",
+        "1200",
+        "10800",
+        "240",
+    ]
+    set_row_values(0, first_row_values)
+
+    before_rows = table.rowCount()
+    last_row = table.rowCount() - 1
+    new_row_values = [
+        (window.combo_column_options.get(0) or ["大圖輸出"])[0],
+        "111",
+        "x",
+        "222",
+        "1",
+        (window.combo_column_options.get(5) or [""])[0],
+        (window.combo_column_options.get(6) or [""])[0],
+        (window.combo_column_options.get(7) or [""])[0],
+        (window.combo_column_options.get(8) or [""])[0],
+        (window.combo_column_options.get(9) or [""])[0],
+        "1",
+        "8.5",
+        "700",
+        "700",
+        "50",
+    ]
+    set_row_values(last_row, new_row_values)
+    app = QApplication.instance()
+    if app is not None:
+        app.processEvents()
+    after_rows = table.rowCount()
+    if after_rows != before_rows + 1:
+        raise AssertionError(f"auto append failed: before={before_rows}, after={after_rows}")
+
+    tab_sequence = _verify_table_navigation(window)
+    saved_work_order_id, saved_line_count = window.save_work_order_with_lines()
+    if saved_work_order_id != work_order_id:
+        raise AssertionError(f"work_order_id changed unexpectedly: {work_order_id} -> {saved_work_order_id}")
+
+    reloaded_work_order_id, reloaded_line_count = window.load_work_order_by_number(work_number)
+    ui_header = _window_header_snapshot(window)
+    ui_lines = _window_line_snapshot(window)
+    db_header, db_lines, db_meta = _db_bundle_snapshot(work_number)
+
+    if reloaded_work_order_id != work_order_id:
+        raise AssertionError(f"reload returned different work_order_id: {work_order_id} vs {reloaded_work_order_id}")
+    if ui_header != db_header:
+        raise AssertionError(f"UI/DB header mismatch: ui={ui_header} db={db_header}")
+    if ui_lines != db_lines:
+        raise AssertionError(f"UI/DB lines mismatch: ui={ui_lines} db={db_lines}")
+    if db_meta["header_count"] != 1:
+        raise AssertionError(f"duplicate work_orders header detected: {db_meta}")
+    if db_meta["duplicated_line_nos"] != 0:
+        raise AssertionError(f"duplicate line_no detected: {db_meta}")
+
+    return {
+        "work_order_id": work_order_id,
+        "original_line_count": original_line_count,
+        "saved_line_count": saved_line_count,
+        "reloaded_line_count": reloaded_line_count,
+        "db_line_count": db_meta["line_count"],
+        "header_count": db_meta["header_count"],
+        "duplicated_line_nos": db_meta["duplicated_line_nos"],
+        "auto_append_rows_before": before_rows,
+        "auto_append_rows_after": after_rows,
+        "tab_sequence": tab_sequence,
+        "build_label": BUILD_LABEL_TEXT,
+    }
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--screenshot", type=Path, help="Save a screenshot to this path and exit.")
     parser.add_argument("--save-demo", action="store_true", help="Save the seeded header + line fields into work_orders/work_order_lines and print the inserted id.")
     parser.add_argument("--load-work-number", help="Load this work number after window init, print the loaded id/count, and exit.")
+    parser.add_argument("--roundtrip-verify", help="Load an existing work number, edit header/lines, save, reload, verify DB/UI consistency, and exit.")
     return parser.parse_args(argv)
 
 
@@ -1755,26 +2018,25 @@ def main(argv: list[str] | None = None) -> int:
                 app.exit(1)
                 return
 
-            header_values = {
-                "work_number": normalize_line_edit_value(getattr(window.ui, "le_worknum", None)) or "",
-                "case_name": normalize_line_edit_value(getattr(window.ui, "le_caseName", None)) or "",
-                "customer_name": getattr(window.ui, "cb_customerName", None).currentText().strip() if getattr(window.ui, "cb_customerName", None) is not None else "",
-                "phone": normalize_line_edit_value(getattr(window.ui, "le_phone", None)) or "",
-                "contact_name": normalize_line_edit_value(getattr(window.ui, "le_contactName", None)) or "",
-                "start_time": normalize_line_edit_value(getattr(window.ui, "le_startTime", None)) or "",
-                "end_time": normalize_line_edit_value(getattr(window.ui, "le_endTime", None)) or "",
-                "address": normalize_line_edit_value(getattr(window.ui, "lle_address", None)) or "",
-                "remark": normalize_text_edit_value(getattr(window.ui, "te_remark", None)) or "",
-            }
-            table = getattr(window.ui, "tbl_lineItems", None)
-            first_rows = []
-            if table is not None:
-                for row in range(min(3, table.rowCount())):
-                    first_rows.append([window._table_cell_text(row, column) for column in range(table.columnCount())])
+            header_values = _window_header_snapshot(window)
+            first_rows = _window_line_snapshot(window)[:3]
             print(f"LOAD_WORK_ORDER_OK:{work_order_id}:{line_count}:{header_values}:{first_rows}")
             app.exit(0)
 
         QTimer.singleShot(0, load_and_quit)
+    elif args.roundtrip_verify:
+        def verify_and_quit() -> None:
+            try:
+                result = run_roundtrip_verification(window, args.roundtrip_verify)
+            except Exception as exc:
+                print(f"ROUNDTRIP_VERIFY_ERROR: {exc}", file=sys.stderr)
+                app.exit(1)
+                return
+
+            print(f"ROUNDTRIP_VERIFY_OK:{result}")
+            app.exit(0)
+
+        QTimer.singleShot(0, verify_and_quit)
     elif args.screenshot:
         target = args.screenshot.expanduser().resolve()
         target.parent.mkdir(parents=True, exist_ok=True)

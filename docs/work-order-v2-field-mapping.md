@@ -294,3 +294,62 @@ build label 來自：
 - middle table 目前會保留至少 15 列；若 DB 明細超過 15 列，會自動把 rowCount 擴到足夠載完
 - `le_productionAmount` / `le_taxAmount` / `le_totalAmount` 目前仍不是 v2 header 欄位，開啟時會清空，避免殘留上一筆畫面的值
 
+## 8. Round-trip 驗證（2026-04-22）
+
+本輪補上「開啟既有工單 -> 修改 header/lines -> 再儲存 -> 再開啟」的自動驗證入口：
+
+```bash
+QT_QPA_PLATFORM=offscreen prototype/pyside6-demo/.venv/bin/python \
+  prototype/pyside6-demo/preview_generated_ui.py \
+  --roundtrip-verify 26-03-29-01
+```
+
+實際驗證流程：
+1. 以 `work_number=26-03-29-01` 載入既有工單
+2. 修改 header 至少 3 個欄位：`case_name` / `contact_name` / `remark`
+3. 修改第 1 列既有明細數值
+4. 在最後一列空白列輸入新明細，確認 auto-append 會再補一列新的空白尾列
+5. 再次儲存
+6. 重新載入同一張工單
+7. 直接查 DB，比對 `work_orders` 與 `work_order_lines` 是否和 UI reload 後一致
+
+驗證結果（實測輸出摘要）：
+
+```text
+ROUNDTRIP_VERIFY_OK:{
+  'work_order_id': 3,
+  'original_line_count': 4,
+  'saved_line_count': 5,
+  'reloaded_line_count': 5,
+  'db_line_count': 5,
+  'header_count': 1,
+  'duplicated_line_nos': 0,
+  'auto_append_rows_before': 15,
+  'auto_append_rows_after': 16,
+  'tab_sequence': [(0, 0), (0, 1), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 9), (0, 10), (0, 12), (0, 14), (1, 0)],
+  'build_label': 'build: <short-hash>'
+}
+```
+
+### DB 無重複驗證重點
+
+- `work_orders` 仍只會有 **1 筆** `work_number=26-03-29-01`
+- `work_order_lines` 會以同一個 `work_order_id` 整批 replace，不會把舊 rows append 回去
+- `duplicated_line_nos = 0`，代表沒有同工單內重複的 `line_no`
+- reload 後 UI snapshot 與 DB snapshot 完全一致
+
+### 這輪順手補的穩定性修正
+
+`_collect_line_payloads()` 原本直接用 `row_index + 1` 當 `line_no`。
+
+這在「載回既有 4 筆 -> 畫面保留 15 列空白 -> 使用者在最後空白列新增第 5 筆」時，可能把新列存成 `line_no=16`；雖然不一定會 duplicate，但 round-trip 後 `line_no` 會不穩定。
+
+現在改成：
+- 只對「有意義資料列」重新連續編號
+- `line_no = len(valid_lines) + 1`
+
+效果：
+- round-trip 後 line ordering 穩定
+- 不受中間保留空白列影響
+- 更符合 UI 視角下的第 1 / 2 / 3 ... 筆明細
+
