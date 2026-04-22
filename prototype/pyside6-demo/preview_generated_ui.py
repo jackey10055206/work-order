@@ -62,6 +62,8 @@ LENGTH_COLUMN_INDEX = 3
 TABLE_LOCKED_COLUMN_INDEXES = {11, 13}
 MIDDLE_TAB_COLUMN_ORDER = [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14]
 TABLE_SKIP_FOCUS_COLUMN_INDEXES = {X_COLUMN_INDEX, *TABLE_LOCKED_COLUMN_INDEXES}
+DEFAULT_LINE_ITEM_ROW_COUNT = 15
+BLANK_LINE_ROW_TEMPLATE = ["", "", "x", "", "", "", "", "", "", "", "", "", "", "", ""]
 NUMERIC_COLUMN_INDEXES = {1, 3, 4, 10, 11, 12, 13, 14}
 SELECT_LIKE_COLUMN_INDEXES = {0, 5, 6, 7, 8, 9}
 SUMMARY_LOCKED_FIELD_NAMES = {"le_productionAmount", "le_taxAmount", "le_totalAmount"}
@@ -584,6 +586,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.build_label: QLabel | None = None
+        self._suspend_auto_append_checks = False
         self._configure_customer_name_combo()
         self._tune_generated_layout()
         self._initialize_blank_work_order()
@@ -881,10 +884,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
             return str(value).strip()
 
     def _build_table_rows_from_line_payloads(self, line_rows: list[dict[str, object]]) -> list[list[str]]:
-        table = getattr(self.ui, "tbl_lineItems", None)
-        row_count = table.rowCount() if table is not None else max(len(line_rows), 1)
+        target_row_count = max(DEFAULT_LINE_ITEM_ROW_COUNT, len(line_rows) + 1)
         built_rows: list[list[str]] = []
-        for line_row in line_rows[:row_count]:
+        for line_row in line_rows:
             built_rows.append(
                 [
                     self._coerce_option_item_name("production_item", line_row.get("production_item_name")),
@@ -905,8 +907,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 ]
             )
 
-        while len(built_rows) < row_count:
-            built_rows.append(["", "", "x", "", "", "", "", "", "", "", "", "", "", "", ""])
+        while len(built_rows) < target_row_count:
+            built_rows.append(list(BLANK_LINE_ROW_TEMPLATE))
         return built_rows
 
     def load_work_order_by_number(self, work_number: str) -> tuple[int, int]:
@@ -1407,7 +1409,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         table.setHorizontalHeader(BandHeaderView(Qt.Orientation.Horizontal, table))
         table.setHorizontalHeaderLabels(TABLE_HEADERS)
         self._apply_line_items_header_colors(table)
-        table.setRowCount(15)
+        table.setRowCount(DEFAULT_LINE_ITEM_ROW_COUNT)
         table.setAlternatingRowColors(True)
         table.setWordWrap(False)
         table.setShowGrid(True)
@@ -1548,6 +1550,68 @@ class GeneratedUiPreviewWindow(QMainWindow):
             self.table_tab_navigator.register_widget(widget, row, column)
         return widget
 
+    def _populate_single_line_item_row(self, row_idx: int, row: list[str] | None = None) -> None:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return
+
+        row_values = list(row) if row is not None else list(BLANK_LINE_ROW_TEMPLATE)
+        if len(row_values) < len(TABLE_HEADERS):
+            row_values.extend([""] * (len(TABLE_HEADERS) - len(row_values)))
+        if len(row_values) > len(TABLE_HEADERS):
+            row_values = row_values[: len(TABLE_HEADERS)]
+        row_values[X_COLUMN_INDEX] = "x"
+
+        for col_idx, value in enumerate(row_values):
+            if col_idx in COMBO_COLUMN_OPTIONS:
+                widget = self._make_combo_box(col_idx, value)
+                self._connect_auto_append_signal(widget)
+                table.setCellWidget(row_idx, col_idx, self._register_table_cell_widget(widget, row_idx, col_idx))
+                table.setItem(row_idx, col_idx, self._make_widget_backing_item(col_idx))
+            elif col_idx in TABLE_SKIP_FOCUS_COLUMN_INDEXES:
+                table.setItem(row_idx, col_idx, self._make_table_item(value, col_idx))
+            else:
+                widget = self._make_line_edit(col_idx, value)
+                self._connect_auto_append_signal(widget)
+                table.setCellWidget(row_idx, col_idx, self._register_table_cell_widget(widget, row_idx, col_idx))
+                table.setItem(row_idx, col_idx, self._make_widget_backing_item(col_idx))
+        table.setRowHeight(row_idx, 36)
+
+    def _connect_auto_append_signal(self, widget: QWidget) -> None:
+        if isinstance(widget, QComboBox):
+            widget.currentTextChanged.connect(self._handle_line_item_widget_changed)
+            line_edit = widget.lineEdit()
+            if line_edit is not None:
+                line_edit.textChanged.connect(self._handle_line_item_widget_changed)
+        elif isinstance(widget, QLineEdit):
+            widget.textChanged.connect(self._handle_line_item_widget_changed)
+
+    def _append_blank_line_item_row(self) -> int:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return -1
+
+        row_idx = table.rowCount()
+        table.insertRow(row_idx)
+        self._populate_single_line_item_row(row_idx, list(BLANK_LINE_ROW_TEMPLATE))
+        return row_idx
+
+    def _ensure_trailing_blank_line(self) -> bool:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None or table.rowCount() <= 0:
+            return False
+
+        last_row = table.rowCount() - 1
+        if self._line_row_has_meaningful_data(last_row):
+            self._append_blank_line_item_row()
+            return True
+        return False
+
+    def _handle_line_item_widget_changed(self, _value: str) -> None:
+        if self._suspend_auto_append_checks:
+            return
+        self._ensure_trailing_blank_line()
+
     def _initialize_blank_work_order(self) -> None:
         self.setWindowTitle("project.ui preview (generated)")
 
@@ -1580,40 +1644,27 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         table = getattr(self.ui, "tbl_lineItems", None)
         row_count = table.rowCount() if table is not None else 0
-        self._populate_line_items_table_with_rows([
-            ["", "", "x", "", "", "", "", "", "", "", "", "", "", "", ""]
-            for _ in range(row_count)
-        ])
+        self._populate_line_items_table_with_rows([list(BLANK_LINE_ROW_TEMPLATE) for _ in range(row_count)])
 
     def _populate_line_items_table_with_rows(self, rows: list[list[str]]) -> None:
         if not hasattr(self.ui, "tbl_lineItems"):
             return
 
         table = self.ui.tbl_lineItems
-        row_count = max(table.rowCount(), len(rows))
-        table.setRowCount(row_count)
+        desired_rows = max(DEFAULT_LINE_ITEM_ROW_COUNT, len(rows))
+        if desired_rows <= 0:
+            desired_rows = DEFAULT_LINE_ITEM_ROW_COUNT
+        table.setRowCount(desired_rows)
         table.clearContents()
         self.table_tab_navigator = TableCellTabNavigator(table, self)
-        for row_idx in range(table.rowCount()):
-            row = rows[row_idx] if row_idx < len(rows) else ["", "", "x", "", "", "", "", "", "", "", "", "", "", "", ""]
-            for col_idx, value in enumerate(row):
-                if col_idx in COMBO_COLUMN_OPTIONS:
-                    table.setCellWidget(
-                        row_idx,
-                        col_idx,
-                        self._register_table_cell_widget(self._make_combo_box(col_idx, value), row_idx, col_idx),
-                    )
-                    table.setItem(row_idx, col_idx, self._make_widget_backing_item(col_idx))
-                elif col_idx in TABLE_SKIP_FOCUS_COLUMN_INDEXES:
-                    table.setItem(row_idx, col_idx, self._make_table_item(value, col_idx))
-                else:
-                    table.setCellWidget(
-                        row_idx,
-                        col_idx,
-                        self._register_table_cell_widget(self._make_line_edit(col_idx, value), row_idx, col_idx),
-                    )
-                    table.setItem(row_idx, col_idx, self._make_widget_backing_item(col_idx))
-            table.setRowHeight(row_idx, 36)
+        self._suspend_auto_append_checks = True
+        try:
+            for row_idx in range(table.rowCount()):
+                row = rows[row_idx] if row_idx < len(rows) else list(BLANK_LINE_ROW_TEMPLATE)
+                self._populate_single_line_item_row(row_idx, row)
+        finally:
+            self._suspend_auto_append_checks = False
+        self._ensure_trailing_blank_line()
 
     def _seed_demo_values(self) -> None:
         self._initialize_blank_work_order()
