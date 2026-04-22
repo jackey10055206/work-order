@@ -509,6 +509,15 @@ def parse_int_or_none(raw_value: str | None) -> int | None:
     return int(decimal_value)
 
 
+def format_decimal_for_ui(value: object) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, Decimal):
+        normalized = format(value.normalize(), "f")
+        return "0" if normalized == "-0" else normalized
+    return str(value)
+
+
 def load_option_item_ids_from_v2() -> dict[str, dict[str, int]]:
     lookup = {group: {} for group in COMBO_COLUMN_GROUPS.values()}
     if pymysql is None:
@@ -564,6 +573,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         super().__init__()
         self.combo_column_options = load_combo_options_from_v2()
         self.option_item_ids_by_group = load_option_item_ids_from_v2()
+        self.option_item_names_by_group_and_id = self._invert_option_item_lookup(self.option_item_ids_by_group)
         self.clients = load_clients_from_v2()
         self.client_rows_by_short_name = {
             str(row["short_name"]): row for row in self.clients if row.get("short_name")
@@ -578,6 +588,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._tune_generated_layout()
         self._initialize_blank_work_order()
         self._configure_save_flow()
+        self._configure_open_flow()
         self._configure_focus_chain()
 
     def _configure_customer_name_combo(self) -> None:
@@ -605,10 +616,22 @@ class GeneratedUiPreviewWindow(QMainWindow):
             return
         self._apply_customer_contact_defaults(row)
 
+    @staticmethod
+    def _invert_option_item_lookup(option_item_ids_by_group: dict[str, dict[str, int]]) -> dict[str, dict[int, str]]:
+        return {
+            group: {item_id: item_name for item_name, item_id in items.items()}
+            for group, items in option_item_ids_by_group.items()
+        }
+
     def _configure_save_flow(self) -> None:
         save_button = getattr(self.ui, "btn_save", None)
         if save_button is not None:
             save_button.clicked.connect(self._handle_save_clicked)
+
+    def _configure_open_flow(self) -> None:
+        open_button = getattr(self.ui, "btn_open", None)
+        if open_button is not None:
+            open_button.clicked.connect(self._handle_open_clicked)
 
     def _set_status_message(self, message: str, timeout_ms: int = 8000) -> None:
         self.statusBar().showMessage(message, timeout_ms)
@@ -780,6 +803,206 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 work_order_id = self._upsert_work_order_header(cur, payload)
             conn.commit()
         return work_order_id
+
+    def _fetch_work_order_bundle(self, work_number: str) -> tuple[dict[str, object], list[dict[str, object]]]:
+        if pymysql is None:
+            raise RuntimeError("缺少 PyMySQL，無法讀取 work_order_v2。")
+        normalized_work_number = work_number.strip()
+        if not normalized_work_number:
+            raise ValueError("請先輸入工單號再開啟。")
+
+        header_sql = """
+            SELECT
+                wo.id,
+                wo.work_number,
+                wo.case_name,
+                wo.client_id,
+                c.short_name AS client_short_name,
+                wo.company_phone,
+                wo.contact_name,
+                wo.work_time,
+                wo.cleanup_time,
+                wo.work_address,
+                wo.remark,
+                wo.status
+            FROM work_orders wo
+            LEFT JOIN clients c ON c.id = wo.client_id
+            WHERE wo.work_number = %s
+            LIMIT 1
+        """
+        line_sql = """
+            SELECT
+                wol.line_no,
+                wol.width_mm,
+                wol.height_mm,
+                wol.quantity,
+                wol.extra_material_quantity,
+                wol.cbm,
+                wol.cbm_unit_price,
+                wol.line_total,
+                wol.extra_material_total,
+                pi.item_name AS production_item_name,
+                mi.item_name AS material_name,
+                li.item_name AS lamination_name,
+                bti.item_name AS board_type_name,
+                bthi.item_name AS board_thickness_name,
+                emi.item_name AS extra_material_name
+            FROM work_order_lines wol
+            LEFT JOIN option_items pi ON pi.id = wol.production_item_id
+            LEFT JOIN option_items mi ON mi.id = wol.material_id
+            LEFT JOIN option_items li ON li.id = wol.lamination_id
+            LEFT JOIN option_items bti ON bti.id = wol.board_type_id
+            LEFT JOIN option_items bthi ON bthi.id = wol.board_thickness_id
+            LEFT JOIN option_items emi ON emi.id = wol.extra_material_id
+            WHERE wol.work_order_id = %s
+            ORDER BY wol.line_no, wol.id
+        """
+
+        with pymysql.connect(**_connect_kwargs()) as conn:
+            with conn.cursor() as cur:
+                cur.execute(header_sql, (normalized_work_number,))
+                header_row = cur.fetchone()
+                if header_row is None:
+                    raise LookupError(f"找不到工單號：{normalized_work_number}")
+                cur.execute(line_sql, (header_row["id"],))
+                line_rows = cur.fetchall()
+        return header_row, line_rows
+
+    def _coerce_option_item_name(self, option_group: str, value: object) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, int):
+            return self.option_item_names_by_group_and_id.get(option_group, {}).get(value, "")
+        if isinstance(value, str):
+            return value.strip()
+        try:
+            return self.option_item_names_by_group_and_id.get(option_group, {}).get(int(value), "")
+        except (TypeError, ValueError):
+            return str(value).strip()
+
+    def _build_table_rows_from_line_payloads(self, line_rows: list[dict[str, object]]) -> list[list[str]]:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        row_count = table.rowCount() if table is not None else max(len(line_rows), 1)
+        built_rows: list[list[str]] = []
+        for line_row in line_rows[:row_count]:
+            built_rows.append(
+                [
+                    self._coerce_option_item_name("production_item", line_row.get("production_item_name")),
+                    format_decimal_for_ui(line_row.get("width_mm")),
+                    "x",
+                    format_decimal_for_ui(line_row.get("height_mm")),
+                    format_decimal_for_ui(line_row.get("quantity")),
+                    self._coerce_option_item_name("material", line_row.get("material_name")),
+                    self._coerce_option_item_name("lamination", line_row.get("lamination_name")),
+                    self._coerce_option_item_name("board_type", line_row.get("board_type_name")),
+                    self._coerce_option_item_name("board_thickness", line_row.get("board_thickness_name")),
+                    self._coerce_option_item_name("extra_material", line_row.get("extra_material_name")),
+                    format_decimal_for_ui(line_row.get("extra_material_quantity")),
+                    format_decimal_for_ui(line_row.get("cbm")),
+                    format_decimal_for_ui(line_row.get("cbm_unit_price")),
+                    format_decimal_for_ui(line_row.get("line_total")),
+                    format_decimal_for_ui(line_row.get("extra_material_total")),
+                ]
+            )
+
+        while len(built_rows) < row_count:
+            built_rows.append(["", "", "x", "", "", "", "", "", "", "", "", "", "", "", ""])
+        return built_rows
+
+    def load_work_order_by_number(self, work_number: str) -> tuple[int, int]:
+        header_row, line_rows = self._fetch_work_order_bundle(work_number)
+
+        customer_combo = getattr(self.ui, "cb_customerName", None)
+        if isinstance(customer_combo, QComboBox):
+            customer_name = str(header_row.get("client_short_name") or "").strip()
+            customer_index = customer_combo.findText(customer_name) if customer_name else -1
+            if customer_index >= 0:
+                customer_combo.setCurrentIndex(customer_index)
+            else:
+                customer_combo.setCurrentIndex(-1)
+                customer_combo.setEditText(customer_name)
+
+        field_mappings = {
+            "le_worknum": header_row.get("work_number"),
+            "le_caseName": header_row.get("case_name"),
+            "le_phone": header_row.get("company_phone"),
+            "le_contactName": header_row.get("contact_name"),
+            "le_startTime": header_row.get("work_time"),
+            "le_endTime": header_row.get("cleanup_time"),
+            "lle_address": header_row.get("work_address"),
+            "le_productionAmount": "",
+            "le_taxAmount": "",
+            "le_totalAmount": "",
+        }
+        for attr, value in field_mappings.items():
+            widget = getattr(self.ui, attr, None)
+            if isinstance(widget, QLineEdit):
+                widget.setText(str(value or ""))
+
+        if hasattr(self.ui, "te_remark"):
+            self.ui.te_remark.setPlainText(str(header_row.get("remark") or ""))
+
+        table_rows = self._build_table_rows_from_line_payloads(line_rows)
+        self._populate_line_items_table_with_rows(table_rows)
+        self._last_auto_filled_phone = str(header_row.get("company_phone") or "")
+        self._last_auto_filled_address = str(header_row.get("work_address") or "")
+        return int(header_row["id"]), len(line_rows)
+
+    def _has_loaded_content_on_screen(self) -> bool:
+        customer_combo = getattr(self.ui, "cb_customerName", None)
+        if isinstance(customer_combo, QComboBox) and customer_combo.currentText().strip():
+            return True
+
+        for attr in (
+            "le_contactName",
+            "le_phone",
+            "le_caseName",
+            "le_startTime",
+            "le_endTime",
+            "lle_address",
+            "le_productionAmount",
+            "le_taxAmount",
+            "le_totalAmount",
+        ):
+            widget = getattr(self.ui, attr, None)
+            if isinstance(widget, QLineEdit) and widget.text().strip():
+                return True
+
+        if hasattr(self.ui, "te_remark") and self.ui.te_remark.toPlainText().strip():
+            return True
+
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is not None:
+            for row in range(table.rowCount()):
+                if self._line_row_has_meaningful_data(row):
+                    return True
+        return False
+
+    def _handle_open_clicked(self) -> None:
+        work_number = normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or ""
+        if self._has_loaded_content_on_screen():
+            confirm = QMessageBox.question(
+                self,
+                "開啟工單",
+                "目前畫面內容會直接被載入的工單覆蓋；尚未做完整 dirty-check。\n\n要繼續開啟嗎？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if confirm != QMessageBox.StandardButton.Yes:
+                self._set_status_message("已取消開啟工單。")
+                return
+
+        try:
+            work_order_id, line_count = self.load_work_order_by_number(work_number)
+        except Exception as exc:
+            message = str(exc) or exc.__class__.__name__
+            QMessageBox.warning(self, "開啟失敗", message)
+            self._set_status_message(f"開啟失敗：{message}")
+            return
+
+        success_message = f"已開啟 work_orders #{work_order_id}（工單 {work_number}，明細 {line_count} 筆）"
+        QMessageBox.information(self, "開啟成功", success_message)
+        self._set_status_message(success_message)
 
     def save_work_order_with_lines(self) -> tuple[int, int]:
         if pymysql is None:
@@ -1367,6 +1590,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
             return
 
         table = self.ui.tbl_lineItems
+        row_count = max(table.rowCount(), len(rows))
+        table.setRowCount(row_count)
         table.clearContents()
         self.table_tab_navigator = TableCellTabNavigator(table, self)
         for row_idx in range(table.rowCount()):
@@ -1444,6 +1669,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--screenshot", type=Path, help="Save a screenshot to this path and exit.")
     parser.add_argument("--save-demo", action="store_true", help="Save the seeded header + line fields into work_orders/work_order_lines and print the inserted id.")
+    parser.add_argument("--load-work-number", help="Load this work number after window init, print the loaded id/count, and exit.")
     return parser.parse_args(argv)
 
 
@@ -1469,6 +1695,35 @@ def main(argv: list[str] | None = None) -> int:
             app.exit(0)
 
         QTimer.singleShot(0, save_demo_and_quit)
+    elif args.load_work_number:
+        def load_and_quit() -> None:
+            try:
+                work_order_id, line_count = window.load_work_order_by_number(args.load_work_number)
+            except Exception as exc:
+                print(f"LOAD_WORK_ORDER_ERROR: {exc}", file=sys.stderr)
+                app.exit(1)
+                return
+
+            header_values = {
+                "work_number": normalize_line_edit_value(getattr(window.ui, "le_worknum", None)) or "",
+                "case_name": normalize_line_edit_value(getattr(window.ui, "le_caseName", None)) or "",
+                "customer_name": getattr(window.ui, "cb_customerName", None).currentText().strip() if getattr(window.ui, "cb_customerName", None) is not None else "",
+                "phone": normalize_line_edit_value(getattr(window.ui, "le_phone", None)) or "",
+                "contact_name": normalize_line_edit_value(getattr(window.ui, "le_contactName", None)) or "",
+                "start_time": normalize_line_edit_value(getattr(window.ui, "le_startTime", None)) or "",
+                "end_time": normalize_line_edit_value(getattr(window.ui, "le_endTime", None)) or "",
+                "address": normalize_line_edit_value(getattr(window.ui, "lle_address", None)) or "",
+                "remark": normalize_text_edit_value(getattr(window.ui, "te_remark", None)) or "",
+            }
+            table = getattr(window.ui, "tbl_lineItems", None)
+            first_rows = []
+            if table is not None:
+                for row in range(min(3, table.rowCount())):
+                    first_rows.append([window._table_cell_text(row, column) for column in range(table.columnCount())])
+            print(f"LOAD_WORK_ORDER_OK:{work_order_id}:{line_count}:{header_values}:{first_rows}")
+            app.exit(0)
+
+        QTimer.singleShot(0, load_and_quit)
     elif args.screenshot:
         target = args.screenshot.expanduser().resolve()
         target.parent.mkdir(parents=True, exist_ok=True)

@@ -243,3 +243,54 @@ QT_QPA_PLATFORM=offscreen prototype/pyside6-demo/.venv/bin/python \
 build label 來自：
 - `git rev-parse --short HEAD`
 - 畫面左下顯示格式：`build: <short-hash>`
+
+## 7. 已接上的開啟流程（2026-04-22）
+
+`preview_generated_ui.py` 現在已把既有 `btn_open` 掛上載入流程。
+
+### 開啟規則
+
+1. 讀取 `le_worknum`
+2. 以 `work_orders.work_number` 查 header
+3. 找到後回填：
+   - `le_worknum`
+   - `le_caseName`
+   - `cb_customerName`（顯示 `clients.short_name`）
+   - `le_phone`
+   - `le_contactName`
+   - `le_startTime`
+   - `le_endTime`
+   - `lle_address`
+   - `te_remark`
+4. 再用 `work_orders.id` 查 `work_order_lines`
+5. 透過 join `option_items` 把 FK 轉回 `item_name`，回填 middle table
+
+### `option_items` FK 還原策略
+
+載入時不是把 id 直接塞回 UI，而是：
+- `work_order_lines.production_item_id` -> join `option_items pi` -> `pi.item_name`
+- `material_id` / `lamination_id` / `board_type_id` / `board_thickness_id` / `extra_material_id`
+  也各自 join `option_items` 取回顯示文字
+- UI table 看到的是 `item_name`，不是數字 FK
+
+### 查不到工單號時的定義
+
+- `le_worknum` 空白：直接報錯 `請先輸入工單號再開啟。`
+- `work_orders` 查不到：直接報錯 `找不到工單號：xxx`
+- 不做靜默失敗
+
+### 未存內容目前的最小處理
+
+這輪先不做完整 dirty-check，也不比對「是否真的有變更」。
+
+目前行為：
+- 若畫面上除了查詢用的 `le_worknum` 之外，header / remark / middle table 已有任何內容
+- 按 `開啟` 時先跳確認視窗：
+  `目前畫面內容會直接被載入的工單覆蓋；尚未做完整 dirty-check。要繼續開啟嗎？`
+- 使用者按 Yes 才覆蓋；按 No 取消
+
+### 補充
+
+- middle table 目前會保留至少 15 列；若 DB 明細超過 15 列，會自動把 rowCount 擴到足夠載完
+- `le_productionAmount` / `le_taxAmount` / `le_totalAmount` 目前仍不是 v2 header 欄位，開啟時會清空，避免殘留上一筆畫面的值
+
