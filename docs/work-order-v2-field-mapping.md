@@ -138,6 +138,18 @@
 
 這樣可以避免工單先落庫、客戶卻是模糊字串，後續不好補救。
 
+### `btn_reset` / `btn_save` UX 補充（2026-04-23）
+
+- `btn_reset` 現在正式接線，定義為：**整張恢復成空白新工單初始狀態**。
+- 重置範圍包含：
+  - TOP 區所有欄位（含 `le_worknum` / 客戶 / 聯絡資訊 / 時間 / 案名 / 地址 / 備註）
+  - bottom summary（`le_productionAmount` / `le_taxAmount` / `le_totalAmount`）
+  - `tbl_lineItems` 全部內容
+- `tbl_lineItems` 重置後固定回到 **15 列空白列**，最後仍保留既有 blank-row / auto-append 行為。
+- 若畫面上已有內容（header / remark / 任一明細列），`btn_reset` 會先跳確認；空白畫面直接重置，不跳確認。
+- `btn_save` 仍走既有 header upsert + lines replace round-trip 流程；但若同一個 `work_number` 已存在 `work_orders`，UI 端現在會先明確詢問**是否覆蓋既有資料**，避免默默蓋掉。
+- 若使用者取消覆蓋，這次 save 不會落 DB，也不改動既有 `work_orders` / `work_order_lines`。
+
 ## 5. 目前已接上的明細存檔規則（prototype 現況）
 
 `btn_save` 現在會在同一次存檔流程內：

@@ -4,6 +4,7 @@ import argparse
 import os
 import subprocess
 import sys
+from contextlib import contextmanager
 from decimal import Decimal, InvalidOperation, ROUND_CEILING
 from pathlib import Path
 
@@ -597,6 +598,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._initialize_blank_work_order()
         self._configure_save_flow()
         self._configure_open_flow()
+        self._configure_reset_flow()
         self._configure_calculation_actions()
         self._configure_line_row_actions()
         self._configure_focus_chain()
@@ -642,6 +644,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
         open_button = getattr(self.ui, "btn_open", None)
         if open_button is not None:
             open_button.clicked.connect(self._handle_open_clicked)
+
+    def _configure_reset_flow(self) -> None:
+        reset_button = getattr(self.ui, "btn_reset", None)
+        if reset_button is not None:
+            reset_button.clicked.connect(self._handle_reset_clicked)
 
     def _configure_calculation_actions(self) -> None:
         subtotal_button = getattr(self.ui, "btn_subtotal", None)
@@ -1138,6 +1145,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             return True
 
         for attr in (
+            "le_worknum",
             "le_contactName",
             "le_phone",
             "le_caseName",
@@ -1161,6 +1169,28 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 if self._line_row_has_meaningful_data(row):
                     return True
         return False
+
+    def reset_work_order_to_blank(self) -> None:
+        self._initialize_blank_work_order()
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is not None and table.rowCount() > 0:
+            table.setCurrentCell(0, 0)
+        self._set_status_message("已重置為空白新工單。")
+
+    def _handle_reset_clicked(self) -> None:
+        if self._has_loaded_content_on_screen():
+            confirm = QMessageBox.question(
+                self,
+                "重置工單",
+                "目前畫面已有內容；重置會清空整張工單並回到空白新工單狀態。\n\n要繼續嗎？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if confirm != QMessageBox.StandardButton.Yes:
+                self._set_status_message("已取消重置工單。")
+                return
+
+        self.reset_work_order_to_blank()
 
     def _handle_open_clicked(self) -> None:
         work_number = normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or ""
@@ -1202,8 +1232,42 @@ class GeneratedUiPreviewWindow(QMainWindow):
             conn.commit()
         return work_order_id, len(line_payloads)
 
+    def _find_existing_work_order_id(self, work_number: str) -> int | None:
+        if pymysql is None:
+            return None
+
+        normalized_work_number = work_number.strip()
+        if not normalized_work_number:
+            return None
+
+        with pymysql.connect(**_connect_kwargs()) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id FROM work_orders WHERE work_number = %s LIMIT 1", (normalized_work_number,))
+                row = cur.fetchone()
+        return int(row["id"]) if row else None
+
+    def _confirm_overwrite_existing_work_order(self, work_number: str) -> bool:
+        existing_work_order_id = self._find_existing_work_order_id(work_number)
+        if existing_work_order_id is None:
+            return True
+
+        confirm = QMessageBox.question(
+            self,
+            "覆蓋既有工單",
+            f"工單號 {work_number} 已經有既有資料（work_orders #{existing_work_order_id}）。\n\n是否要覆蓋？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            self._set_status_message("已取消覆蓋既有工單。")
+            return False
+        return True
+
     def _handle_save_clicked(self) -> None:
+        work_number = normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or ""
         try:
+            if not self._confirm_overwrite_existing_work_order(work_number):
+                return
             work_order_id, line_count = self.save_work_order_with_lines()
         except Exception as exc:
             message = str(exc) or exc.__class__.__name__
@@ -1211,7 +1275,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             self._set_status_message(f"儲存失敗：{message}")
             return
 
-        work_number = normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or "-"
+        work_number = work_number or "-"
         success_message = f"已儲存 work_orders #{work_order_id}（工單 {work_number}，明細 {line_count} 筆）"
         QMessageBox.information(self, "儲存成功", success_message)
         self._set_status_message(success_message)
@@ -1945,9 +2009,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if hasattr(self.ui, "te_remark"):
             self.ui.te_remark.clear()
 
-        table = getattr(self.ui, "tbl_lineItems", None)
-        row_count = table.rowCount() if table is not None else 0
-        self._populate_line_items_table_with_rows([list(BLANK_LINE_ROW_TEMPLATE) for _ in range(row_count)])
+        self._populate_line_items_table_with_rows(
+            [list(BLANK_LINE_ROW_TEMPLATE) for _ in range(DEFAULT_LINE_ITEM_ROW_COUNT)]
+        )
 
     def _populate_line_items_table_with_rows(self, rows: list[list[str]]) -> None:
         if not hasattr(self.ui, "tbl_lineItems"):
@@ -2048,6 +2112,39 @@ def _window_line_snapshot(window: GeneratedUiPreviewWindow) -> list[list[str]]:
             continue
         rows.append([window._table_cell_text(row, column) for column in range(table.columnCount())])
     return rows
+
+
+@contextmanager
+def _mock_message_boxes(
+    *,
+    question_response: QMessageBox.StandardButton = QMessageBox.StandardButton.Yes,
+) -> dict[str, list[dict[str, str]]]:
+    events: dict[str, list[dict[str, str]]] = {"question": [], "information": [], "warning": []}
+    original_question = QMessageBox.question
+    original_information = QMessageBox.information
+    original_warning = QMessageBox.warning
+
+    def fake_question(parent, title, text, buttons, default_button):
+        events["question"].append({"title": str(title), "text": str(text)})
+        return question_response
+
+    def fake_information(parent, title, text):
+        events["information"].append({"title": str(title), "text": str(text)})
+        return QMessageBox.StandardButton.Ok
+
+    def fake_warning(parent, title, text):
+        events["warning"].append({"title": str(title), "text": str(text)})
+        return QMessageBox.StandardButton.Ok
+
+    QMessageBox.question = fake_question
+    QMessageBox.information = fake_information
+    QMessageBox.warning = fake_warning
+    try:
+        yield events
+    finally:
+        QMessageBox.question = original_question
+        QMessageBox.information = original_information
+        QMessageBox.warning = original_warning
 
 
 def _db_bundle_snapshot(work_number: str) -> tuple[dict[str, str], list[list[str]], dict[str, int]]:
@@ -2511,6 +2608,104 @@ def run_row_action_verification(window: GeneratedUiPreviewWindow, work_number: s
     }
 
 
+def run_reset_verification(window: GeneratedUiPreviewWindow, work_number: str) -> dict[str, object]:
+    window._initialize_blank_work_order()
+    blank_row_count_before = window.ui.tbl_lineItems.rowCount()
+    with _mock_message_boxes(question_response=QMessageBox.StandardButton.Yes) as blank_events:
+        window._handle_reset_clicked()
+    if blank_events["question"]:
+        raise AssertionError("blank reset should not ask for confirmation")
+    if window.ui.tbl_lineItems.rowCount() != DEFAULT_LINE_ITEM_ROW_COUNT:
+        raise AssertionError("blank reset should keep 15 rows")
+
+    window._seed_demo_values()
+    with _mock_message_boxes(question_response=QMessageBox.StandardButton.No) as cancel_events:
+        window._handle_reset_clicked()
+    if len(cancel_events["question"]) != 1:
+        raise AssertionError("filled reset should ask exactly one confirmation")
+    if not normalize_line_edit_value(getattr(window.ui, "le_worknum", None)):
+        raise AssertionError("cancelled reset should keep existing content")
+
+    with _mock_message_boxes(question_response=QMessageBox.StandardButton.Yes) as confirm_events:
+        window._handle_reset_clicked()
+    if len(confirm_events["question"]) != 1:
+        raise AssertionError("confirmed reset should ask exactly one confirmation")
+    if window._has_loaded_content_on_screen():
+        raise AssertionError("reset should clear the whole work order")
+    if window.ui.tbl_lineItems.rowCount() != DEFAULT_LINE_ITEM_ROW_COUNT:
+        raise AssertionError("reset should restore line table to 15 rows")
+
+    window._seed_demo_values()
+    worknum_widget = getattr(window.ui, "le_worknum", None)
+    if isinstance(worknum_widget, QLineEdit):
+        worknum_widget.setText(work_number)
+    saved_work_order_id, saved_line_count = window.save_work_order_with_lines()
+    window.reset_work_order_to_blank()
+    if window.ui.tbl_lineItems.rowCount() != DEFAULT_LINE_ITEM_ROW_COUNT:
+        raise AssertionError("direct reset should restore line table to 15 rows")
+    window._seed_demo_values()
+    if isinstance(worknum_widget, QLineEdit):
+        worknum_widget.setText(work_number)
+    resaved_work_order_id, resaved_line_count = window.save_work_order_with_lines()
+    reloaded_work_order_id, reloaded_line_count = window.load_work_order_by_number(work_number)
+    if saved_work_order_id != resaved_work_order_id or saved_work_order_id != reloaded_work_order_id:
+        raise AssertionError("save/reset/re-save should keep same work_order_id")
+
+    return {
+        "blank_reset_row_count_before": blank_row_count_before,
+        "blank_reset_row_count_after": window.ui.tbl_lineItems.rowCount(),
+        "confirmations_on_cancel": len(cancel_events["question"]),
+        "confirmations_on_confirm": len(confirm_events["question"]),
+        "saved_work_order_id": saved_work_order_id,
+        "saved_line_count": saved_line_count,
+        "resaved_line_count": resaved_line_count,
+        "reloaded_line_count": reloaded_line_count,
+        "build_label": BUILD_LABEL_TEXT,
+    }
+
+
+def run_save_overwrite_verification(window: GeneratedUiPreviewWindow, work_number: str) -> dict[str, object]:
+    window._seed_demo_values()
+    worknum_widget = getattr(window.ui, "le_worknum", None)
+    if isinstance(worknum_widget, QLineEdit):
+        worknum_widget.setText(work_number)
+    baseline_work_order_id, baseline_line_count = window.save_work_order_with_lines()
+    baseline_header, baseline_lines, baseline_meta = _db_bundle_snapshot(work_number)
+
+    case_widget = getattr(window.ui, "le_caseName", None)
+    if isinstance(case_widget, QLineEdit):
+        case_widget.setText("SAVE UX SHOULD NOT OVERWRITE WHEN CANCELLED")
+
+    with _mock_message_boxes(question_response=QMessageBox.StandardButton.No) as cancel_events:
+        window._handle_save_clicked()
+    after_cancel_header, after_cancel_lines, after_cancel_meta = _db_bundle_snapshot(work_number)
+    if len(cancel_events["question"]) != 1:
+        raise AssertionError("existing work number save should ask before overwrite")
+    if after_cancel_header != baseline_header or after_cancel_lines != baseline_lines or after_cancel_meta != baseline_meta:
+        raise AssertionError("cancelled overwrite should not change DB contents")
+
+    if isinstance(case_widget, QLineEdit):
+        case_widget.setText("SAVE UX OVERWRITE CONFIRMED")
+    with _mock_message_boxes(question_response=QMessageBox.StandardButton.Yes) as confirm_events:
+        window._handle_save_clicked()
+    after_confirm_header, _after_confirm_lines, after_confirm_meta = _db_bundle_snapshot(work_number)
+    if len(confirm_events["question"]) != 1:
+        raise AssertionError("confirmed overwrite should ask exactly one confirmation")
+    if after_confirm_header["case_name"] != "SAVE UX OVERWRITE CONFIRMED":
+        raise AssertionError("confirmed overwrite should update DB")
+    if after_confirm_meta["work_order_id"] != baseline_work_order_id:
+        raise AssertionError("overwrite save should update existing work_order row")
+
+    return {
+        "work_order_id": baseline_work_order_id,
+        "baseline_line_count": baseline_line_count,
+        "cancel_confirmations": len(cancel_events["question"]),
+        "confirm_confirmations": len(confirm_events["question"]),
+        "case_name_after_confirm": after_confirm_header["case_name"],
+        "build_label": BUILD_LABEL_TEXT,
+    }
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--screenshot", type=Path, help="Save a screenshot to this path and exit.")
@@ -2519,6 +2714,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--roundtrip-verify", help="Load an existing work number, edit header/lines, save, reload, verify DB/UI consistency, and exit.")
     parser.add_argument("--row-ux-verify", help="Seed demo data into this work number, verify clear/delete row UX, save/reload, and exit.")
     parser.add_argument("--calc-verify", action="store_true", help="Verify subtotal/calculate rules, blank handling, auto-append, and tab order.")
+    parser.add_argument("--reset-verify", help="Seed demo data into this work number, verify reset UX/save-open flow, and exit.")
+    parser.add_argument("--save-overwrite-verify", help="Seed demo data into this work number, verify save overwrite confirmation UX, and exit.")
     return parser.parse_args(argv)
 
 
@@ -2598,6 +2795,32 @@ def main(argv: list[str] | None = None) -> int:
             app.exit(0)
 
         QTimer.singleShot(0, verify_calc_and_quit)
+    elif args.reset_verify:
+        def verify_reset_and_quit() -> None:
+            try:
+                result = run_reset_verification(window, args.reset_verify)
+            except Exception as exc:
+                print(f"RESET_VERIFY_ERROR: {exc}", file=sys.stderr)
+                app.exit(1)
+                return
+
+            print(f"RESET_VERIFY_OK:{result}")
+            app.exit(0)
+
+        QTimer.singleShot(0, verify_reset_and_quit)
+    elif args.save_overwrite_verify:
+        def verify_save_overwrite_and_quit() -> None:
+            try:
+                result = run_save_overwrite_verification(window, args.save_overwrite_verify)
+            except Exception as exc:
+                print(f"SAVE_OVERWRITE_VERIFY_ERROR: {exc}", file=sys.stderr)
+                app.exit(1)
+                return
+
+            print(f"SAVE_OVERWRITE_VERIFY_OK:{result}")
+            app.exit(0)
+
+        QTimer.singleShot(0, verify_save_overwrite_and_quit)
     elif args.screenshot:
         target = args.screenshot.expanduser().resolve()
         target.parent.mkdir(parents=True, exist_ok=True)
