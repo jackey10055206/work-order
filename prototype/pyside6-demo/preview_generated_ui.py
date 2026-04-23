@@ -4,7 +4,7 @@ import argparse
 import os
 import subprocess
 import sys
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_CEILING
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QObject, QPoint, QTimer, Qt
@@ -593,6 +593,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._initialize_blank_work_order()
         self._configure_save_flow()
         self._configure_open_flow()
+        self._configure_calculation_actions()
         self._configure_line_row_actions()
         self._configure_focus_chain()
 
@@ -637,6 +638,15 @@ class GeneratedUiPreviewWindow(QMainWindow):
         open_button = getattr(self.ui, "btn_open", None)
         if open_button is not None:
             open_button.clicked.connect(self._handle_open_clicked)
+
+    def _configure_calculation_actions(self) -> None:
+        subtotal_button = getattr(self.ui, "btn_subtotal", None)
+        if subtotal_button is not None:
+            subtotal_button.clicked.connect(self._handle_subtotal_clicked)
+
+        calculate_button = getattr(self.ui, "btn_calcuate", None)
+        if calculate_button is not None:
+            calculate_button.clicked.connect(self._handle_calculate_clicked)
 
     def _configure_line_row_actions(self) -> None:
         table = getattr(self.ui, "tbl_lineItems", None)
@@ -707,6 +717,126 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 f"第 {row_number} 列「{column_label}」找不到 option_items 對應：group={option_group}, item_name={normalized_name}"
             )
         return item_id
+
+    def _parse_table_decimal(self, row: int, column: int, *, blank_as_zero: bool = True, invalid_as_zero: bool = True) -> Decimal:
+        raw_value = self._table_cell_text(row, column)
+        if not raw_value:
+            return Decimal("0") if blank_as_zero else Decimal("0")
+        try:
+            return parse_decimal_or_none(raw_value) or Decimal("0")
+        except ValueError:
+            if invalid_as_zero:
+                return Decimal("0")
+            raise
+
+    def _write_table_value(self, row: int, column: int, text: str) -> None:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return
+
+        cell_widget = table.cellWidget(row, column)
+        if isinstance(cell_widget, QLineEdit):
+            cell_widget.setText(text)
+            return
+        if isinstance(cell_widget, QComboBox):
+            found_index = cell_widget.findText(text)
+            if found_index >= 0:
+                cell_widget.setCurrentIndex(found_index)
+            else:
+                cell_widget.setEditText(text)
+            return
+
+        item = table.item(row, column)
+        if item is not None:
+            item.setText(text)
+
+    def _set_summary_field_value(self, field_name: str, value: Decimal) -> None:
+        widget = getattr(self.ui, field_name, None)
+        if isinstance(widget, QLineEdit):
+            widget.setText(format_decimal_for_ui(value))
+
+    def calculate_line_subtotals(self) -> dict[str, object]:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return {"updated_rows": 0, "skipped_rows": 0, "rows": []}
+
+        results: list[dict[str, str]] = []
+        updated_rows = 0
+        skipped_rows = 0
+        for row in range(table.rowCount()):
+            if not self._line_row_has_meaningful_data(row):
+                skipped_rows += 1
+                continue
+
+            width = self._parse_table_decimal(row, 1)
+            length = self._parse_table_decimal(row, 3)
+            quantity = self._parse_table_decimal(row, 4)
+            unit_price = self._parse_table_decimal(row, 12)
+
+            cbm_raw = (width * length * quantity) / Decimal("900")
+            cbm = cbm_raw.to_integral_value(rounding=ROUND_CEILING)
+            line_total = cbm * unit_price
+
+            self._write_table_value(row, 11, format_decimal_for_ui(cbm))
+            self._write_table_value(row, 13, format_decimal_for_ui(line_total))
+            updated_rows += 1
+            results.append(
+                {
+                    "row": str(row + 1),
+                    "cbm": format_decimal_for_ui(cbm),
+                    "line_total": format_decimal_for_ui(line_total),
+                }
+            )
+
+        return {"updated_rows": updated_rows, "skipped_rows": skipped_rows, "rows": results}
+
+    def calculate_document_totals(self) -> dict[str, str]:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        production_amount = Decimal("0")
+        if table is not None:
+            for row in range(table.rowCount()):
+                if not self._line_row_has_meaningful_data(row):
+                    continue
+                production_amount += self._parse_table_decimal(row, 13)
+                production_amount += self._parse_table_decimal(row, 14)
+
+        tax_amount = production_amount * Decimal("0.05")
+        total_amount = production_amount + tax_amount
+
+        self._set_summary_field_value("le_productionAmount", production_amount)
+        self._set_summary_field_value("le_taxAmount", tax_amount)
+        self._set_summary_field_value("le_totalAmount", total_amount)
+        return {
+            "production_amount": format_decimal_for_ui(production_amount),
+            "tax_amount": format_decimal_for_ui(tax_amount),
+            "total_amount": format_decimal_for_ui(total_amount),
+        }
+
+    def _handle_subtotal_clicked(self) -> None:
+        try:
+            result = self.calculate_line_subtotals()
+        except Exception as exc:
+            message = str(exc) or exc.__class__.__name__
+            QMessageBox.warning(self, "小計失敗", message)
+            self._set_status_message(f"小計失敗：{message}")
+            return
+
+        self._set_status_message(
+            f"已更新 {result['updated_rows']} 列小計；略過 {result['skipped_rows']} 列空白列。"
+        )
+
+    def _handle_calculate_clicked(self) -> None:
+        try:
+            result = self.calculate_document_totals()
+        except Exception as exc:
+            message = str(exc) or exc.__class__.__name__
+            QMessageBox.warning(self, "計算失敗", message)
+            self._set_status_message(f"計算失敗：{message}")
+            return
+
+        self._set_status_message(
+            f"已完成整單計算：製作金額 {result['production_amount']} / 稅額 {result['tax_amount']} / 總計 {result['total_amount']}"
+        )
 
     def _collect_line_payloads(self) -> list[dict[str, object | None]]:
         table = getattr(self.ui, "tbl_lineItems", None)
@@ -2107,6 +2237,124 @@ def run_roundtrip_verification(window: GeneratedUiPreviewWindow, work_number: st
     }
 
 
+def run_calculation_verification(window: GeneratedUiPreviewWindow) -> dict[str, object]:
+    window._initialize_blank_work_order()
+    table = window.ui.tbl_lineItems
+
+    calc_rows = [
+        [
+            (window.combo_column_options.get(0) or ["大圖輸出"])[0],
+            "100",
+            "x",
+            "100",
+            "1",
+            (window.combo_column_options.get(5) or [""])[0],
+            (window.combo_column_options.get(6) or [""])[0],
+            (window.combo_column_options.get(7) or [""])[0],
+            (window.combo_column_options.get(8) or [""])[0],
+            (window.combo_column_options.get(9) or [""])[0],
+            "1",
+            "",
+            "10",
+            "",
+            "50",
+        ],
+        [
+            (window.combo_column_options.get(0) or ["大圖輸出"])[0],
+            "100",
+            "x",
+            "100",
+            "5",
+            (window.combo_column_options.get(5) or [""])[0],
+            (window.combo_column_options.get(6) or [""])[0],
+            (window.combo_column_options.get(7) or [""])[0],
+            (window.combo_column_options.get(8) or [""])[0],
+            (window.combo_column_options.get(9) or [""])[0],
+            "1",
+            "",
+            "20",
+            "",
+            "",
+        ],
+        [
+            (window.combo_column_options.get(0) or ["大圖輸出"])[0],
+            "200",
+            "x",
+            "150",
+            "1",
+            (window.combo_column_options.get(5) or [""])[0],
+            (window.combo_column_options.get(6) or [""])[0],
+            (window.combo_column_options.get(7) or [""])[0],
+            (window.combo_column_options.get(8) or [""])[0],
+            (window.combo_column_options.get(9) or [""])[0],
+            "1",
+            "",
+            "15",
+            "",
+            "abc",
+        ],
+    ]
+    window._populate_line_items_table_with_rows(calc_rows)
+
+    subtotal_result = window.calculate_line_subtotals()
+    row_results = []
+    expected_row_values = [
+        {"cbm": "12", "line_total": "120"},
+        {"cbm": "56", "line_total": "1120"},
+        {"cbm": "34", "line_total": "510"},
+    ]
+    for row_index, expected in enumerate(expected_row_values):
+        actual = {
+            "cbm": window._table_cell_text(row_index, 11),
+            "line_total": window._table_cell_text(row_index, 13),
+        }
+        if actual != expected:
+            raise AssertionError(f"subtotal mismatch at row {row_index + 1}: actual={actual} expected={expected}")
+        row_results.append({"row": row_index + 1, **actual})
+
+    try:
+        window.calculate_document_totals()
+    except Exception as exc:
+        raise AssertionError(f"calculate_document_totals should tolerate blank/non-numeric extra material total: {exc}") from exc
+
+    totals = {
+        "production_amount": normalize_line_edit_value(getattr(window.ui, "le_productionAmount", None)) or "",
+        "tax_amount": normalize_line_edit_value(getattr(window.ui, "le_taxAmount", None)) or "",
+        "total_amount": normalize_line_edit_value(getattr(window.ui, "le_totalAmount", None)) or "",
+    }
+    expected_totals = {
+        "production_amount": "1800",
+        "tax_amount": "90",
+        "total_amount": "1890",
+    }
+    if totals != expected_totals:
+        raise AssertionError(f"document totals mismatch: actual={totals} expected={expected_totals}")
+
+    blank_row_before = table.rowCount()
+    last_row = table.rowCount() - 1
+    widget = table.cellWidget(last_row, 1)
+    if not isinstance(widget, QLineEdit):
+        raise AssertionError("expected width cell to be editable line edit")
+    widget.setText("10")
+    app = QApplication.instance()
+    if app is not None:
+        app.processEvents()
+    blank_row_after = table.rowCount()
+    if blank_row_after != blank_row_before + 1:
+        raise AssertionError(f"auto append broke during calc verify: before={blank_row_before} after={blank_row_after}")
+
+    tab_sequence = _verify_table_navigation(window)
+    return {
+        "subtotal_result": subtotal_result,
+        "row_results": row_results,
+        "totals": totals,
+        "auto_append_rows_before": blank_row_before,
+        "auto_append_rows_after": blank_row_after,
+        "tab_sequence": tab_sequence,
+        "build_label": BUILD_LABEL_TEXT,
+    }
+
+
 def run_row_action_verification(window: GeneratedUiPreviewWindow, work_number: str) -> dict[str, object]:
     window._seed_demo_values()
     worknum_widget = getattr(window.ui, "le_worknum", None)
@@ -2196,6 +2444,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--load-work-number", help="Load this work number after window init, print the loaded id/count, and exit.")
     parser.add_argument("--roundtrip-verify", help="Load an existing work number, edit header/lines, save, reload, verify DB/UI consistency, and exit.")
     parser.add_argument("--row-ux-verify", help="Seed demo data into this work number, verify clear/delete row UX, save/reload, and exit.")
+    parser.add_argument("--calc-verify", action="store_true", help="Verify subtotal/calculate rules, blank handling, auto-append, and tab order.")
     return parser.parse_args(argv)
 
 
@@ -2262,6 +2511,19 @@ def main(argv: list[str] | None = None) -> int:
             app.exit(0)
 
         QTimer.singleShot(0, verify_row_ux_and_quit)
+    elif args.calc_verify:
+        def verify_calc_and_quit() -> None:
+            try:
+                result = run_calculation_verification(window)
+            except Exception as exc:
+                print(f"CALC_VERIFY_ERROR: {exc}", file=sys.stderr)
+                app.exit(1)
+                return
+
+            print(f"CALC_VERIFY_OK:{result}")
+            app.exit(0)
+
+        QTimer.singleShot(0, verify_calc_and_quit)
     elif args.screenshot:
         target = args.screenshot.expanduser().resolve()
         target.parent.mkdir(parents=True, exist_ok=True)
