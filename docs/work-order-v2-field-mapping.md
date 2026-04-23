@@ -16,6 +16,9 @@
 | 施工時間 | `le_startTime` | `work_orders.work_time` | 目前 schema 是 `VARCHAR(100)` |
 | 地址 | `lle_address` | `work_orders.work_address` | 可由 `clients.address` 預帶，但仍應允許人工覆寫 |
 | 收工時間 | `le_endTime` | `work_orders.cleanup_time` | 目前 schema 是 `VARCHAR(100)` |
+| 製作金額 | `le_productionAmount` | `work_orders.production_amount` | bottom summary；由畫面計算後存檔 |
+| 稅額 | `le_taxAmount` | `work_orders.tax_amount` | `製作金額 × 0.05` 後以 `ceil` 無條件進位 |
+| 總計 | `le_totalAmount` | `work_orders.total_amount` | `製作金額 + 稅額(進位後)` |
 | 備註 | `te_remark` | `work_orders.remark` | |
 
 ### 目前 UI 有顯示，但這輪刻意不接 v2
@@ -32,6 +35,15 @@
 | --- | --- |
 | `work_orders.status` | 存檔時預設 `draft` |
 | `work_orders.created_at` / `updated_at` | DB 自動維護 |
+
+### 本輪新增的 v2 header 欄位
+
+為了保留 bottom summary 的 round-trip，本輪在 `work_orders` 補上：
+- `production_amount DECIMAL(12,2) NULL`
+- `tax_amount DECIMAL(12,2) NULL`
+- `total_amount DECIMAL(12,2) NULL`
+
+對應 migration：`sql/migrations/2026-04-23_add_summary_amounts_to_work_orders.sql`
 
 ## 2. 明細表 `work_order_lines`
 
@@ -111,6 +123,9 @@
 - `le_endTime` -> `work_orders.cleanup_time`
 - `lle_address` -> `work_orders.work_address`
 - `te_remark` -> `work_orders.remark`
+- `le_productionAmount` -> `work_orders.production_amount`
+- `le_taxAmount` -> `work_orders.tax_amount`
+- `le_totalAmount` -> `work_orders.total_amount`
 
 ### `cb_customerName` 查不到時的定義
 
@@ -292,7 +307,8 @@ build label 來自：
 ### 補充
 
 - middle table 目前會保留至少 15 列；若 DB 明細超過 15 列，會自動把 rowCount 擴到足夠載完
-- `le_productionAmount` / `le_taxAmount` / `le_totalAmount` 目前仍不是 v2 header 欄位，開啟時會清空，避免殘留上一筆畫面的值
+- `le_productionAmount` / `le_taxAmount` / `le_totalAmount` 現在會優先載入 `work_orders.production_amount / tax_amount / total_amount`
+- 若 DB 舊資料尚未有這三欄值，開啟後會依當前明細重新計算，避免 UI 與明細矛盾
 
 ## 8. Round-trip 驗證（2026-04-22）
 
@@ -430,8 +446,8 @@ ROUNDTRIP_VERIFY_OK:{
 1. 製作金額 = 所有列 `計價` 加總 + 所有列 `備料計價` 加總
 2. `備料計價` 空白視為 `0`
 3. `備料計價` 若是非數字，也以 `0` 處理，避免整張單因單一欄位髒值而不能按計算
-4. 稅額 = `製作金額 × 0.05`
-5. 總計 = `製作金額 + 稅額`
+4. 稅額 = `ceil(製作金額 × 0.05)`
+5. 總計 = `製作金額 + 稅額(進位後)`
 6. 結果回填：
    - `le_productionAmount`
    - `le_taxAmount`
@@ -462,10 +478,11 @@ QT_QPA_PLATFORM=offscreen prototype/pyside6-demo/.venv/bin/python \
 4. 備料計價分別放入：`50 / 空白 / abc`
    - 空白視為 `0`
    - `abc` 視為 `0`
-5. 整張底部結果應為：
-   - 製作金額 = `120 + 1120 + 510 + 50 = 1800`
-   - 稅額 = `1800 × 0.05 = 90`
-   - 總計 = `1890`
+5. 第 4 列額外驗證 tax ceiling：`90 × 90 / 900 × 1 = 9`，單價 `10` -> `90`，備料計價 `1`
+6. 整張底部結果應為：
+   - 製作金額 = `120 + 1120 + 510 + 90 + 50 + 1 = 1891`
+   - 稅額 = `ceil(1891 × 0.05) = ceil(94.55) = 95`
+   - 總計 = `1986`
 
 實測輸出會回傳：
 - 每列回填後的 `才數` / `計價`
@@ -533,3 +550,26 @@ ROW_UX_VERIFY_OK:{
    - 既有 `--roundtrip-verify 26-03-29-01` 仍可通過
    - 代表新增 row UX 後，最後一列有效時自動補新列、存檔只存有效列、開啟再載回、build label 保留等行為都仍正常
 
+
+## 12. bottom summary 存檔規則（2026-04-23）
+
+這輪把 bottom 區三個欄位正式納入 v2 `work_orders`：
+- `production_amount`
+- `tax_amount`
+- `total_amount`
+
+### 存檔時的行為
+
+`save_work_order_with_lines()` 會先重新執行一次整單 summary 計算，再把結果寫回 UI 與 DB，避免使用者忘記先按 `計算` 就直接存檔。
+
+也就是說：
+1. 先依明細加總得到 `production_amount`
+2. `tax_amount = ceil(production_amount × 0.05)`
+3. `total_amount = production_amount + tax_amount`
+4. 再把三個值一併 upsert 到 `work_orders`
+
+### 開啟舊工單的相容策略
+
+- 若 DB 該筆已有 `production_amount / tax_amount / total_amount`，直接載回 UI
+- 若是舊資料尚未補這三欄，則依 `work_order_lines` 即時計算後回填 UI
+- 這樣可以兼顧新資料 round-trip 與舊資料相容，不需要去動 legacy DB

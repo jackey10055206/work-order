@@ -521,6 +521,10 @@ def format_decimal_for_ui(value: object) -> str:
     return str(value)
 
 
+def ceil_decimal(value: Decimal) -> Decimal:
+    return value.to_integral_value(rounding=ROUND_CEILING)
+
+
 def load_option_item_ids_from_v2() -> dict[str, dict[str, int]]:
     lookup = {group: {} for group in COMBO_COLUMN_GROUPS.values()}
     if pymysql is None:
@@ -681,6 +685,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
             "work_time": normalize_line_edit_value(getattr(self.ui, "le_startTime", None)),
             "cleanup_time": normalize_line_edit_value(getattr(self.ui, "le_endTime", None)),
             "work_address": normalize_line_edit_value(getattr(self.ui, "lle_address", None)),
+            "production_amount": parse_decimal_or_none(normalize_line_edit_value(getattr(self.ui, "le_productionAmount", None))),
+            "tax_amount": parse_decimal_or_none(normalize_line_edit_value(getattr(self.ui, "le_taxAmount", None))),
+            "total_amount": parse_decimal_or_none(normalize_line_edit_value(getattr(self.ui, "le_totalAmount", None))),
             "remark": normalize_text_edit_value(getattr(self.ui, "te_remark", None)),
             "status": "draft",
         }
@@ -790,7 +797,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         return {"updated_rows": updated_rows, "skipped_rows": skipped_rows, "rows": results}
 
-    def calculate_document_totals(self) -> dict[str, str]:
+    def _compute_document_totals(self) -> dict[str, Decimal]:
         table = getattr(self.ui, "tbl_lineItems", None)
         production_amount = Decimal("0")
         if table is not None:
@@ -800,17 +807,26 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 production_amount += self._parse_table_decimal(row, 13)
                 production_amount += self._parse_table_decimal(row, 14)
 
-        tax_amount = production_amount * Decimal("0.05")
+        tax_amount = ceil_decimal(production_amount * Decimal("0.05"))
         total_amount = production_amount + tax_amount
-
-        self._set_summary_field_value("le_productionAmount", production_amount)
-        self._set_summary_field_value("le_taxAmount", tax_amount)
-        self._set_summary_field_value("le_totalAmount", total_amount)
         return {
-            "production_amount": format_decimal_for_ui(production_amount),
-            "tax_amount": format_decimal_for_ui(tax_amount),
-            "total_amount": format_decimal_for_ui(total_amount),
+            "production_amount": production_amount,
+            "tax_amount": tax_amount,
+            "total_amount": total_amount,
         }
+
+    def _apply_document_totals_to_summary_fields(self, totals: dict[str, Decimal]) -> dict[str, str]:
+        self._set_summary_field_value("le_productionAmount", totals["production_amount"])
+        self._set_summary_field_value("le_taxAmount", totals["tax_amount"])
+        self._set_summary_field_value("le_totalAmount", totals["total_amount"])
+        return {
+            "production_amount": format_decimal_for_ui(totals["production_amount"]),
+            "tax_amount": format_decimal_for_ui(totals["tax_amount"]),
+            "total_amount": format_decimal_for_ui(totals["total_amount"]),
+        }
+
+    def calculate_document_totals(self) -> dict[str, str]:
+        return self._apply_document_totals_to_summary_fields(self._compute_document_totals())
 
     def _handle_subtotal_clicked(self) -> None:
         try:
@@ -890,10 +906,12 @@ class GeneratedUiPreviewWindow(QMainWindow):
         insert_sql = """
             INSERT INTO work_orders (
                 work_number, case_name, client_id, company_phone,
-                contact_name, work_time, cleanup_time, work_address, remark, status
+                contact_name, work_time, cleanup_time, work_address,
+                production_amount, tax_amount, total_amount, remark, status
             ) VALUES (
                 %(work_number)s, %(case_name)s, %(client_id)s, %(company_phone)s,
-                %(contact_name)s, %(work_time)s, %(cleanup_time)s, %(work_address)s, %(remark)s, %(status)s
+                %(contact_name)s, %(work_time)s, %(cleanup_time)s, %(work_address)s,
+                %(production_amount)s, %(tax_amount)s, %(total_amount)s, %(remark)s, %(status)s
             )
             ON DUPLICATE KEY UPDATE
                 case_name = VALUES(case_name),
@@ -903,6 +921,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 work_time = VALUES(work_time),
                 cleanup_time = VALUES(cleanup_time),
                 work_address = VALUES(work_address),
+                production_amount = VALUES(production_amount),
+                tax_amount = VALUES(tax_amount),
+                total_amount = VALUES(total_amount),
                 remark = VALUES(remark),
                 status = VALUES(status),
                 id = LAST_INSERT_ID(id)
@@ -965,6 +986,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 wo.work_time,
                 wo.cleanup_time,
                 wo.work_address,
+                wo.production_amount,
+                wo.tax_amount,
+                wo.total_amount,
                 wo.remark,
                 wo.status
             FROM work_orders wo
@@ -1071,9 +1095,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
             "le_startTime": header_row.get("work_time"),
             "le_endTime": header_row.get("cleanup_time"),
             "lle_address": header_row.get("work_address"),
-            "le_productionAmount": "",
-            "le_taxAmount": "",
-            "le_totalAmount": "",
+            "le_productionAmount": format_decimal_for_ui(header_row.get("production_amount")),
+            "le_taxAmount": format_decimal_for_ui(header_row.get("tax_amount")),
+            "le_totalAmount": format_decimal_for_ui(header_row.get("total_amount")),
         }
         for attr, value in field_mappings.items():
             widget = getattr(self.ui, attr, None)
@@ -1085,6 +1109,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         table_rows = self._build_table_rows_from_line_payloads(line_rows)
         self._populate_line_items_table_with_rows(table_rows)
+        if not (field_mappings["le_productionAmount"] and field_mappings["le_taxAmount"] and field_mappings["le_totalAmount"]):
+            self.calculate_document_totals()
         self._last_auto_filled_phone = str(header_row.get("company_phone") or "")
         self._last_auto_filled_address = str(header_row.get("work_address") or "")
         return int(header_row["id"]), len(line_rows)
@@ -1149,6 +1175,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if pymysql is None:
             raise RuntimeError("缺少 PyMySQL，無法儲存到 work_order_v2。")
 
+        self.calculate_document_totals()
         header_payload = self._header_payload()
         line_payloads = self._collect_line_payloads()
         with pymysql.connect(**_connect_kwargs()) as conn:
@@ -1986,6 +2013,9 @@ def _window_header_snapshot(window: GeneratedUiPreviewWindow) -> dict[str, str]:
         "start_time": normalize_line_edit_value(getattr(window.ui, "le_startTime", None)) or "",
         "end_time": normalize_line_edit_value(getattr(window.ui, "le_endTime", None)) or "",
         "address": normalize_line_edit_value(getattr(window.ui, "lle_address", None)) or "",
+        "production_amount": normalize_line_edit_value(getattr(window.ui, "le_productionAmount", None)) or "",
+        "tax_amount": normalize_line_edit_value(getattr(window.ui, "le_taxAmount", None)) or "",
+        "total_amount": normalize_line_edit_value(getattr(window.ui, "le_totalAmount", None)) or "",
         "remark": normalize_text_edit_value(getattr(window.ui, "te_remark", None)) or "",
     }
 
@@ -2010,7 +2040,7 @@ def _db_bundle_snapshot(work_number: str) -> tuple[dict[str, str], list[list[str
                 """
                 SELECT wo.id, wo.work_number, wo.case_name, c.short_name AS customer_name,
                        wo.company_phone, wo.contact_name, wo.work_time, wo.cleanup_time,
-                       wo.work_address, wo.remark
+                       wo.work_address, wo.production_amount, wo.tax_amount, wo.total_amount, wo.remark
                 FROM work_orders wo
                 LEFT JOIN clients c ON c.id = wo.client_id
                 WHERE wo.work_number = %s
@@ -2069,6 +2099,9 @@ def _db_bundle_snapshot(work_number: str) -> tuple[dict[str, str], list[list[str
         "start_time": str(header_row.get("work_time") or ""),
         "end_time": str(header_row.get("cleanup_time") or ""),
         "address": str(header_row.get("work_address") or ""),
+        "production_amount": format_decimal_for_ui(header_row.get("production_amount")),
+        "tax_amount": format_decimal_for_ui(header_row.get("tax_amount")),
+        "total_amount": format_decimal_for_ui(header_row.get("total_amount")),
         "remark": str(header_row.get("remark") or ""),
     }
     line_snapshot = [
@@ -2293,6 +2326,23 @@ def run_calculation_verification(window: GeneratedUiPreviewWindow) -> dict[str, 
             "",
             "abc",
         ],
+        [
+            (window.combo_column_options.get(0) or ["大圖輸出"])[0],
+            "90",
+            "x",
+            "90",
+            "1",
+            (window.combo_column_options.get(5) or [""])[0],
+            (window.combo_column_options.get(6) or [""])[0],
+            (window.combo_column_options.get(7) or [""])[0],
+            (window.combo_column_options.get(8) or [""])[0],
+            (window.combo_column_options.get(9) or [""])[0],
+            "1",
+            "",
+            "10",
+            "",
+            "1",
+        ],
     ]
     window._populate_line_items_table_with_rows(calc_rows)
 
@@ -2302,6 +2352,7 @@ def run_calculation_verification(window: GeneratedUiPreviewWindow) -> dict[str, 
         {"cbm": "12", "line_total": "120"},
         {"cbm": "56", "line_total": "1120"},
         {"cbm": "34", "line_total": "510"},
+        {"cbm": "9", "line_total": "90"},
     ]
     for row_index, expected in enumerate(expected_row_values):
         actual = {
@@ -2323,9 +2374,9 @@ def run_calculation_verification(window: GeneratedUiPreviewWindow) -> dict[str, 
         "total_amount": normalize_line_edit_value(getattr(window.ui, "le_totalAmount", None)) or "",
     }
     expected_totals = {
-        "production_amount": "1800",
-        "tax_amount": "90",
-        "total_amount": "1890",
+        "production_amount": "1891",
+        "tax_amount": "95",
+        "total_amount": "1986",
     }
     if totals != expected_totals:
         raise AssertionError(f"document totals mismatch: actual={totals} expected={expected_totals}")
