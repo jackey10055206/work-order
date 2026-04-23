@@ -47,20 +47,22 @@
 
 ## 2. 明細表 `work_order_lines`
 
+> 2026-04-23 補充：v2 已新增 option fallback text 欄位 migration：`sql/migrations/2026-04-23_add_line_option_text_fallbacks.sql`
+
 畫面主表 `tbl_lineItems` 每一列應對應一筆 `work_order_lines`。
 
 | 表格欄 | 標題 | 欄位型態 | DB 欄位 | 備註 |
 | --- | --- | --- | --- | --- |
-| 0 | 製作項目 | editable combo | `production_item_id` | 以 `option_items.option_group='production_item'` 查 id |
+| 0 | 製作項目 | editable combo | `production_item_id` + `production_item_text` | 找得到 `option_items.option_group='production_item'` 就存 id；找不到則 `id=NULL`、保留原文字到 `production_item_text` |
 | 1 | 寬度 | line edit | `width_mm` | 建議存數值 |
 | 2 | x | 固定字樣 | - | 純 UI 分隔，不入庫 |
 | 3 | 長度 | line edit | `height_mm` | schema 用 `height_mm` |
 | 4 | 數量 | line edit | `quantity` | 主數量 |
-| 5 | 材質 | editable combo | `material_id` | `option_group='material'` |
-| 6 | 冷裱加工 | editable combo | `lamination_id` | `option_group='lamination'` |
-| 7 | 板材種類 | editable combo | `board_type_id` | `option_group='board_type'` |
-| 8 | 板材厚度 | editable combo | `board_thickness_id` | `option_group='board_thickness'` |
-| 9 | 其他備料 | editable combo | `extra_material_id` | `option_group='extra_material'` |
+| 5 | 材質 | editable combo | `material_id` + `material_text` | 找得到 `option_group='material'` 就存 id；找不到則 `id=NULL`、文字寫 `material_text` |
+| 6 | 冷裱加工 | editable combo | `lamination_id` + `lamination_text` | 找得到 `option_group='lamination'` 就存 id；找不到則 `id=NULL`、文字寫 `lamination_text` |
+| 7 | 板材種類 | editable combo | `board_type_id` + `board_type_text` | 找得到 `option_group='board_type'` 就存 id；找不到則 `id=NULL`、文字寫 `board_type_text` |
+| 8 | 板材厚度 | editable combo | `board_thickness_id` + `board_thickness_text` | 找得到 `option_group='board_thickness'` 就存 id；找不到則 `id=NULL`、文字寫 `board_thickness_text` |
+| 9 | 其他備料 | editable combo | `extra_material_id` + `extra_material_text` | 找得到 `option_group='extra_material'` 就存 id；找不到則 `id=NULL`、文字寫 `extra_material_text` |
 | 10 | 數量 | line edit | `extra_material_quantity` | 備料數量 |
 | 11 | 才數 | locked/display | `cbm` | 目前 UI 是唯讀計算欄 |
 | 12 | 單價 | line edit | `cbm_unit_price` | 才數單價 |
@@ -159,10 +161,11 @@
 
 ### `option_items` lookup 規則
 
-- combo 欄位一律依 `option_group + item_name` 精準查 FK
+- combo 欄位一律先依 `option_group + item_name` 精準查 FK
 - 空白值可存 `NULL`
-- **只要使用者輸入了非空文字，但 DB 查不到對應項目，就直接阻擋整次儲存並報錯**
-- 不允許 fallback 到錯的 id，也不靜默寫入自由字串
+- **查得到既有 option_items 時：** 存對應 `*_id`，對應 `*_text` 一律存 `NULL`，避免冗餘與雙重真相
+- **查不到時：** 不報錯、不自動建 option_items；改存 `*_id = NULL`，並把使用者原始輸入寫到對應 `*_text`
+- 這套規則目前至少覆蓋：`production_item / material / lamination / board_type / board_thickness / extra_material`
 
 ### 明細寫入欄位
 
@@ -283,10 +286,10 @@ build label 來自：
 ### `option_items` FK 還原策略
 
 載入時不是把 id 直接塞回 UI，而是：
-- `work_order_lines.production_item_id` -> join `option_items pi` -> `pi.item_name`
-- `material_id` / `lamination_id` / `board_type_id` / `board_thickness_id` / `extra_material_id`
-  也各自 join `option_items` 取回顯示文字
-- UI table 看到的是 `item_name`，不是數字 FK
+- 若 `work_order_lines.*_id` 有值：join `option_items` 後顯示 `item_name`
+- 若 `*_id` 為 `NULL` 但 `*_text` 有值：直接顯示 `*_text`
+- 顯示優先序是 **FK 對應名稱 > text fallback > 空字串**
+- UI table 看到的是最終文字，不是數字 FK
 
 ### 查不到工單號時的定義
 

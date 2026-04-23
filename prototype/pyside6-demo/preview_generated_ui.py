@@ -713,17 +713,15 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 return True
         return False
 
-    def _lookup_option_item_id(self, option_group: str, item_name: str, row_number: int, column_label: str) -> int | None:
+    def _resolve_option_item_storage(self, option_group: str, item_name: str) -> tuple[int | None, str | None]:
         normalized_name = item_name.strip()
         if not normalized_name:
-            return None
+            return None, None
 
         item_id = self.option_item_ids_by_group.get(option_group, {}).get(normalized_name)
-        if item_id is None:
-            raise ValueError(
-                f"第 {row_number} 列「{column_label}」找不到 option_items 對應：group={option_group}, item_name={normalized_name}"
-            )
-        return item_id
+        if item_id is not None:
+            return item_id, None
+        return None, normalized_name
 
     def _parse_table_decimal(self, row: int, column: int, *, blank_as_zero: bool = True, invalid_as_zero: bool = True) -> Decimal:
         raw_value = self._table_cell_text(row, column)
@@ -880,18 +878,31 @@ class GeneratedUiPreviewWindow(QMainWindow):
             line_total = self._table_cell_text(row, 13)
             extra_material_total = self._table_cell_text(row, 14)
 
+            production_item_id, production_item_text = self._resolve_option_item_storage("production_item", production_item)
+            material_id, material_text = self._resolve_option_item_storage("material", material)
+            lamination_id, lamination_text = self._resolve_option_item_storage("lamination", lamination)
+            board_type_id, board_type_text = self._resolve_option_item_storage("board_type", board_type)
+            board_thickness_id, board_thickness_text = self._resolve_option_item_storage("board_thickness", board_thickness)
+            extra_material_id, extra_material_text = self._resolve_option_item_storage("extra_material", extra_material)
+
             line_payloads.append(
                 {
                     "line_no": len(line_payloads) + 1,
-                    "production_item_id": self._lookup_option_item_id("production_item", production_item, row_number, "製作項目"),
+                    "production_item_id": production_item_id,
+                    "production_item_text": production_item_text,
                     "width_mm": parse_decimal_or_none(width_mm),
                     "height_mm": parse_decimal_or_none(height_mm),
                     "quantity": parse_int_or_none(quantity),
-                    "material_id": self._lookup_option_item_id("material", material, row_number, "材質"),
-                    "lamination_id": self._lookup_option_item_id("lamination", lamination, row_number, "冷裱加工"),
-                    "board_type_id": self._lookup_option_item_id("board_type", board_type, row_number, "板材種類"),
-                    "board_thickness_id": self._lookup_option_item_id("board_thickness", board_thickness, row_number, "板材厚度"),
-                    "extra_material_id": self._lookup_option_item_id("extra_material", extra_material, row_number, "其他備料"),
+                    "material_id": material_id,
+                    "material_text": material_text,
+                    "lamination_id": lamination_id,
+                    "lamination_text": lamination_text,
+                    "board_type_id": board_type_id,
+                    "board_type_text": board_type_text,
+                    "board_thickness_id": board_thickness_id,
+                    "board_thickness_text": board_thickness_text,
+                    "extra_material_id": extra_material_id,
+                    "extra_material_text": extra_material_text,
                     "extra_material_quantity": parse_int_or_none(extra_material_quantity),
                     "cbm": parse_decimal_or_none(cbm),
                     "cbm_unit_price": parse_decimal_or_none(cbm_unit_price),
@@ -938,15 +949,15 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         insert_sql = """
             INSERT INTO work_order_lines (
-                work_order_id, line_no, production_item_id, width_mm, height_mm, quantity,
-                material_id, lamination_id, board_type_id, board_thickness_id,
-                extra_material_id, extra_material_quantity, cbm, cbm_unit_price,
-                line_total, extra_material_total
+                work_order_id, line_no, production_item_id, production_item_text, width_mm, height_mm, quantity,
+                material_id, material_text, lamination_id, lamination_text, board_type_id, board_type_text,
+                board_thickness_id, board_thickness_text, extra_material_id, extra_material_text,
+                extra_material_quantity, cbm, cbm_unit_price, line_total, extra_material_total
             ) VALUES (
-                %(work_order_id)s, %(line_no)s, %(production_item_id)s, %(width_mm)s, %(height_mm)s, %(quantity)s,
-                %(material_id)s, %(lamination_id)s, %(board_type_id)s, %(board_thickness_id)s,
-                %(extra_material_id)s, %(extra_material_quantity)s, %(cbm)s, %(cbm_unit_price)s,
-                %(line_total)s, %(extra_material_total)s
+                %(work_order_id)s, %(line_no)s, %(production_item_id)s, %(production_item_text)s, %(width_mm)s, %(height_mm)s, %(quantity)s,
+                %(material_id)s, %(material_text)s, %(lamination_id)s, %(lamination_text)s, %(board_type_id)s, %(board_type_text)s,
+                %(board_thickness_id)s, %(board_thickness_text)s, %(extra_material_id)s, %(extra_material_text)s,
+                %(extra_material_quantity)s, %(cbm)s, %(cbm_unit_price)s, %(line_total)s, %(extra_material_total)s
             )
         """
         rows = []
@@ -1007,6 +1018,12 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 wol.cbm_unit_price,
                 wol.line_total,
                 wol.extra_material_total,
+                wol.production_item_text,
+                wol.material_text,
+                wol.lamination_text,
+                wol.board_type_text,
+                wol.board_thickness_text,
+                wol.extra_material_text,
                 pi.item_name AS production_item_name,
                 mi.item_name AS material_name,
                 li.item_name AS lamination_name,
@@ -1052,16 +1069,16 @@ class GeneratedUiPreviewWindow(QMainWindow):
         for line_row in line_rows:
             built_rows.append(
                 [
-                    self._coerce_option_item_name("production_item", line_row.get("production_item_name")),
+                    self._coerce_option_item_name("production_item", line_row.get("production_item_name") or line_row.get("production_item_text")),
                     format_decimal_for_ui(line_row.get("width_mm")),
                     "x",
                     format_decimal_for_ui(line_row.get("height_mm")),
                     format_decimal_for_ui(line_row.get("quantity")),
-                    self._coerce_option_item_name("material", line_row.get("material_name")),
-                    self._coerce_option_item_name("lamination", line_row.get("lamination_name")),
-                    self._coerce_option_item_name("board_type", line_row.get("board_type_name")),
-                    self._coerce_option_item_name("board_thickness", line_row.get("board_thickness_name")),
-                    self._coerce_option_item_name("extra_material", line_row.get("extra_material_name")),
+                    self._coerce_option_item_name("material", line_row.get("material_name") or line_row.get("material_text")),
+                    self._coerce_option_item_name("lamination", line_row.get("lamination_name") or line_row.get("lamination_text")),
+                    self._coerce_option_item_name("board_type", line_row.get("board_type_name") or line_row.get("board_type_text")),
+                    self._coerce_option_item_name("board_thickness", line_row.get("board_thickness_name") or line_row.get("board_thickness_text")),
+                    self._coerce_option_item_name("extra_material", line_row.get("extra_material_name") or line_row.get("extra_material_text")),
                     format_decimal_for_ui(line_row.get("extra_material_quantity")),
                     format_decimal_for_ui(line_row.get("cbm")),
                     format_decimal_for_ui(line_row.get("cbm_unit_price")),
@@ -2068,7 +2085,13 @@ def _db_bundle_snapshot(work_number: str) -> tuple[dict[str, str], list[list[str
                        wol.cbm,
                        wol.cbm_unit_price,
                        wol.line_total,
-                       wol.extra_material_total
+                       wol.extra_material_total,
+                       wol.production_item_text,
+                       wol.material_text,
+                       wol.lamination_text,
+                       wol.board_type_text,
+                       wol.board_thickness_text,
+                       wol.extra_material_text
                 FROM work_order_lines wol
                 LEFT JOIN option_items pi ON pi.id = wol.production_item_id
                 LEFT JOIN option_items mi ON mi.id = wol.material_id
@@ -2106,16 +2129,16 @@ def _db_bundle_snapshot(work_number: str) -> tuple[dict[str, str], list[list[str
     }
     line_snapshot = [
         [
-            str(line_row.get("production_item_name") or ""),
+            str(line_row.get("production_item_name") or line_row.get("production_item_text") or ""),
             format_decimal_for_ui(line_row.get("width_mm")),
             "x",
             format_decimal_for_ui(line_row.get("height_mm")),
             format_decimal_for_ui(line_row.get("quantity")),
-            str(line_row.get("material_name") or ""),
-            str(line_row.get("lamination_name") or ""),
-            str(line_row.get("board_type_name") or ""),
-            str(line_row.get("board_thickness_name") or ""),
-            str(line_row.get("extra_material_name") or ""),
+            str(line_row.get("material_name") or line_row.get("material_text") or ""),
+            str(line_row.get("lamination_name") or line_row.get("lamination_text") or ""),
+            str(line_row.get("board_type_name") or line_row.get("board_type_text") or ""),
+            str(line_row.get("board_thickness_name") or line_row.get("board_thickness_text") or ""),
+            str(line_row.get("extra_material_name") or line_row.get("extra_material_text") or ""),
             format_decimal_for_ui(line_row.get("extra_material_quantity")),
             format_decimal_for_ui(line_row.get("cbm")),
             format_decimal_for_ui(line_row.get("cbm_unit_price")),
