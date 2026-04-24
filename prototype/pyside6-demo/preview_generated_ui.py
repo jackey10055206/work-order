@@ -588,6 +588,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         }
         self._last_auto_filled_phone = ""
         self._last_auto_filled_address = ""
+        self._loaded_work_order_number = ""
         self.table_tab_navigator: TableCellTabNavigator | None = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -1137,15 +1138,21 @@ class GeneratedUiPreviewWindow(QMainWindow):
             self.calculate_document_totals()
         self._last_auto_filled_phone = str(header_row.get("company_phone") or "")
         self._last_auto_filled_address = str(header_row.get("work_address") or "")
+        self._loaded_work_order_number = str(header_row.get("work_number") or "").strip()
         return int(header_row["id"]), len(line_rows)
 
     def _has_loaded_content_on_screen(self) -> bool:
+        return self._screen_has_meaningful_content(include_lookup_work_number=True)
+
+    def _screen_has_meaningful_content(self, *, include_lookup_work_number: bool) -> bool:
+        if self._loaded_work_order_number:
+            return True
+
         customer_combo = getattr(self.ui, "cb_customerName", None)
         if isinstance(customer_combo, QComboBox) and customer_combo.currentText().strip():
             return True
 
-        for attr in (
-            "le_worknum",
+        line_edit_attrs = [
             "le_contactName",
             "le_phone",
             "le_caseName",
@@ -1155,7 +1162,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
             "le_productionAmount",
             "le_taxAmount",
             "le_totalAmount",
-        ):
+        ]
+        if include_lookup_work_number:
+            line_edit_attrs.insert(0, "le_worknum")
+
+        for attr in line_edit_attrs:
             widget = getattr(self.ui, attr, None)
             if isinstance(widget, QLineEdit) and widget.text().strip():
                 return True
@@ -1194,7 +1205,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
     def _handle_open_clicked(self) -> None:
         work_number = normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or ""
-        if self._has_loaded_content_on_screen():
+        if self._screen_has_meaningful_content(include_lookup_work_number=False):
             confirm = QMessageBox.question(
                 self,
                 "開啟工單",
@@ -1230,6 +1241,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 work_order_id = self._upsert_work_order_header(cur, header_payload)
                 self._replace_work_order_lines(cur, work_order_id, line_payloads)
             conn.commit()
+        self._loaded_work_order_number = str(header_payload.get("work_number") or "").strip()
         return work_order_id, len(line_payloads)
 
     def _find_existing_work_order_id(self, work_number: str) -> int | None:
@@ -1984,6 +1996,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         self._last_auto_filled_phone = ""
         self._last_auto_filled_address = ""
+        self._loaded_work_order_number = ""
 
         customer_combo = getattr(self.ui, "cb_customerName", None)
         if isinstance(customer_combo, QComboBox):
@@ -2664,6 +2677,67 @@ def run_reset_verification(window: GeneratedUiPreviewWindow, work_number: str) -
     }
 
 
+def run_open_dirty_check_verification(window: GeneratedUiPreviewWindow, work_number: str) -> dict[str, object]:
+    window._seed_demo_values()
+    worknum_widget = getattr(window.ui, "le_worknum", None)
+    case_widget = getattr(window.ui, "le_caseName", None)
+    remark_widget = getattr(window.ui, "te_remark", None)
+    if isinstance(worknum_widget, QLineEdit):
+        worknum_widget.setText(work_number)
+    seeded_work_order_id, seeded_line_count = window.save_work_order_with_lines()
+
+    window._initialize_blank_work_order()
+    if isinstance(worknum_widget, QLineEdit):
+        worknum_widget.setText(work_number)
+    with _mock_message_boxes(question_response=QMessageBox.StandardButton.Yes) as lookup_only_events:
+        window._handle_open_clicked()
+    if lookup_only_events["question"]:
+        raise AssertionError("lookup-only open should not ask for overwrite confirmation")
+    if len(lookup_only_events["information"]) != 1:
+        raise AssertionError("lookup-only open should still finish the open flow")
+
+    window.reset_work_order_to_blank()
+    if isinstance(worknum_widget, QLineEdit):
+        worknum_widget.setText(work_number)
+    if isinstance(case_widget, QLineEdit):
+        case_widget.setText("DIRTY CHECK SHOULD ASK")
+    with _mock_message_boxes(question_response=QMessageBox.StandardButton.No) as typed_content_events:
+        window._handle_open_clicked()
+    if len(typed_content_events["question"]) != 1:
+        raise AssertionError("open with edited content should ask exactly one confirmation")
+    if typed_content_events["information"]:
+        raise AssertionError("cancelled open should not show success information")
+
+    window.load_work_order_by_number(work_number)
+    if not window._loaded_work_order_number:
+        raise AssertionError("loaded work order marker was not recorded")
+    with _mock_message_boxes(question_response=QMessageBox.StandardButton.No) as loaded_screen_events:
+        window._handle_open_clicked()
+    if len(loaded_screen_events["question"]) != 1:
+        raise AssertionError("loaded work order should still ask before opening another one")
+
+    window.reset_work_order_to_blank()
+    if isinstance(worknum_widget, QLineEdit):
+        worknum_widget.setText(work_number)
+    if remark_widget is not None:
+        remark_widget.setPlainText("remark makes screen dirty")
+    with _mock_message_boxes(question_response=QMessageBox.StandardButton.No) as remark_events:
+        window._handle_open_clicked()
+    if len(remark_events["question"]) != 1:
+        raise AssertionError("remark content should trigger overwrite confirmation")
+
+    return {
+        "seeded_work_order_id": seeded_work_order_id,
+        "seeded_line_count": seeded_line_count,
+        "lookup_only_confirmations": len(lookup_only_events["question"]),
+        "typed_content_confirmations": len(typed_content_events["question"]),
+        "loaded_screen_confirmations": len(loaded_screen_events["question"]),
+        "remark_confirmations": len(remark_events["question"]),
+        "loaded_work_number_marker": window._loaded_work_order_number,
+        "build_label": BUILD_LABEL_TEXT,
+    }
+
+
 def run_save_overwrite_verification(window: GeneratedUiPreviewWindow, work_number: str) -> dict[str, object]:
     window._seed_demo_values()
     worknum_widget = getattr(window.ui, "le_worknum", None)
@@ -2716,6 +2790,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--calc-verify", action="store_true", help="Verify subtotal/calculate rules, blank handling, auto-append, and tab order.")
     parser.add_argument("--reset-verify", help="Seed demo data into this work number, verify reset UX/save-open flow, and exit.")
     parser.add_argument("--save-overwrite-verify", help="Seed demo data into this work number, verify save overwrite confirmation UX, and exit.")
+    parser.add_argument("--open-dirty-verify", help="Seed demo data into this work number, verify open dirty-check UX, and exit.")
     return parser.parse_args(argv)
 
 
@@ -2821,6 +2896,19 @@ def main(argv: list[str] | None = None) -> int:
             app.exit(0)
 
         QTimer.singleShot(0, verify_save_overwrite_and_quit)
+    elif args.open_dirty_verify:
+        def verify_open_dirty_and_quit() -> None:
+            try:
+                result = run_open_dirty_check_verification(window, args.open_dirty_verify)
+            except Exception as exc:
+                print(f"OPEN_DIRTY_VERIFY_ERROR: {exc}", file=sys.stderr)
+                app.exit(1)
+                return
+
+            print(f"OPEN_DIRTY_VERIFY_OK:{result}")
+            app.exit(0)
+
+        QTimer.singleShot(0, verify_open_dirty_and_quit)
     elif args.screenshot:
         target = args.screenshot.expanduser().resolve()
         target.parent.mkdir(parents=True, exist_ok=True)
