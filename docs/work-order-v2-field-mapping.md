@@ -566,7 +566,96 @@ ROW_UX_VERIFY_OK:{
    - 代表新增 row UX 後，最後一列有效時自動補新列、存檔只存有效列、開啟再載回、build label 保留等行為都仍正常
 
 
-## 12. bottom summary 存檔規則（2026-04-23）
+## 12. `btn_billing` 請款 Excel 匯出規則（2026-04-27）
+
+`preview_generated_ui.py` 這輪把 bottom 區的 `btn_billing` 正式接上 Excel 請款匯出流程，使用既有樣板：
+
+- `/Users/luoweijie/.openclaw/media/inbound/excel_payment---77c32a06-0913-4a13-b837-a079ffedda68.xlsx`
+
+### 匯出資料來源
+
+- 以**目前畫面上**的 header / middle table / bottom summary 為主
+- 匯出前會先跑一次 `calculate_document_totals()`，確保 summary 與目前明細一致
+- 客戶額外資訊不是從畫面文字硬猜，而是用 `cb_customerName.currentText()` 回查 `clients.short_name` 對應 row，再取：
+  - `clients.full_name`
+  - `clients.tax_id`
+  - `clients.address`
+
+### Header mapping
+
+| Excel 格位 | 值來源 |
+| --- | --- |
+| `C3:E3` | `clients.full_name` |
+| `G3` | `le_caseName` |
+| `I3` | `le_contactName` |
+| `K3` | `le_phone` |
+| `C4:G4` | `lle_address` |
+| `I4` | `le_startTime` |
+| `K4` | `le_endTime` |
+| `C5` | `clients.tax_id` |
+| `F5:K5` | `clients.address` |
+
+### 明細 mapping（Excel 第 7~21 列）
+
+每頁最多 15 列，對應 Excel `7..21`：
+
+| Excel 欄 | 值來源 |
+| --- | --- |
+| `B{r}` | 製作項目 |
+| `C{r}:D{r}` | `寬度 x 長度` |
+| `E{r}` | 數量 |
+| `F{r}` | 材質 |
+| `G{r}` | `板材厚度 + 板材種類` |
+| `H{r}` | 其他備料 |
+| `I{r}` | 備料數量 |
+| `J{r}` | 才數 |
+| `K{r}` | 計價 |
+| `L{r}` | 備料計價 |
+
+補充：
+- 冷裱加工在這份請款 Excel **不填**
+- option 類欄位沿用目前 UI 顯示文字，因此既有 option name 與 text fallback 都可直接匯出
+
+### 多頁規則
+
+- 單頁最多 15 列
+- 超過 15 列時，自動拆成多個 Excel 檔案
+- 每頁 header 都相同
+- **只有最後一頁**填 bottom totals：
+  - `H22` -> 製作金額
+  - `J22` -> 稅額
+  - `L22` -> 製作總價
+- 前面頁數的 `H22 / J22 / L22` 全部留空
+
+### 檔名規則
+
+輸出檔名：
+
+- `{工單編號}-{客戶}-{案件名稱}-第一頁.xlsx`
+- `{工單編號}-{客戶}-{案件名稱}-第二頁.xlsx`
+- 依此類推
+
+其中 `{工單編號}` / `{客戶}` / `{案件名稱}` 都會先做檔名安全處理：
+- 過濾非法字元 `< > : " / \\ | ? *`
+- 壓縮多餘空白
+- 去除尾端空白與 `.`
+
+### 自動驗證入口
+
+```bash
+QT_QPA_PLATFORM=offscreen prototype/pyside6-demo/.venv/bin/python \
+  prototype/pyside6-demo/preview_generated_ui.py \
+  --billing-export-verify prototype/pyside6-demo/out/billing-verify
+```
+
+此驗證至少覆蓋：
+1. 15 列內匯出 1 份 Excel
+2. 17 列匯出 2 份 Excel，第二頁只放剩餘 2 列
+3. 只有最後一頁有 totals
+4. `clients.full_name / tax_id / address` 正確寫入 header
+5. fallback 文字（非 option_items 既有值）也能正確寫入 Excel
+
+## 13. bottom summary 存檔規則（2026-04-23）
 
 這輪把 bottom 區三個欄位正式納入 v2 `work_orders`：
 - `production_amount`

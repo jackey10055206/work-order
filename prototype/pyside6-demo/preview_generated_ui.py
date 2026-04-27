@@ -38,6 +38,11 @@ try:
 except ImportError:  # pragma: no cover - fallback when PyMySQL is unavailable
     pymysql = None
 
+try:
+    from openpyxl import load_workbook
+except ImportError:  # pragma: no cover - fallback when openpyxl is unavailable
+    load_workbook = None
+
 
 TABLE_HEADERS = [
     "製作項目",
@@ -125,6 +130,24 @@ BUILD_COMMIT_HASH = resolve_build_commit_hash()
 BUILD_LABEL_TEXT = f"build: {BUILD_COMMIT_HASH}"
 
 
+BILLING_TEMPLATE_PATH = Path("/Users/luoweijie/.openclaw/media/inbound/excel_payment---77c32a06-0913-4a13-b837-a079ffedda68.xlsx")
+BILLING_MAX_ROWS_PER_PAGE = 15
+BILLING_DETAIL_START_ROW = 7
+BILLING_TOTAL_ROW = 22
+PAGE_LABELS = [
+    "第一頁",
+    "第二頁",
+    "第三頁",
+    "第四頁",
+    "第五頁",
+    "第六頁",
+    "第七頁",
+    "第八頁",
+    "第九頁",
+    "第十頁",
+]
+
+
 def _connect_kwargs() -> dict:
     return {key: value for key, value in DB_V2_CONFIG.items() if value is not None}
 
@@ -134,7 +157,7 @@ def load_clients_from_v2() -> list[dict[str, str | int | None]]:
         return []
 
     query = """
-        SELECT id, short_name, full_name, phone, address
+        SELECT id, short_name, full_name, phone, address, tax_id
         FROM clients
         WHERE is_active = 1
         ORDER BY short_name, id
@@ -159,6 +182,7 @@ def load_clients_from_v2() -> list[dict[str, str | int | None]]:
                 "full_name": (row.get("full_name") or "").strip() or None,
                 "phone": (row.get("phone") or "").strip() or None,
                 "address": (row.get("address") or "").strip() or None,
+                "tax_id": (row.get("tax_id") or "").strip() or None,
             }
         )
     return normalized_rows
@@ -601,6 +625,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._configure_open_flow()
         self._configure_reset_flow()
         self._configure_calculation_actions()
+        self._configure_billing_action()
         self._configure_line_row_actions()
         self._configure_focus_chain()
 
@@ -659,6 +684,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
         calculate_button = getattr(self.ui, "btn_calcuate", None)
         if calculate_button is not None:
             calculate_button.clicked.connect(self._handle_calculate_clicked)
+
+    def _configure_billing_action(self) -> None:
+        billing_button = getattr(self.ui, "btn_billing", None)
+        if billing_button is not None:
+            billing_button.clicked.connect(self._handle_billing_clicked)
 
     def _configure_line_row_actions(self) -> None:
         table = getattr(self.ui, "tbl_lineItems", None)
@@ -859,6 +889,112 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._set_status_message(
             f"已完成整單計算：製作金額 {result['production_amount']} / 稅額 {result['tax_amount']} / 總計 {result['total_amount']}"
         )
+
+    def _current_client_row(self) -> dict[str, str | int | None] | None:
+        customer_combo = getattr(self.ui, "cb_customerName", None)
+        if not isinstance(customer_combo, QComboBox):
+            return None
+        customer_name = customer_combo.currentText().strip()
+        return self.client_rows_by_short_name.get(customer_name) if customer_name else None
+
+    def _billing_header_snapshot(self) -> dict[str, str]:
+        client_row = self._current_client_row() or {}
+        customer_combo = getattr(self.ui, "cb_customerName", None)
+        customer_short_name = customer_combo.currentText().strip() if isinstance(customer_combo, QComboBox) else ""
+        return {
+            "work_number": normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or "",
+            "customer_short_name": customer_short_name,
+            "customer_full_name": str(client_row.get("full_name") or customer_short_name or ""),
+            "case_name": normalize_line_edit_value(getattr(self.ui, "le_caseName", None)) or "",
+            "contact_name": normalize_line_edit_value(getattr(self.ui, "le_contactName", None)) or "",
+            "phone": normalize_line_edit_value(getattr(self.ui, "le_phone", None)) or "",
+            "work_address": normalize_line_edit_value(getattr(self.ui, "lle_address", None)) or "",
+            "work_time": normalize_line_edit_value(getattr(self.ui, "le_startTime", None)) or "",
+            "cleanup_time": normalize_line_edit_value(getattr(self.ui, "le_endTime", None)) or "",
+            "company_tax_id": str(client_row.get("tax_id") or ""),
+            "company_address": str(client_row.get("address") or ""),
+        }
+
+    def _billing_line_items(self) -> list[dict[str, str]]:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return []
+        rows: list[dict[str, str]] = []
+        for row in range(table.rowCount()):
+            if not self._line_row_has_meaningful_data(row):
+                continue
+            width = self._table_cell_text(row, 1)
+            length = self._table_cell_text(row, 3)
+            size = " x ".join(part for part in [width, length] if part) if (width or length) else ""
+            board_text = f"{self._table_cell_text(row, 8)}{self._table_cell_text(row, 7)}".strip()
+            rows.append(
+                {
+                    "production_item": self._table_cell_text(row, 0),
+                    "size": size,
+                    "quantity": self._table_cell_text(row, 4),
+                    "material": self._table_cell_text(row, 5),
+                    "board": board_text,
+                    "extra_material": self._table_cell_text(row, 9),
+                    "extra_material_quantity": self._table_cell_text(row, 10),
+                    "cbm": self._table_cell_text(row, 11),
+                    "line_total": self._table_cell_text(row, 13),
+                    "extra_material_total": self._table_cell_text(row, 14),
+                }
+            )
+        return rows
+
+    def export_billing_excels(self, output_dir: Path | None = None) -> list[Path]:
+        if load_workbook is None:
+            raise RuntimeError("缺少 openpyxl，無法匯出請款 Excel。")
+        if not BILLING_TEMPLATE_PATH.exists():
+            raise FileNotFoundError(f"找不到請款樣板：{BILLING_TEMPLATE_PATH}")
+
+        totals = self.calculate_document_totals()
+        header = self._billing_header_snapshot()
+        if not header["work_number"]:
+            raise ValueError("工單號不可為空。")
+        if not header["customer_short_name"]:
+            raise ValueError("請先選擇客戶，再匯出請款 Excel。")
+        line_items = self._billing_line_items()
+        if not line_items:
+            raise ValueError("目前沒有可匯出的明細列。")
+
+        export_dir = output_dir.expanduser().resolve() if output_dir is not None else Path.cwd()
+        export_dir.mkdir(parents=True, exist_ok=True)
+        page_chunks = chunked(line_items, BILLING_MAX_ROWS_PER_PAGE)
+        exported_paths: list[Path] = []
+        for page_index, page_rows in enumerate(page_chunks, start=1):
+            workbook = load_workbook(BILLING_TEMPLATE_PATH)
+            sheet = workbook.active
+            apply_billing_header_to_sheet(sheet, header)
+            apply_billing_rows_to_sheet(sheet, page_rows)
+            if page_index == len(page_chunks):
+                apply_billing_totals_to_sheet(sheet, totals)
+            else:
+                clear_billing_totals_on_sheet(sheet)
+
+            output_path = export_dir / build_billing_output_filename(
+                header["work_number"],
+                header["customer_short_name"],
+                header["case_name"],
+                page_index,
+            )
+            workbook.save(output_path)
+            exported_paths.append(output_path)
+        return exported_paths
+
+    def _handle_billing_clicked(self) -> None:
+        try:
+            exported_paths = self.export_billing_excels(Path.cwd())
+        except Exception as exc:
+            message = str(exc) or exc.__class__.__name__
+            QMessageBox.warning(self, "請款匯出失敗", message)
+            self._set_status_message(f"請款匯出失敗：{message}")
+            return
+
+        files_text = "\n".join(str(path) for path in exported_paths)
+        QMessageBox.information(self, "請款匯出完成", f"已輸出 {len(exported_paths)} 個 Excel：\n{files_text}")
+        self._set_status_message(f"請款 Excel 已輸出 {len(exported_paths)} 個檔案。")
 
     def _collect_line_payloads(self) -> list[dict[str, object | None]]:
         table = getattr(self.ui, "tbl_lineItems", None)
@@ -2780,6 +2916,201 @@ def run_save_overwrite_verification(window: GeneratedUiPreviewWindow, work_numbe
     }
 
 
+def chunked(items: list[dict[str, str]], size: int) -> list[list[dict[str, str]]]:
+    if size <= 0:
+        raise ValueError("chunk size must be positive")
+    return [items[index : index + size] for index in range(0, len(items), size)]
+
+
+def sanitize_filename_component(value: str) -> str:
+    sanitized = "".join("_" if ch in '<>:"/\\|?*' else ch for ch in value.strip())
+    sanitized = sanitized.replace("\n", " ").replace("\r", " ")
+    sanitized = " ".join(sanitized.split())
+    return sanitized.strip(" .") or "未命名"
+
+
+def page_label(page_index: int) -> str:
+    if 1 <= page_index <= len(PAGE_LABELS):
+        return PAGE_LABELS[page_index - 1]
+    return f"第{page_index}頁"
+
+
+def build_billing_output_filename(work_number: str, customer_name: str, case_name: str, page_index: int) -> str:
+    parts = [
+        sanitize_filename_component(work_number),
+        sanitize_filename_component(customer_name),
+        sanitize_filename_component(case_name),
+        page_label(page_index),
+    ]
+    return "-".join(parts) + ".xlsx"
+
+
+def set_merged_cell_value(sheet, cell_ref: str, value: str) -> None:
+    sheet[cell_ref] = value
+
+
+def apply_billing_header_to_sheet(sheet, header: dict[str, str]) -> None:
+    set_merged_cell_value(sheet, "C3", header["customer_full_name"])
+    sheet["G3"] = header["case_name"]
+    sheet["I3"] = header["contact_name"]
+    sheet["K3"] = header["phone"]
+    set_merged_cell_value(sheet, "C4", header["work_address"])
+    sheet["I4"] = header["work_time"]
+    sheet["K4"] = header["cleanup_time"]
+    sheet["C5"] = header["company_tax_id"]
+    set_merged_cell_value(sheet, "F5", header["company_address"])
+
+
+def apply_billing_rows_to_sheet(sheet, page_rows: list[dict[str, str]]) -> None:
+    for row_offset in range(BILLING_MAX_ROWS_PER_PAGE):
+        excel_row = BILLING_DETAIL_START_ROW + row_offset
+        row_payload = page_rows[row_offset] if row_offset < len(page_rows) else None
+        values = row_payload or {
+            "production_item": "", "size": "", "quantity": "", "material": "", "board": "",
+            "extra_material": "", "extra_material_quantity": "", "cbm": "", "line_total": "", "extra_material_total": "",
+        }
+        sheet[f"B{excel_row}"] = values["production_item"]
+        set_merged_cell_value(sheet, f"C{excel_row}", values["size"])
+        sheet[f"E{excel_row}"] = values["quantity"]
+        sheet[f"F{excel_row}"] = values["material"]
+        sheet[f"G{excel_row}"] = values["board"]
+        sheet[f"H{excel_row}"] = values["extra_material"]
+        sheet[f"I{excel_row}"] = values["extra_material_quantity"]
+        sheet[f"J{excel_row}"] = values["cbm"]
+        sheet[f"K{excel_row}"] = values["line_total"]
+        sheet[f"L{excel_row}"] = values["extra_material_total"]
+
+
+def apply_billing_totals_to_sheet(sheet, totals: dict[str, str]) -> None:
+    sheet["H22"] = totals["production_amount"]
+    sheet["J22"] = totals["tax_amount"]
+    sheet["L22"] = totals["total_amount"]
+
+
+def clear_billing_totals_on_sheet(sheet) -> None:
+    for cell_ref in ("H22", "J22", "L22"):
+        sheet[cell_ref] = ""
+
+
+def _seed_billing_rows(window: GeneratedUiPreviewWindow, row_count: int, *, fallback_row: int | None = None) -> None:
+    rows: list[list[str]] = []
+    for idx in range(row_count):
+        use_fallback = fallback_row is not None and idx == fallback_row
+        rows.append([
+            f"製作項目{idx + 1}" if not use_fallback else "客製項目/特殊*測試",
+            str(100 + idx),
+            "x",
+            str(200 + idx),
+            str((idx % 3) + 1),
+            f"材質{idx + 1}" if not use_fallback else "客製材質?",
+            "",
+            f"板材{idx + 1}" if not use_fallback else "特殊板",
+            f"{(idx % 5) + 1}mm" if not use_fallback else "7mm",
+            f"備料{idx + 1}" if not use_fallback else "其他備料:",
+            str((idx % 2) + 1),
+            str(10 + idx),
+            str(100 + idx),
+            str(500 + idx),
+            str(30 + idx),
+        ])
+    window._populate_line_items_table_with_rows(rows)
+
+
+def run_billing_export_verification(window: GeneratedUiPreviewWindow, output_dir: Path) -> dict[str, object]:
+    customer_name = next(iter(window.client_rows_by_short_name.keys()), "")
+    if not customer_name:
+        raise AssertionError("clients table is empty; cannot verify billing export")
+    client_row = window.client_rows_by_short_name[customer_name]
+    customer_combo = getattr(window.ui, "cb_customerName", None)
+    if isinstance(customer_combo, QComboBox):
+        customer_combo.setCurrentText(customer_name)
+    for attr, value in {
+        "le_worknum": "BILL-EXPORT-01",
+        "le_caseName": "請款測試/案件:特殊?",
+        "le_contactName": "王小明",
+        "le_phone": "02-1234-5678",
+        "le_startTime": "2026/04/27 09:00",
+        "le_endTime": "2026/04/27 18:00",
+        "lle_address": "台北市信義區測試路 1 號",
+    }.items():
+        widget = getattr(window.ui, attr, None)
+        if isinstance(widget, QLineEdit):
+            widget.setText(value)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    _seed_billing_rows(window, 15, fallback_row=2)
+    window._set_summary_field_value("le_productionAmount", Decimal("9999"))
+    window._set_summary_field_value("le_taxAmount", Decimal("500"))
+    window._set_summary_field_value("le_totalAmount", Decimal("10499"))
+    single_paths = window.export_billing_excels(output_dir / "single")
+    if len(single_paths) != 1:
+        raise AssertionError(f"expected 1 billing file, got {len(single_paths)}")
+    wb = load_workbook(single_paths[0], data_only=True)
+    ws = wb.active
+    expected_full_name = str(client_row.get("full_name") or customer_name)
+    if ws["C3"].value != expected_full_name:
+        raise AssertionError(f"client full_name mismatch: {ws['C3'].value} vs {expected_full_name}")
+    if ws["C5"].value != str(client_row.get("tax_id") or ""):
+        raise AssertionError("client tax_id mismatch")
+    if ws["F5"].value != str(client_row.get("address") or ""):
+        raise AssertionError("client address mismatch")
+    if ws["B9"].value != "客製項目/特殊*測試":
+        raise AssertionError("fallback production_item export mismatch")
+    if ws["F9"].value != "客製材質?":
+        raise AssertionError("fallback material export mismatch")
+    if ws["G9"].value != "7mm特殊板":
+        raise AssertionError("fallback board export mismatch")
+    if ws["H22"].value in (None, "") or ws["J22"].value in (None, "") or ws["L22"].value in (None, ""):
+        raise AssertionError("single-page totals should be filled")
+
+    if single_paths[0].name != "BILL-EXPORT-01-{}-{}-第一頁.xlsx".format(
+        sanitize_filename_component(customer_name),
+        sanitize_filename_component("請款測試/案件:特殊?"),
+    ):
+        raise AssertionError(f"unexpected single file name: {single_paths[0].name}")
+
+    _seed_billing_rows(window, 17, fallback_row=16)
+    multi_paths = window.export_billing_excels(output_dir / "multi")
+    if len(multi_paths) != 2:
+        raise AssertionError(f"expected 2 billing files, got {len(multi_paths)}")
+    wb1 = load_workbook(multi_paths[0], data_only=True)
+    ws1 = wb1.active
+    wb2 = load_workbook(multi_paths[1], data_only=True)
+    ws2 = wb2.active
+    if ws1["B7"].value != "製作項目1" or ws1["B21"].value != "製作項目15":
+        raise AssertionError("first page detail rows mismatch")
+    if ws2["B7"].value != "製作項目16" or ws2["B8"].value != "客製項目/特殊*測試":
+        raise AssertionError("second page remaining rows mismatch")
+    if ws2["B9"].value not in (None, ""):
+        raise AssertionError("second page should only contain remaining rows")
+    if ws1["H22"].value not in (None, "") or ws1["J22"].value not in (None, "") or ws1["L22"].value not in (None, ""):
+        raise AssertionError("non-final page totals must be blank")
+    if ws2["H22"].value in (None, "") or ws2["J22"].value in (None, "") or ws2["L22"].value in (None, ""):
+        raise AssertionError("final page totals must be filled")
+
+    return {
+        "single_paths": [str(path) for path in single_paths],
+        "multi_paths": [str(path) for path in multi_paths],
+        "single_header": {
+            "customer_full_name": ws["C3"].value,
+            "tax_id": ws["C5"].value,
+            "company_address": ws["F5"].value,
+        },
+        "single_fallback_row": {
+            "production_item": ws["B9"].value,
+            "material": ws["F9"].value,
+            "board": ws["G9"].value,
+        },
+        "multi_page_rows": {
+            "page1_last": ws1["B21"].value,
+            "page2_first": ws2["B7"].value,
+            "page2_second": ws2["B8"].value,
+        },
+        "build_label": BUILD_LABEL_TEXT,
+    }
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--screenshot", type=Path, help="Save a screenshot to this path and exit.")
@@ -2791,6 +3122,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--reset-verify", help="Seed demo data into this work number, verify reset UX/save-open flow, and exit.")
     parser.add_argument("--save-overwrite-verify", help="Seed demo data into this work number, verify save overwrite confirmation UX, and exit.")
     parser.add_argument("--open-dirty-verify", help="Seed demo data into this work number, verify open dirty-check UX, and exit.")
+    parser.add_argument("--billing-export-verify", type=Path, help="Export billing excels into this directory, verify 1-page/2-page mappings, and exit.")
     return parser.parse_args(argv)
 
 
@@ -2909,6 +3241,19 @@ def main(argv: list[str] | None = None) -> int:
             app.exit(0)
 
         QTimer.singleShot(0, verify_open_dirty_and_quit)
+    elif args.billing_export_verify:
+        def verify_billing_export_and_quit() -> None:
+            try:
+                result = run_billing_export_verification(window, args.billing_export_verify)
+            except Exception as exc:
+                print(f"BILLING_EXPORT_VERIFY_ERROR: {exc}", file=sys.stderr)
+                app.exit(1)
+                return
+
+            print(f"BILLING_EXPORT_VERIFY_OK:{result}")
+            app.exit(0)
+
+        QTimer.singleShot(0, verify_billing_export_and_quit)
     elif args.screenshot:
         target = args.screenshot.expanduser().resolve()
         target.parent.mkdir(parents=True, exist_ok=True)
