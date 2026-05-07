@@ -9,7 +9,7 @@ from decimal import Decimal, InvalidOperation, ROUND_CEILING
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QObject, QPoint, QTimer, Qt
-from PySide6.QtGui import QAction, QColor, QKeyEvent, QPalette, QPainter
+from PySide6.QtGui import QAction, QColor, QFont, QKeyEvent, QPalette, QPainter
 from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QStyledItemDelegate,
     QTableWidget,
     QTableWidgetItem,
+    QTextEdit,
     QWidget,
 )
 
@@ -131,6 +132,9 @@ BUILD_LABEL_TEXT = f"build: {BUILD_COMMIT_HASH}"
 
 
 BILLING_TEMPLATE_PATH = Path("/Users/luoweijie/.openclaw/media/inbound/excel_payment---77c32a06-0913-4a13-b837-a079ffedda68.xlsx")
+BILLING_OUTPUT_FOLDER_NAME = "報價留底"
+INPUT_FONT_FAMILY = "新細明體"
+INPUT_FONT_POINT_SIZE = 22
 BILLING_MAX_ROWS_PER_PAGE = 15
 BILLING_DETAIL_START_ROW = 7
 BILLING_TOTAL_ROW = 22
@@ -150,6 +154,32 @@ PAGE_LABELS = [
 
 def _connect_kwargs() -> dict:
     return {key: value for key, value in DB_V2_CONFIG.items() if value is not None}
+
+
+def build_input_font() -> QFont:
+    font = QFont(INPUT_FONT_FAMILY, INPUT_FONT_POINT_SIZE)
+    font.setStyleHint(QFont.StyleHint.SansSerif, QFont.StyleStrategy.PreferAntialias)
+    return font
+
+
+def resolve_desktop_dir() -> Path:
+    candidates = []
+    one_drive = os.environ.get("OneDrive")
+    user_profile = os.environ.get("USERPROFILE")
+    if one_drive:
+        candidates.append(Path(one_drive) / "Desktop")
+    if user_profile:
+        candidates.append(Path(user_profile) / "Desktop")
+    candidates.append(Path.home() / "Desktop")
+
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_dir():
+            return candidate
+    return candidates[0]
+
+
+def resolve_billing_output_dir() -> Path:
+    return resolve_desktop_dir() / BILLING_OUTPUT_FOLDER_NAME
 
 
 def load_clients_from_v2() -> list[dict[str, str | int | None]]:
@@ -619,6 +649,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self.build_label: QLabel | None = None
         self._suspend_auto_append_checks = False
         self._configure_customer_name_combo()
+        self._apply_input_font_defaults()
         self._tune_generated_layout()
         self._initialize_blank_work_order()
         self._configure_save_flow()
@@ -628,6 +659,25 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._configure_billing_action()
         self._configure_line_row_actions()
         self._configure_focus_chain()
+
+    def _apply_input_font_defaults(self) -> None:
+        input_font = build_input_font()
+        for name in [
+            "le_worknum",
+            "cb_customerName",
+            "le_contactName",
+            "le_startTime",
+            "le_caseName",
+            "le_phone",
+            "lle_address",
+            "le_endTime",
+            "te_remark",
+        ]:
+            widget = getattr(self.ui, name, None)
+            if isinstance(widget, (QLineEdit, QComboBox, QTextEdit)):
+                widget.setFont(input_font)
+                if isinstance(widget, QComboBox) and widget.lineEdit() is not None:
+                    widget.lineEdit().setFont(input_font)
 
     def _configure_customer_name_combo(self) -> None:
         combo = getattr(self.ui, "cb_customerName", None)
@@ -983,8 +1033,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
         return exported_paths
 
     def _handle_billing_clicked(self) -> None:
+        output_dir = resolve_billing_output_dir()
         try:
-            exported_paths = self.export_billing_excels(Path.cwd())
+            exported_paths = self.export_billing_excels(output_dir)
         except Exception as exc:
             message = str(exc) or exc.__class__.__name__
             QMessageBox.warning(self, "請款匯出失敗", message)
@@ -1907,6 +1958,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
         combo.setMaxVisibleItems(8)
         combo.setMinimumHeight(28)
         combo.setMaximumHeight(28)
+        combo.setFont(build_input_font())
+        if combo.lineEdit() is not None:
+            combo.lineEdit().setFont(build_input_font())
 
         completer = QCompleter(combo.model(), combo)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
@@ -1930,6 +1984,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         line_edit.setMinimumHeight(28)
         line_edit.setMaximumHeight(28)
         line_edit.setTextMargins(6, 0, 6, 0)
+        line_edit.setFont(build_input_font())
         if column in NUMERIC_COLUMN_INDEXES:
             line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
