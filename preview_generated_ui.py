@@ -3116,6 +3116,7 @@ def apply_billing_totals_to_sheet(sheet, totals: dict[str, str]) -> None:
     sheet["L22"] = totals["total_amount"]
     for cell_ref in ("H22", "J22", "L22"):
         set_cell_font(sheet, cell_ref)
+        set_cell_alignment(sheet, cell_ref, horizontal="center", vertical="center")
 
 
 def clear_billing_totals_on_sheet(sheet) -> None:
