@@ -911,8 +911,14 @@ class GeneratedUiPreviewWindow(QMainWindow):
             quantity = self._parse_table_decimal(row, 4)
             unit_price = self._parse_table_decimal(row, 12)
 
-            cbm_raw = (width * length * quantity) / Decimal("900")
-            cbm = cbm_raw.to_integral_value(rounding=ROUND_CEILING)
+            if width <= 0 or length <= 0 or quantity <= 0:
+                cbm = Decimal("0")
+            else:
+                per_item_cbm_raw = (width * length) / Decimal("900")
+                per_item_cbm = per_item_cbm_raw.to_integral_value(rounding=ROUND_CEILING)
+                if per_item_cbm < 1:
+                    per_item_cbm = Decimal("1")
+                cbm = per_item_cbm * quantity
             line_total = cbm * unit_price
 
             self._write_table_value(row, 11, format_decimal_for_ui(cbm))
