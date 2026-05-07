@@ -41,10 +41,11 @@ except ImportError:  # pragma: no cover - fallback when PyMySQL is unavailable
 
 try:
     from openpyxl import load_workbook
-    from openpyxl.styles import Alignment
+    from openpyxl.styles import Alignment, Font
 except ImportError:  # pragma: no cover - fallback when openpyxl is unavailable
     load_workbook = None
     Alignment = None
+    Font = None
 
 
 TABLE_HEADERS = [
@@ -1073,6 +1074,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 header["customer_short_name"],
                 header["case_name"],
                 page_index,
+                len(page_chunks),
             )
             workbook.save(output_path)
             exported_paths.append(output_path)
@@ -3043,13 +3045,14 @@ def page_label(page_index: int) -> str:
     return f"第{page_index}頁"
 
 
-def build_billing_output_filename(work_number: str, customer_name: str, case_name: str, page_index: int) -> str:
+def build_billing_output_filename(work_number: str, customer_name: str, case_name: str, page_index: int, total_pages: int) -> str:
     parts = [
         sanitize_filename_component(work_number),
         sanitize_filename_component(customer_name),
         sanitize_filename_component(case_name),
-        page_label(page_index),
     ]
+    if total_pages > 1:
+        parts.append(page_label(page_index))
     return "-".join(parts) + ".xlsx"
 
 
@@ -3061,6 +3064,12 @@ def set_cell_alignment(sheet, cell_ref: str, *, horizontal: str = "center", vert
     if Alignment is None:
         return
     sheet[cell_ref].alignment = Alignment(horizontal=horizontal, vertical=vertical)
+
+
+def set_cell_font(sheet, cell_ref: str, *, name: str = INPUT_FONT_FAMILY, size: int = 22) -> None:
+    if Font is None:
+        return
+    sheet[cell_ref].font = Font(name=name, size=size)
 
 
 def apply_billing_header_to_sheet(sheet, header: dict[str, str]) -> None:
@@ -3076,6 +3085,7 @@ def apply_billing_header_to_sheet(sheet, header: dict[str, str]) -> None:
 
     for cell_ref in ("C3", "G3", "I3", "K3", "C4", "I4", "K4", "C5", "F5"):
         set_cell_alignment(sheet, cell_ref, horizontal="left", vertical="center")
+        set_cell_font(sheet, cell_ref)
 
 
 def apply_billing_rows_to_sheet(sheet, page_rows: list[dict[str, str]]) -> None:
@@ -3096,12 +3106,16 @@ def apply_billing_rows_to_sheet(sheet, page_rows: list[dict[str, str]]) -> None:
         sheet[f"J{excel_row}"] = values["cbm"]
         sheet[f"K{excel_row}"] = values["line_total"]
         sheet[f"L{excel_row}"] = values["extra_material_total"]
+        for cell_ref in (f"B{excel_row}", f"C{excel_row}", f"E{excel_row}", f"F{excel_row}", f"G{excel_row}", f"H{excel_row}", f"I{excel_row}", f"J{excel_row}", f"K{excel_row}", f"L{excel_row}"):
+            set_cell_font(sheet, cell_ref)
 
 
 def apply_billing_totals_to_sheet(sheet, totals: dict[str, str]) -> None:
     sheet["H22"] = totals["production_amount"]
     sheet["J22"] = totals["tax_amount"]
     sheet["L22"] = totals["total_amount"]
+    for cell_ref in ("H22", "J22", "L22"):
+        set_cell_font(sheet, cell_ref)
 
 
 def clear_billing_totals_on_sheet(sheet) -> None:
