@@ -136,7 +136,8 @@ BUILD_LABEL_TEXT = f"build: {BUILD_COMMIT_HASH}"
 BILLING_TEMPLATE_PATH = Path("/Users/luoweijie/.openclaw/media/inbound/excel_payment---77c32a06-0913-4a13-b837-a079ffedda68.xlsx")
 BILLING_OUTPUT_FOLDER_NAME = "報價留底"
 INPUT_FONT_FAMILY = "新細明體"
-INPUT_FONT_POINT_SIZE = 22
+TOP_FORM_FONT_POINT_SIZE = 18
+TABLE_INPUT_FONT_POINT_SIZE = 20
 BILLING_MAX_ROWS_PER_PAGE = 15
 BILLING_DETAIL_START_ROW = 7
 BILLING_TOTAL_ROW = 22
@@ -158,8 +159,8 @@ def _connect_kwargs() -> dict:
     return {key: value for key, value in DB_V2_CONFIG.items() if value is not None}
 
 
-def build_input_font() -> QFont:
-    font = QFont(INPUT_FONT_FAMILY, INPUT_FONT_POINT_SIZE)
+def build_input_font(point_size: int) -> QFont:
+    font = QFont(INPUT_FONT_FAMILY, point_size)
     font.setStyleHint(QFont.StyleHint.SansSerif, QFont.StyleStrategy.PreferAntialias)
     return font
 
@@ -663,7 +664,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._configure_focus_chain()
 
     def _apply_input_font_defaults(self) -> None:
-        input_font = build_input_font()
+        top_font = build_input_font(TOP_FORM_FONT_POINT_SIZE)
+        table_font = build_input_font(TABLE_INPUT_FONT_POINT_SIZE)
         for name in [
             "le_worknum",
             "cb_customerName",
@@ -677,16 +679,16 @@ class GeneratedUiPreviewWindow(QMainWindow):
         ]:
             widget = getattr(self.ui, name, None)
             if isinstance(widget, (QLineEdit, QComboBox, QTextEdit)):
-                widget.setFont(input_font)
+                widget.setFont(top_font)
                 if isinstance(widget, QComboBox):
                     if widget.lineEdit() is not None:
-                        widget.lineEdit().setFont(input_font)
+                        widget.lineEdit().setFont(top_font)
                     if widget.view() is not None:
-                        widget.view().setFont(input_font)
+                        widget.view().setFont(top_font)
 
         table = getattr(self.ui, "tbl_lineItems", None)
         if isinstance(table, QTableWidget):
-            table.setFont(input_font)
+            table.setFont(table_font)
 
     def _configure_customer_name_combo(self) -> None:
         combo = getattr(self.ui, "cb_customerName", None)
@@ -1967,7 +1969,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         combo.setMaxVisibleItems(8)
         combo.setMinimumHeight(28)
         combo.setMaximumHeight(28)
-        combo_font = build_input_font()
+        combo_font = build_input_font(TABLE_INPUT_FONT_POINT_SIZE)
         combo.setFont(combo_font)
         if combo.lineEdit() is not None:
             combo.lineEdit().setFont(combo_font)
@@ -1996,7 +1998,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         line_edit.setMinimumHeight(28)
         line_edit.setMaximumHeight(28)
         line_edit.setTextMargins(6, 0, 6, 0)
-        line_edit.setFont(build_input_font())
+        line_edit.setFont(build_input_font(TABLE_INPUT_FONT_POINT_SIZE))
         if column in NUMERIC_COLUMN_INDEXES:
             line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
