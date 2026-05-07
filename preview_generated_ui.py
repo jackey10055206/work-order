@@ -137,7 +137,12 @@ BILLING_TEMPLATE_FILENAME = "excel_payment.xlsx"
 BILLING_OUTPUT_FOLDER_NAME = "報價留底"
 INPUT_FONT_FAMILY = "新細明體"
 TOP_FORM_FONT_POINT_SIZE = 16
-TABLE_INPUT_FONT_POINT_SIZE = 19
+TABLE_PRODUCTION_FONT_POINT_SIZE = 20
+TABLE_TEXT_FONT_POINT_SIZE = 18
+TABLE_NUMBER_FONT_POINT_SIZE = 16
+TABLE_HEADER_PRODUCTION_FONT_POINT_SIZE = 20
+TABLE_HEADER_TEXT_FONT_POINT_SIZE = 17
+TABLE_HEADER_NUMBER_FONT_POINT_SIZE = 15
 BILLING_MAX_ROWS_PER_PAGE = 15
 BILLING_DETAIL_START_ROW = 7
 BILLING_TOTAL_ROW = 22
@@ -163,6 +168,22 @@ def build_input_font(point_size: int) -> QFont:
     font = QFont(INPUT_FONT_FAMILY, point_size)
     font.setStyleHint(QFont.StyleHint.SansSerif, QFont.StyleStrategy.PreferAntialias)
     return font
+
+
+def build_table_cell_font(column: int) -> QFont:
+    if column == 0:
+        return build_input_font(TABLE_PRODUCTION_FONT_POINT_SIZE)
+    if column in SELECT_LIKE_COLUMN_INDEXES:
+        return build_input_font(TABLE_TEXT_FONT_POINT_SIZE)
+    return build_input_font(TABLE_NUMBER_FONT_POINT_SIZE)
+
+
+def build_table_header_font(column: int) -> QFont:
+    if column == 0:
+        return build_input_font(TABLE_HEADER_PRODUCTION_FONT_POINT_SIZE)
+    if column in SELECT_LIKE_COLUMN_INDEXES:
+        return build_input_font(TABLE_HEADER_TEXT_FONT_POINT_SIZE)
+    return build_input_font(TABLE_HEADER_NUMBER_FONT_POINT_SIZE)
 
 
 def resolve_desktop_dir() -> Path:
@@ -679,7 +700,6 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
     def _apply_input_font_defaults(self) -> None:
         top_font = build_input_font(TOP_FORM_FONT_POINT_SIZE)
-        table_font = build_input_font(TABLE_INPUT_FONT_POINT_SIZE)
         for name in [
             "le_worknum",
             "cb_customerName",
@@ -702,7 +722,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         table = getattr(self.ui, "tbl_lineItems", None)
         if isinstance(table, QTableWidget):
-            table.setFont(table_font)
+            table.setFont(build_input_font(TABLE_NUMBER_FONT_POINT_SIZE))
 
     def _configure_customer_name_combo(self) -> None:
         combo = getattr(self.ui, "cb_customerName", None)
@@ -1945,16 +1965,19 @@ class GeneratedUiPreviewWindow(QMainWindow):
             if item is not None:
                 item.setBackground(HEADER_YELLOW_BG)
                 item.setForeground(HEADER_YELLOW_FG)
+                item.setFont(build_table_header_font(column))
 
         for column in HEADER_PURPLE_COLUMNS:
             item = table.horizontalHeaderItem(column)
             if item is not None:
                 item.setBackground(HEADER_PURPLE_BG)
                 item.setForeground(HEADER_PURPLE_FG)
+                item.setFont(build_table_header_font(column))
 
     def _make_table_item(self, text: str, column: int) -> QTableWidgetItem:
         item = QTableWidgetItem(text)
         item.setForeground(QColor("#202124"))
+        item.setFont(build_table_cell_font(column))
 
         if column == X_COLUMN_INDEX:
             item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1984,7 +2007,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         combo.setMaxVisibleItems(8)
         combo.setMinimumHeight(28)
         combo.setMaximumHeight(28)
-        combo_font = build_input_font(TABLE_INPUT_FONT_POINT_SIZE)
+        combo_font = build_table_cell_font(column)
         combo.setFont(combo_font)
         if combo.lineEdit() is not None:
             combo.lineEdit().setFont(combo_font)
@@ -2013,7 +2036,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         line_edit.setMinimumHeight(28)
         line_edit.setMaximumHeight(28)
         line_edit.setTextMargins(6, 0, 6, 0)
-        line_edit.setFont(build_input_font(TABLE_INPUT_FONT_POINT_SIZE))
+        line_edit.setFont(build_table_cell_font(column))
         if column in NUMERIC_COLUMN_INDEXES:
             line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
