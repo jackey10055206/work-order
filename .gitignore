@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Build outputs
+app/build/
+app/dist/
+build/
+dist/
+
+# Local previews / captures
+out/
+
+# Office temp files
+~$*.xlsx
+
+# Legacy archive noise
+legacy-root-2026-05-06/.DS_Store
+legacy-root-2026-05-06/.venv/
+legacy-root-2026-05-06/.venv-preview/
+legacy-root-2026-05-06/__pycache__/
+legacy-root-2026-05-06/scripts/__pycache__/
+legacy-root-2026-05-06/out/
+legacy-root-2026-05-06/SQLExport/
+legacy-root-2026-05-06/docker/.DS_Store
+legacy-root-2026-05-06/X:/
