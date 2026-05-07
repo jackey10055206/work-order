@@ -41,8 +41,10 @@ except ImportError:  # pragma: no cover - fallback when PyMySQL is unavailable
 
 try:
     from openpyxl import load_workbook
+    from openpyxl.styles import Alignment
 except ImportError:  # pragma: no cover - fallback when openpyxl is unavailable
     load_workbook = None
+    Alignment = None
 
 
 TABLE_HEADERS = [
@@ -676,8 +678,15 @@ class GeneratedUiPreviewWindow(QMainWindow):
             widget = getattr(self.ui, name, None)
             if isinstance(widget, (QLineEdit, QComboBox, QTextEdit)):
                 widget.setFont(input_font)
-                if isinstance(widget, QComboBox) and widget.lineEdit() is not None:
-                    widget.lineEdit().setFont(input_font)
+                if isinstance(widget, QComboBox):
+                    if widget.lineEdit() is not None:
+                        widget.lineEdit().setFont(input_font)
+                    if widget.view() is not None:
+                        widget.view().setFont(input_font)
+
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if isinstance(table, QTableWidget):
+            table.setFont(input_font)
 
     def _configure_customer_name_combo(self) -> None:
         combo = getattr(self.ui, "cb_customerName", None)
@@ -1958,9 +1967,12 @@ class GeneratedUiPreviewWindow(QMainWindow):
         combo.setMaxVisibleItems(8)
         combo.setMinimumHeight(28)
         combo.setMaximumHeight(28)
-        combo.setFont(build_input_font())
+        combo_font = build_input_font()
+        combo.setFont(combo_font)
         if combo.lineEdit() is not None:
-            combo.lineEdit().setFont(build_input_font())
+            combo.lineEdit().setFont(combo_font)
+        if combo.view() is not None:
+            combo.view().setFont(combo_font)
 
         completer = QCompleter(combo.model(), combo)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
@@ -3005,6 +3017,12 @@ def set_merged_cell_value(sheet, cell_ref: str, value: str) -> None:
     sheet[cell_ref] = value
 
 
+def set_cell_alignment(sheet, cell_ref: str, *, horizontal: str = "center", vertical: str = "center") -> None:
+    if Alignment is None:
+        return
+    sheet[cell_ref].alignment = Alignment(horizontal=horizontal, vertical=vertical)
+
+
 def apply_billing_header_to_sheet(sheet, header: dict[str, str]) -> None:
     set_merged_cell_value(sheet, "C3", header["customer_full_name"])
     sheet["G3"] = header["case_name"]
@@ -3015,6 +3033,9 @@ def apply_billing_header_to_sheet(sheet, header: dict[str, str]) -> None:
     sheet["K4"] = header["cleanup_time"]
     sheet["C5"] = header["company_tax_id"]
     set_merged_cell_value(sheet, "F5", header["company_address"])
+
+    for cell_ref in ("C3", "G3", "I3", "K3", "C4", "I4", "K4", "C5", "F5"):
+        set_cell_alignment(sheet, cell_ref, horizontal="left", vertical="center")
 
 
 def apply_billing_rows_to_sheet(sheet, page_rows: list[dict[str, str]]) -> None:
