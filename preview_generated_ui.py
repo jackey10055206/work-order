@@ -133,7 +133,7 @@ BUILD_COMMIT_HASH = resolve_build_commit_hash()
 BUILD_LABEL_TEXT = f"build: {BUILD_COMMIT_HASH}"
 
 
-BILLING_TEMPLATE_PATH = Path("/Users/luoweijie/.openclaw/media/inbound/excel_payment---77c32a06-0913-4a13-b837-a079ffedda68.xlsx")
+BILLING_TEMPLATE_FILENAME = "excel_payment.xlsx"
 BILLING_OUTPUT_FOLDER_NAME = "報價留底"
 INPUT_FONT_FAMILY = "新細明體"
 TOP_FORM_FONT_POINT_SIZE = 18
@@ -183,6 +183,20 @@ def resolve_desktop_dir() -> Path:
 
 def resolve_billing_output_dir() -> Path:
     return resolve_desktop_dir() / BILLING_OUTPUT_FOLDER_NAME
+
+
+def resolve_billing_template_path() -> Path:
+    base_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    candidates = [
+        Path(sys.executable).resolve().parent / BILLING_TEMPLATE_FILENAME if getattr(sys, "frozen", False) else None,
+        base_dir / BILLING_TEMPLATE_FILENAME,
+        Path(__file__).resolve().parent / BILLING_TEMPLATE_FILENAME,
+        Path.cwd() / BILLING_TEMPLATE_FILENAME,
+    ]
+    for candidate in candidates:
+        if candidate is not None and candidate.exists() and candidate.is_file():
+            return candidate
+    return (Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent) / BILLING_TEMPLATE_FILENAME
 
 
 def load_clients_from_v2() -> list[dict[str, str | int | None]]:
@@ -1006,8 +1020,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
     def export_billing_excels(self, output_dir: Path | None = None) -> list[Path]:
         if load_workbook is None:
             raise RuntimeError("缺少 openpyxl，無法匯出請款 Excel。")
-        if not BILLING_TEMPLATE_PATH.exists():
-            raise FileNotFoundError(f"找不到請款樣板：{BILLING_TEMPLATE_PATH}")
+        template_path = resolve_billing_template_path()
+        if not template_path.exists():
+            raise FileNotFoundError(f"找不到請款樣板：{template_path}")
 
         totals = self.calculate_document_totals()
         header = self._billing_header_snapshot()
@@ -1024,7 +1039,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         page_chunks = chunked(line_items, BILLING_MAX_ROWS_PER_PAGE)
         exported_paths: list[Path] = []
         for page_index, page_rows in enumerate(page_chunks, start=1):
-            workbook = load_workbook(BILLING_TEMPLATE_PATH)
+            workbook = load_workbook(template_path)
             sheet = workbook.active
             apply_billing_header_to_sheet(sheet, header)
             apply_billing_rows_to_sheet(sheet, page_rows)
