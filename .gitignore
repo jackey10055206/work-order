@@ -28,3 +28,17 @@ legacy-root-2026-05-06/out/
 legacy-root-2026-05-06/SQLExport/
 legacy-root-2026-05-06/docker/.DS_Store
 legacy-root-2026-05-06/X:/
+legacy-root-2026-05-06/app/
+legacy-root-2026-05-06/verification-artifacts/
+legacy-root-2026-05-06/*.code-workspace
+legacy-root-2026-05-06/*.exe
+legacy-root-2026-05-06/*.xlsx
+legacy-root-2026-05-06/To
+legacy-root-2026-05-06/sql資料
+legacy-root-2026-05-06/auto_login.py
+legacy-root-2026-05-06/pack.txt
+legacy-root-2026-05-06/project.py
+legacy-root-2026-05-06/project.ui
+
+# Local input files
+26-*.xlsx

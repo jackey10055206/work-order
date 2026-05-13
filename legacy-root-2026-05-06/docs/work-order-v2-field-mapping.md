@@ -14,7 +14,7 @@
 | 公司電話 | `le_phone` | `work_orders.company_phone` | 可由 `clients.phone` 預帶，但仍應允許人工覆寫 |
 | 聯絡人 | `le_contactName` | `work_orders.contact_name` | |
 | 施工時間 | `le_startTime` | `work_orders.work_time` | 目前 schema 是 `VARCHAR(100)` |
-| 地址 | `lle_address` | `work_orders.work_address` | 可由 `clients.address` 預帶，但仍應允許人工覆寫 |
+| 地址 | `lle_address` | `work_orders.work_address` | 代表施工地址；選客戶時不自動帶入，保留空白讓使用者填寫 |
 | 收工時間 | `le_endTime` | `work_orders.cleanup_time` | 目前 schema 是 `VARCHAR(100)` |
 | 製作金額 | `le_productionAmount` | `work_orders.production_amount` | bottom summary；由畫面計算後存檔 |
 | 稅額 | `le_taxAmount` | `work_orders.tax_amount` | `製作金額 × 0.05` 後以 `ceil` 無條件進位 |
@@ -97,8 +97,9 @@
 
 這輪 preview 採用的策略：
 - `cb_customerName` 顯示並搜尋 `short_name`
-- 選到已存在客戶時，**僅在電話 / 地址欄位為空，或仍是上一筆自動帶入值時**，才自動填入 `phone` / `address`
-- 若使用者已手動改過電話 / 地址，不自動覆蓋
+- 選到已存在客戶時，僅自動填入 `phone`
+- `lle_address` 代表施工地址，選客戶時不自動帶入 `clients.address`
+- 若使用者已手動改過電話，不自動覆蓋
 
 這樣可以兼顧：
 - 便利性

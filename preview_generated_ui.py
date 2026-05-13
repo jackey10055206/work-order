@@ -15,12 +15,16 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
     QCompleter,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
     QMainWindow,
     QMenu,
     QMessageBox,
+    QPushButton,
     QSizePolicy,
     QStyle,
     QStyleFactory,
@@ -29,6 +33,7 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QTextEdit,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -668,6 +673,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
         "btn_calcuate",
         "btn_import",
         "btn_invoice",
+        "btn_add_customer",
+        "btn_delete_work_order",
     ]
 
     def __init__(self) -> None:
@@ -687,6 +694,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self.ui.setupUi(self)
         self.build_label: QLabel | None = None
         self._suspend_auto_append_checks = False
+        self._inject_customer_management_buttons()
         self._configure_customer_name_combo()
         self._apply_input_font_defaults()
         self._tune_generated_layout()
@@ -696,6 +704,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._configure_reset_flow()
         self._configure_calculation_actions()
         self._configure_billing_action()
+        self._configure_customer_management_actions()
+        self._configure_delete_work_order_action()
         self._configure_line_row_actions()
         self._configure_focus_chain()
 
@@ -750,6 +760,22 @@ class GeneratedUiPreviewWindow(QMainWindow):
             return
         self._apply_customer_contact_defaults(row)
 
+    def _inject_customer_management_buttons(self) -> None:
+        lower_buttons_layout = getattr(self.ui, "horizontalLayout_15", None)
+        button_parent = getattr(self.ui, "widget14", self)
+        if lower_buttons_layout is None:
+            return
+
+        add_customer_button = QPushButton("新增客戶", button_parent)
+        add_customer_button.setObjectName("btn_add_customer")
+        lower_buttons_layout.addWidget(add_customer_button)
+        self.ui.btn_add_customer = add_customer_button
+
+        delete_work_order_button = QPushButton("刪除工單", button_parent)
+        delete_work_order_button.setObjectName("btn_delete_work_order")
+        lower_buttons_layout.addWidget(delete_work_order_button)
+        self.ui.btn_delete_work_order = delete_work_order_button
+
     @staticmethod
     def _invert_option_item_lookup(option_item_ids_by_group: dict[str, dict[str, int]]) -> dict[str, dict[int, str]]:
         return {
@@ -785,6 +811,16 @@ class GeneratedUiPreviewWindow(QMainWindow):
         billing_button = getattr(self.ui, "btn_billing", None)
         if billing_button is not None:
             billing_button.clicked.connect(self._handle_billing_clicked)
+
+    def _configure_customer_management_actions(self) -> None:
+        add_customer_button = getattr(self.ui, "btn_add_customer", None)
+        if add_customer_button is not None:
+            add_customer_button.clicked.connect(self._handle_add_customer_clicked)
+
+    def _configure_delete_work_order_action(self) -> None:
+        delete_button = getattr(self.ui, "btn_delete_work_order", None)
+        if delete_button is not None:
+            delete_button.clicked.connect(self._handle_delete_work_order_clicked)
 
     def _configure_line_row_actions(self) -> None:
         table = getattr(self.ui, "tbl_lineItems", None)
@@ -1534,19 +1570,193 @@ class GeneratedUiPreviewWindow(QMainWindow):
         QMessageBox.information(self, "儲存成功", success_message)
         self._set_status_message(success_message)
 
+    def _refresh_client_cache(self, *, preferred_short_name: str | None = None) -> None:
+        current_text = ""
+        combo = getattr(self.ui, "cb_customerName", None)
+        if isinstance(combo, QComboBox):
+            current_text = combo.currentText().strip()
+
+        self.clients = load_clients_from_v2()
+        self.client_rows_by_short_name = {
+            str(row["short_name"]): row for row in self.clients if row.get("short_name")
+        }
+
+        if not isinstance(combo, QComboBox):
+            return
+
+        selected_text = (preferred_short_name or current_text).strip()
+        combo.blockSignals(True)
+        combo.clear()
+        for row in self.clients:
+            combo.addItem(str(row["short_name"]), row)
+        combo.blockSignals(False)
+
+        if selected_text:
+            target_index = combo.findText(selected_text)
+            if target_index >= 0:
+                combo.setCurrentIndex(target_index)
+            else:
+                combo.setEditText(selected_text)
+            self._handle_customer_name_changed(selected_text)
+
+    def _build_add_customer_dialog(self) -> tuple[QDialog, dict[str, QLineEdit]]:
+        dialog = QDialog(self)
+        dialog.setWindowTitle("新增客戶")
+        dialog.setModal(True)
+        dialog.resize(420, 0)
+
+        layout = QVBoxLayout(dialog)
+        form = QFormLayout()
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+        form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        layout.addLayout(form)
+
+        combo = getattr(self.ui, "cb_customerName", None)
+        initial_short_name = combo.currentText().strip() if isinstance(combo, QComboBox) else ""
+        initial_phone = normalize_line_edit_value(getattr(self.ui, "le_phone", None))
+        initial_address = normalize_line_edit_value(getattr(self.ui, "lle_address", None))
+
+        fields = {
+            "short_name": QLineEdit(initial_short_name, dialog),
+            "full_name": QLineEdit(initial_short_name, dialog),
+            "phone": QLineEdit(initial_phone, dialog),
+            "address": QLineEdit(initial_address, dialog),
+            "tax_id": QLineEdit("", dialog),
+        }
+        labels = {
+            "short_name": "客戶簡稱",
+            "full_name": "客戶全名",
+            "phone": "電話",
+            "address": "地址",
+            "tax_id": "統編",
+        }
+        for name, widget in fields.items():
+            widget.setFont(build_input_font(12))
+            form.addRow(labels[name], widget)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, parent=dialog)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("儲存")
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        return dialog, fields
+
+    def _insert_client_record(self, payload: dict[str, str | None]) -> None:
+        if pymysql is None:
+            raise RuntimeError("缺少 PyMySQL，無法新增客戶資料。")
+
+        short_name = (payload.get("short_name") or "").strip()
+        if not short_name:
+            raise ValueError("客戶簡稱不可為空。")
+
+        with pymysql.connect(**_connect_kwargs()) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id FROM clients WHERE short_name = %s LIMIT 1", (short_name,))
+                existing = cur.fetchone()
+                if existing is not None:
+                    raise ValueError(f"客戶簡稱已存在：{short_name}")
+                cur.execute(
+                    """
+                    INSERT INTO clients (short_name, full_name, phone, address, tax_id)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (
+                        short_name,
+                        payload.get("full_name") or None,
+                        payload.get("phone") or None,
+                        payload.get("address") or None,
+                        payload.get("tax_id") or None,
+                    ),
+                )
+            conn.commit()
+
+    def _handle_add_customer_clicked(self) -> None:
+        dialog, fields = self._build_add_customer_dialog()
+        short_name_widget = fields["short_name"]
+        short_name_widget.setFocus(Qt.FocusReason.ActiveWindowFocusReason)
+        short_name_widget.selectAll()
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            self._set_status_message("已取消新增客戶。")
+            return
+
+        payload = {name: widget.text().strip() or None for name, widget in fields.items()}
+        if payload.get("short_name") and not payload.get("full_name"):
+            payload["full_name"] = payload["short_name"]
+        try:
+            self._insert_client_record(payload)
+            self._refresh_client_cache(preferred_short_name=str(payload.get("short_name") or ""))
+        except Exception as exc:
+            message = str(exc) or exc.__class__.__name__
+            QMessageBox.warning(self, "新增客戶失敗", message)
+            self._set_status_message(f"新增客戶失敗：{message}")
+            return
+
+        short_name = str(payload.get("short_name") or "")
+        QMessageBox.information(self, "新增客戶成功", f"已新增客戶：{short_name}")
+        self._set_status_message(f"已新增客戶：{short_name}")
+
+    def _delete_work_order_record(self, work_number: str) -> int:
+        if pymysql is None:
+            raise RuntimeError("缺少 PyMySQL，無法刪除工單。")
+
+        normalized_work_number = work_number.strip()
+        if not normalized_work_number:
+            raise ValueError("請先輸入工單號，再刪除工單。")
+
+        with pymysql.connect(**_connect_kwargs()) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id FROM work_orders WHERE work_number = %s LIMIT 1", (normalized_work_number,))
+                row = cur.fetchone()
+                if row is None:
+                    raise LookupError(f"找不到工單號：{normalized_work_number}")
+                work_order_id = int(row["id"])
+                cur.execute("DELETE FROM work_orders WHERE id = %s", (work_order_id,))
+            conn.commit()
+        return work_order_id
+
+    def _handle_delete_work_order_clicked(self) -> None:
+        work_number = normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or ""
+        existing_work_order_id = self._find_existing_work_order_id(work_number)
+        if existing_work_order_id is None:
+            message = "請先輸入或開啟有效工單號，再刪除工單。"
+            QMessageBox.warning(self, "刪除工單失敗", message)
+            self._set_status_message(message)
+            return
+
+        confirm = QMessageBox.question(
+            self,
+            "刪除工單",
+            f"確定要刪除工單 {work_number}（work_orders #{existing_work_order_id}）嗎？\n\n這會一併刪掉所有明細列，而且無法復原。",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            self._set_status_message("已取消刪除工單。")
+            return
+
+        try:
+            deleted_work_order_id = self._delete_work_order_record(work_number)
+        except Exception as exc:
+            message = str(exc) or exc.__class__.__name__
+            QMessageBox.warning(self, "刪除工單失敗", message)
+            self._set_status_message(f"刪除工單失敗：{message}")
+            return
+
+        self.reset_work_order_to_blank()
+        self._loaded_work_order_number = ""
+        success_message = f"已刪除工單 {work_number}（work_orders #{deleted_work_order_id}）。"
+        QMessageBox.information(self, "刪除工單成功", success_message)
+        self._set_status_message(success_message)
+
     def _apply_customer_contact_defaults(self, row: dict[str, str | int | None]) -> None:
         phone_widget = getattr(self.ui, "le_phone", None)
-        address_widget = getattr(self.ui, "lle_address", None)
-        if not isinstance(phone_widget, QLineEdit) or not isinstance(address_widget, QLineEdit):
+        if not isinstance(phone_widget, QLineEdit):
             return
 
         next_phone = str(row.get("phone") or "")
-        next_address = str(row.get("address") or "")
-
         current_phone = phone_widget.text().strip()
-        current_address = address_widget.text().strip()
         can_fill_phone = not current_phone or current_phone == self._last_auto_filled_phone
-        can_fill_address = not current_address or current_address == self._last_auto_filled_address
 
         if next_phone and can_fill_phone:
             phone_widget.setText(next_phone)
@@ -1554,13 +1764,6 @@ class GeneratedUiPreviewWindow(QMainWindow):
         elif not next_phone and current_phone == self._last_auto_filled_phone:
             phone_widget.clear()
             self._last_auto_filled_phone = ""
-
-        if next_address and can_fill_address:
-            address_widget.setText(next_address)
-            self._last_auto_filled_address = next_address
-        elif not next_address and current_address == self._last_auto_filled_address:
-            address_widget.clear()
-            self._last_auto_filled_address = ""
 
     def _tune_generated_layout(self) -> None:
         main_layout = getattr(self.ui, "verticalLayout_2", None)
@@ -1639,7 +1842,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             amount_layout.setSpacing(6)
 
         summary_specs = [
-            ("wdg_productionAmountField", "widget11", "lbl_productionAmount", "le_productionAmount", 68, 152, 220),
+            ("wdg_productionAmountField", "widget11", "lbl_productionAmount", "le_productionAmount", 84, 130, 220),
             ("wdg_taxAmountField", "widget12", "lbl_taxAmount", "le_taxAmount", 56, 152, 218),
             ("wdg_totalAmountField", "widget13", "lbl_totalAmount", "le_totalAmount", 56, 152, 218),
         ]
@@ -1690,6 +1893,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
             "btn_calcuate": 106,
             "btn_import": 106,
             "btn_invoice": 106,
+            "btn_add_customer": 106,
+            "btn_delete_work_order": 106,
         }
         for button_name, width in button_specs.items():
             button = getattr(self.ui, button_name, None)
@@ -1704,11 +1909,14 @@ class GeneratedUiPreviewWindow(QMainWindow):
             top_buttons_layout.setContentsMargins(0, 0, 0, 0)
             top_buttons_layout.setSpacing(4)
         if lower_buttons_layout is not None:
-            lower_buttons_layout.setContentsMargins(0, 2, 0, 0)
-            lower_buttons_layout.setSpacing(4)
+            lower_buttons_layout.setContentsMargins(2, 2, 0, 0)
+            lower_buttons_layout.setSpacing(6)
+            lower_buttons_layout.addStretch(1)
         if button_rows_layout is not None:
             button_rows_layout.setContentsMargins(0, 0, 0, 0)
             button_rows_layout.setSpacing(0)
+            button_rows_layout.setStretch(0, 0)
+            button_rows_layout.setStretch(1, 1)
 
         summary_actions.setMinimumWidth(summary_outer_width)
         summary_actions.setMaximumWidth(summary_outer_width)
@@ -3189,6 +3397,8 @@ def run_billing_export_verification(window: GeneratedUiPreviewWindow, output_dir
     expected_full_name = str(client_row.get("full_name") or customer_name)
     if ws["C3"].value != expected_full_name:
         raise AssertionError(f"client full_name mismatch: {ws['C3'].value} vs {expected_full_name}")
+    if ws["C4"].value != "台北市信義區測試路 1 號":
+        raise AssertionError("work address mismatch")
     if ws["C5"].value != str(client_row.get("tax_id") or ""):
         raise AssertionError("client tax_id mismatch")
     if ws["F5"].value != str(client_row.get("address") or ""):
@@ -3232,6 +3442,7 @@ def run_billing_export_verification(window: GeneratedUiPreviewWindow, output_dir
         "multi_paths": [str(path) for path in multi_paths],
         "single_header": {
             "customer_full_name": ws["C3"].value,
+            "work_address": ws["C4"].value,
             "tax_id": ws["C5"].value,
             "company_address": ws["F5"].value,
         },
