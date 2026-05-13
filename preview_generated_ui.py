@@ -1,22 +1,29 @@
 from __future__ import annotations
 
 import argparse
+import difflib
+import json
 import os
+import re
 import subprocess
 import sys
+import unicodedata
 from contextlib import contextmanager
 from decimal import Decimal, InvalidOperation, ROUND_CEILING
 from pathlib import Path
+from urllib import error as urllib_error, request as urllib_request
 
 from PySide6.QtCore import QEvent, QObject, QPoint, QTimer, Qt
 from PySide6.QtGui import QAction, QColor, QFont, QKeyEvent, QPalette, QPainter
 from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
+    QCheckBox,
     QComboBox,
     QCompleter,
     QDialog,
     QDialogButtonBox,
+    QFileDialog,
     QFormLayout,
     QHeaderView,
     QLabel,
@@ -25,6 +32,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMessageBox,
     QPushButton,
+    QProgressDialog,
     QSizePolicy,
     QStyle,
     QStyleFactory,
@@ -164,6 +172,43 @@ PAGE_LABELS = [
     "第九頁",
     "第十頁",
 ]
+IMPORT_ROOT_HINT = r"\\New-super-1682\1682輸出"
+IMPORT_IMAGE_SUFFIXES = {".jpg", ".jpeg"}
+SIZE_TEXT_PATTERN = re.compile(r"^\d+(?:\.\d+)?[xX]\d+(?:\.\d+)?$")
+PAPER_SIZE_PATTERN = re.compile(r"^A\d+$", re.IGNORECASE)
+THICKNESS_PATTERN = re.compile(r"^\d+(?:\.\d+)?(?:mm|cm)$", re.IGNORECASE)
+CASE_PREFIX_PATTERN = re.compile(r"^\d+-")
+QUANTITY_TOKEN_PATTERN = re.compile(r"^[xX](\d+)$")
+
+MATERIAL_ALIASES = {
+    "PVC": "PVC",
+    "PP": "PP",
+}
+BOARD_TYPE_ALIASES = {
+    "H": "合成板",
+    "合成板": "合成板",
+    "合成版": "合成板",
+    "黑色H": "黑色合成板",
+    "黑色合成板": "黑色合成板",
+    "黑色合成版": "黑色合成板",
+    "F": "發泡板",
+    "發泡板": "發泡板",
+    "W": "瓦楞板",
+    "瓦楞板": "瓦楞板",
+    "S": "厚磅紙板",
+    "厚磅紙板": "厚磅紙板",
+}
+BOARD_TYPE_DEFAULT_THICKNESS = {
+    "合成板": "5mm",
+    "黑色合成板": "5mm",
+    "發泡板": "2mm",
+    "瓦楞板": "5mm",
+    "厚磅紙板": "",
+}
+IMPORT_AI_MODEL = os.environ.get("WORK_ORDER_IMPORT_AI_MODEL", "deepseek/deepseek-v4-flash")
+OPENROUTER_API_URL = os.environ.get("OPENROUTER_API_URL", "https://openrouter.ai/api/v1/chat/completions")
+DEEPSEEK_API_URL = os.environ.get("DEEPSEEK_API_URL", "https://api.deepseek.com/chat/completions")
+IMPORT_AI_TIMEOUT_SECONDS = int(os.environ.get("WORK_ORDER_IMPORT_AI_TIMEOUT_SECONDS", "45"))
 
 
 def _connect_kwargs() -> dict:
@@ -652,6 +697,390 @@ def load_option_item_ids_from_v2() -> dict[str, dict[str, int]]:
     return lookup
 
 
+def normalize_token_text(value: str) -> str:
+    normalized = unicodedata.normalize("NFKC", value or "")
+    normalized = normalized.replace(" ", "").strip()
+    return normalized.upper()
+
+
+def split_path_parts(path_text: str) -> list[str]:
+    return [part for part in re.split(r"[\\/]+", path_text) if part]
+
+
+def looks_like_size_text(value: str) -> bool:
+    candidate = unicodedata.normalize("NFKC", (value or "").strip())
+    return bool(SIZE_TEXT_PATTERN.fullmatch(candidate) or PAPER_SIZE_PATTERN.fullmatch(candidate))
+
+
+def looks_like_thickness_text(value: str) -> bool:
+    candidate = unicodedata.normalize("NFKC", (value or "").strip())
+    return bool(THICKNESS_PATTERN.fullmatch(candidate))
+
+
+def strip_case_prefix(case_folder: str) -> str:
+    normalized = unicodedata.normalize("NFKC", case_folder or "").strip()
+    return CASE_PREFIX_PATTERN.sub("", normalized).strip() or normalized
+
+
+def parse_import_path_context(folder_path: str) -> dict[str, str]:
+    parts = split_path_parts(folder_path)
+    customer_name = ""
+    case_folder = Path(folder_path).name
+    if "1682輸出" in parts:
+        idx = parts.index("1682輸出")
+        tail = parts[idx + 1 :]
+        if len(tail) >= 2 and tail[0] == "000客戶":
+            customer_name = tail[1]
+            if len(tail) >= 3:
+                case_folder = tail[2]
+        elif len(tail) >= 2:
+            customer_name = tail[0]
+            case_folder = tail[1]
+    return {
+        "source_folder": folder_path,
+        "customer_name": customer_name.strip(),
+        "case_folder": case_folder.strip(),
+        "case_name": strip_case_prefix(case_folder),
+    }
+
+
+def compact_compare_text(value: str) -> str:
+    normalized = normalize_token_text(value)
+    for noise in ("板", "版", "型", "鐵", "角", "架"):
+        normalized = normalized.replace(noise, "")
+    return normalized
+
+
+def match_candidate(token: str, candidates: list[str]) -> tuple[str | None, float]:
+    normalized_token = compact_compare_text(token)
+    if not normalized_token:
+        return None, 0.0
+    best_name = None
+    best_score = 0.0
+    for candidate in candidates:
+        normalized_candidate = compact_compare_text(candidate)
+        if not normalized_candidate:
+            continue
+        if normalized_token == normalized_candidate:
+            return candidate, 1.0
+        if normalized_token in normalized_candidate or normalized_candidate in normalized_token:
+            score = 0.88
+        else:
+            score = difflib.SequenceMatcher(None, normalized_token, normalized_candidate).ratio()
+        if score > best_score:
+            best_score = score
+            best_name = candidate
+    return best_name, best_score
+
+
+def extract_json_text(raw_text: str) -> str:
+    cleaned = raw_text.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?", "", cleaned).strip()
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3].strip()
+    return cleaned
+
+
+def ensure_str_list(value: object) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        text = value.strip()
+        return [text] if text else []
+    if isinstance(value, (list, tuple, set)):
+        items: list[str] = []
+        for item in value:
+            text = str(item).strip()
+            if text:
+                items.append(text)
+        return items
+    text = str(value).strip()
+    return [text] if text else []
+
+
+def deepseek_configured() -> bool:
+    return bool(os.environ.get("OPENROUTER_API_KEY") or os.environ.get("DEEPSEEK_API_KEY"))
+
+
+def configure_combo_autocomplete(combo: QComboBox) -> None:
+    combo.setEditable(True)
+    combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+    completer = QCompleter(combo.model(), combo)
+    completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+    completer.setFilterMode(Qt.MatchFlag.MatchContains)
+    completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+    combo.setCompleter(completer)
+
+
+class ImportHeaderConfirmDialog(QDialog):
+    def __init__(self, folder_path: str, header_payload: dict[str, str], parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("導入：確認資料夾與表頭")
+        self.setModal(True)
+        self.resize(760, 0)
+        self.folder_path = folder_path
+
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+        layout.addLayout(form)
+
+        self.folder_edit = QLineEdit(folder_path, self)
+        self.folder_edit.setReadOnly(True)
+        self.customer_edit = QLineEdit(header_payload.get("customer_name", ""), self)
+        self.case_name_edit = QLineEdit(header_payload.get("case_name", ""), self)
+        self.work_number_edit = QLineEdit(header_payload.get("work_number", ""), self)
+
+        form.addRow("資料夾路徑", self.folder_edit)
+        form.addRow("客戶名稱", self.customer_edit)
+        form.addRow("案件名稱", self.case_name_edit)
+        form.addRow("工單編號", self.work_number_edit)
+
+        buttons = QDialogButtonBox(parent=self)
+        self.reselect_button = buttons.addButton("重新選擇資料夾", QDialogButtonBox.ButtonRole.ActionRole)
+        self.confirm_button = buttons.addButton("確認", QDialogButtonBox.ButtonRole.AcceptRole)
+        self.cancel_button = buttons.addButton("取消", QDialogButtonBox.ButtonRole.RejectRole)
+        self.reselect_button.clicked.connect(self._handle_reselect_clicked)
+        self.confirm_button.clicked.connect(self._handle_accept_clicked)
+        self.cancel_button.clicked.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def _handle_reselect_clicked(self) -> None:
+        start_dir = self.folder_path or IMPORT_ROOT_HINT
+        selected = QFileDialog.getExistingDirectory(self, "選擇導入資料夾", start_dir)
+        if not selected:
+            return
+        self.folder_path = selected
+        self.folder_edit.setText(selected)
+        parsed = parse_import_path_context(selected)
+        self.customer_edit.setText(parsed.get("customer_name", ""))
+        self.case_name_edit.setText(parsed.get("case_name", ""))
+
+    def _handle_accept_clicked(self) -> None:
+        if not self.folder_edit.text().strip():
+            QMessageBox.warning(self, "資料不足", "請先選擇資料夾。")
+            return
+        if not self.customer_edit.text().strip():
+            QMessageBox.warning(self, "資料不足", "客戶名稱不可為空。")
+            return
+        if not self.case_name_edit.text().strip():
+            QMessageBox.warning(self, "資料不足", "案件名稱不可為空。")
+            return
+        self.accept()
+
+    def payload(self) -> dict[str, str]:
+        return {
+            "source_folder": self.folder_edit.text().strip(),
+            "customer_name": self.customer_edit.text().strip(),
+            "case_name": self.case_name_edit.text().strip(),
+            "work_number": self.work_number_edit.text().strip(),
+        }
+
+
+class ImportExtraMaterialsDialog(QDialog):
+    def __init__(
+        self,
+        options: list[str],
+        selected_values: list[str] | None = None,
+        unresolved_tokens: list[str] | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("編輯其他備料")
+        self.setModal(True)
+        self.resize(420, 0)
+        self._checkboxes: list[QCheckBox] = []
+        selected = {value.strip() for value in (selected_values or []) if value and value.strip()}
+        unresolved = [value.strip() for value in (unresolved_tokens or []) if value and value.strip()]
+
+        layout = QVBoxLayout(self)
+        if unresolved:
+            hint = QLabel(f"未解 token：{'+'.join(unresolved)}", self)
+            hint.setWordWrap(True)
+            layout.addWidget(hint)
+
+        for option in options:
+            checkbox = QCheckBox(option, self)
+            checkbox.setChecked(option in selected)
+            layout.addWidget(checkbox)
+            self._checkboxes.append(checkbox)
+
+        custom_values = [value for value in selected if value not in set(options)]
+        self.custom_edit = QLineEdit("+".join(custom_values), self)
+        self.custom_edit.setPlaceholderText("其他自訂備料，用 + 串接")
+        layout.addWidget(self.custom_edit)
+
+        buttons = QDialogButtonBox(parent=self)
+        self.confirm_button = buttons.addButton("確認", QDialogButtonBox.ButtonRole.AcceptRole)
+        self.cancel_button = buttons.addButton("取消", QDialogButtonBox.ButtonRole.RejectRole)
+        self.confirm_button.clicked.connect(self.accept)
+        self.cancel_button.clicked.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def payload(self) -> list[str]:
+        values = [checkbox.text().strip() for checkbox in self._checkboxes if checkbox.isChecked() and checkbox.text().strip()]
+        for part in self.custom_edit.text().split("+"):
+            value = part.strip()
+            if value and value not in values:
+                values.append(value)
+        return values
+
+
+class ImportLineItemsConfirmDialog(QDialog):
+    COLUMN_KEYS = [
+        "production_item",
+        "size_text",
+        "material",
+        "lamination",
+        "board_type",
+        "board_thickness",
+        "extra_materials",
+        "quantity",
+        "unresolved_tokens",
+        "confidence",
+    ]
+    COLUMN_LABELS = [
+        "製作項目",
+        "尺寸",
+        "材質",
+        "冷裱",
+        "板材",
+        "板厚",
+        "其他備料",
+        "數量",
+        "未解 token",
+        "信心",
+    ]
+    COMBO_COLUMN_KEYS = {
+        2: "material",
+        3: "lamination",
+        4: "board_type",
+        5: "board_thickness",
+    }
+
+    def __init__(self, lines: list[dict[str, object]], option_choices: dict[str, list[str]] | None = None, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("導入：確認明細")
+        self.setModal(True)
+        self.resize(1180, 640)
+        self._lines = lines
+        self.option_choices = option_choices or {}
+        self.go_back = False
+
+        layout = QVBoxLayout(self)
+        self.table = QTableWidget(len(lines), len(self.COLUMN_KEYS), self)
+        self.table.setHorizontalHeaderLabels(self.COLUMN_LABELS)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setEditTriggers(
+            QAbstractItemView.EditTrigger.DoubleClicked
+            | QAbstractItemView.EditTrigger.SelectedClicked
+            | QAbstractItemView.EditTrigger.EditKeyPressed
+        )
+        header = self.table.horizontalHeader()
+        if header is not None:
+            header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+            header.setStretchLastSection(True)
+        layout.addWidget(self.table)
+
+        buttons = QDialogButtonBox(parent=self)
+        self.back_button = buttons.addButton("返回上一步", QDialogButtonBox.ButtonRole.ActionRole)
+        self.confirm_button = buttons.addButton("確認匯入", QDialogButtonBox.ButtonRole.AcceptRole)
+        self.cancel_button = buttons.addButton("取消", QDialogButtonBox.ButtonRole.RejectRole)
+        self.back_button.clicked.connect(self._handle_back_clicked)
+        self.confirm_button.clicked.connect(self.accept)
+        self.cancel_button.clicked.connect(self.reject)
+        layout.addWidget(buttons)
+
+        self.table.cellDoubleClicked.connect(self._handle_table_cell_double_clicked)
+        self._populate_rows()
+
+    def _make_combo_widget(self, key: str, value: str) -> QComboBox:
+        combo = QComboBox(self.table)
+        options = [option for option in self.option_choices.get(key, []) if option]
+        for option in options:
+            combo.addItem(option)
+        configure_combo_autocomplete(combo)
+        found_index = combo.findText(value)
+        if found_index >= 0:
+            combo.setCurrentIndex(found_index)
+        else:
+            combo.setEditText(value)
+        return combo
+
+    def _populate_rows(self) -> None:
+        for row_index, line in enumerate(self._lines):
+            values = {
+                "production_item": str(line.get("production_item") or ""),
+                "size_text": str(line.get("size_text") or ""),
+                "material": str(line.get("material") or ""),
+                "lamination": str(line.get("lamination") or ""),
+                "board_type": str(line.get("board_type") or ""),
+                "board_thickness": str(line.get("board_thickness") or ""),
+                "extra_materials": "+".join(line.get("extra_materials") or []),
+                "quantity": str(line.get("quantity") or 1),
+                "unresolved_tokens": "+".join(line.get("unresolved_tokens") or []),
+                "confidence": f"{float(line.get('confidence') or 0):.2f}",
+            }
+            for column, key in enumerate(self.COLUMN_KEYS):
+                if column in self.COMBO_COLUMN_KEYS:
+                    combo = self._make_combo_widget(self.COMBO_COLUMN_KEYS[column], values[key])
+                    self.table.setCellWidget(row_index, column, combo)
+                    self.table.setItem(row_index, column, QTableWidgetItem(values[key]))
+                    continue
+                item = QTableWidgetItem(values[key])
+                if key in {"extra_materials", "unresolved_tokens", "confidence"}:
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.table.setItem(row_index, column, item)
+
+    def _handle_table_cell_double_clicked(self, row_index: int, column: int) -> None:
+        if column != 6:
+            return
+        current_values = [part.strip() for part in self._cell_text(row_index, column).split("+") if part.strip()]
+        unresolved_tokens = [part.strip() for part in self._cell_text(row_index, 8).split("+") if part.strip()]
+        dialog = ImportExtraMaterialsDialog(
+            list(self.option_choices.get("extra_materials", [])),
+            current_values,
+            unresolved_tokens,
+            self,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        item = self.table.item(row_index, column)
+        if item is None:
+            item = QTableWidgetItem()
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row_index, column, item)
+        item.setText("+".join(dialog.payload()))
+
+    def _handle_back_clicked(self) -> None:
+        self.go_back = True
+        self.reject()
+
+    def payload(self) -> list[dict[str, object]]:
+        updated_lines: list[dict[str, object]] = []
+        for row_index, source_line in enumerate(self._lines):
+            line = dict(source_line)
+            line["production_item"] = self._cell_text(row_index, 0)
+            line["size_text"] = self._cell_text(row_index, 1)
+            line["material"] = self._cell_text(row_index, 2)
+            line["lamination"] = self._cell_text(row_index, 3)
+            line["board_type"] = self._cell_text(row_index, 4)
+            line["board_thickness"] = self._cell_text(row_index, 5)
+            line["extra_materials"] = [part.strip() for part in self._cell_text(row_index, 6).split("+") if part.strip()]
+            line["quantity"] = parse_int_or_none(self._cell_text(row_index, 7)) or 1
+            updated_lines.append(line)
+        return updated_lines
+
+    def _cell_text(self, row_index: int, column: int) -> str:
+        cell_widget = self.table.cellWidget(row_index, column)
+        if isinstance(cell_widget, QComboBox):
+            return cell_widget.currentText().strip()
+        item = self.table.item(row_index, column)
+        return item.text().strip() if item is not None else ""
+
+
 class GeneratedUiPreviewWindow(QMainWindow):
     TOP_TAB_ORDER = [
         "le_worknum",
@@ -704,6 +1133,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._configure_reset_flow()
         self._configure_calculation_actions()
         self._configure_billing_action()
+        self._configure_import_action()
         self._configure_customer_management_actions()
         self._configure_delete_work_order_action()
         self._configure_line_row_actions()
@@ -740,18 +1170,12 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if not isinstance(combo, QComboBox):
             return
 
-        combo.setEditable(True)
-        combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        configure_combo_autocomplete(combo)
         combo.setMaxVisibleItems(8)
         combo.clear()
         for row in self.clients:
             combo.addItem(str(row["short_name"]), row)
 
-        completer = QCompleter(combo.model(), combo)
-        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
-        combo.setCompleter(completer)
         combo.currentTextChanged.connect(self._handle_customer_name_changed)
 
     def _handle_customer_name_changed(self, customer_name: str) -> None:
@@ -811,6 +1235,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
         billing_button = getattr(self.ui, "btn_billing", None)
         if billing_button is not None:
             billing_button.clicked.connect(self._handle_billing_clicked)
+
+    def _configure_import_action(self) -> None:
+        import_button = getattr(self.ui, "btn_import", None)
+        if import_button is not None:
+            import_button.clicked.connect(self._handle_import_clicked)
 
     def _configure_customer_management_actions(self) -> None:
         add_customer_button = getattr(self.ui, "btn_add_customer", None)
@@ -1506,6 +1935,475 @@ class GeneratedUiPreviewWindow(QMainWindow):
         success_message = f"已開啟 work_orders #{work_order_id}（工單 {work_number}，明細 {line_count} 筆）"
         QMessageBox.information(self, "開啟成功", success_message)
         self._set_status_message(success_message)
+
+    def _handle_import_clicked(self) -> None:
+        initial_dir = IMPORT_ROOT_HINT if Path(IMPORT_ROOT_HINT).exists() else str(Path.home())
+        selected_folder = QFileDialog.getExistingDirectory(self, "選擇導入資料夾", initial_dir)
+        if not selected_folder:
+            self._set_status_message("已取消導入。")
+            return
+
+        initial_context = parse_import_path_context(selected_folder)
+        header_state = {
+            "customer_name": initial_context.get("customer_name", ""),
+            "case_name": initial_context.get("case_name", ""),
+            "work_number": "",
+        }
+
+        while True:
+            try:
+                preview_payload = self._build_import_preview_payload(selected_folder)
+            except Exception as exc:
+                message = str(exc) or exc.__class__.__name__
+                QMessageBox.warning(self, "導入失敗", message)
+                self._set_status_message(f"導入失敗：{message}")
+                return
+
+            header_dialog = ImportHeaderConfirmDialog(preview_payload["source_folder"], header_state, self)
+            if header_dialog.exec() != QDialog.DialogCode.Accepted:
+                self._set_status_message("已取消導入。")
+                return
+
+            header_payload = header_dialog.payload()
+            if header_payload["source_folder"] != selected_folder:
+                selected_folder = header_payload["source_folder"]
+                continue
+
+            preview_payload["customer_name"] = header_payload["customer_name"]
+            preview_payload["case_name"] = header_payload["case_name"]
+            preview_payload["work_number"] = header_payload["work_number"]
+            header_state = {
+                "customer_name": header_payload["customer_name"],
+                "case_name": header_payload["case_name"],
+                "work_number": header_payload["work_number"],
+            }
+
+            lines_dialog = ImportLineItemsConfirmDialog(
+                list(preview_payload.get("lines") or []),
+                {
+                    "material": self.combo_column_options.get(5, []),
+                    "lamination": self.combo_column_options.get(6, []),
+                    "board_type": self.combo_column_options.get(7, []),
+                    "board_thickness": self.combo_column_options.get(8, []),
+                    "extra_materials": self.combo_column_options.get(9, []),
+                },
+                self,
+            )
+            if lines_dialog.exec() != QDialog.DialogCode.Accepted:
+                if lines_dialog.go_back:
+                    continue
+                self._set_status_message("已取消導入。")
+                return
+
+            preview_payload["lines"] = lines_dialog.payload()
+            if not self._confirm_replace_current_screen_if_needed():
+                return
+            self._apply_import_preview_to_screen(preview_payload)
+            imported_count = len(preview_payload["lines"])
+            self._set_status_message(f"已導入 {imported_count} 筆明細。")
+            QMessageBox.information(self, "導入完成", f"已導入 {imported_count} 筆明細到目前工單畫面。")
+            return
+
+    def _build_import_preview_payload(self, selected_folder: str) -> dict[str, object]:
+        loading = QProgressDialog("正在讀取資料夾與解析檔名…", None, 0, 0, self)
+        loading.setWindowTitle("導入中")
+        loading.setWindowModality(Qt.WindowModality.ApplicationModal)
+        loading.setCancelButton(None)
+        loading.setMinimumDuration(0)
+        loading.show()
+        QApplication.processEvents()
+        try:
+            context = parse_import_path_context(selected_folder)
+            image_paths = sorted(
+                [
+                    path for path in Path(selected_folder).iterdir()
+                    if path.is_file() and path.suffix.lower() in IMPORT_IMAGE_SUFFIXES
+                ],
+                key=lambda p: p.name.lower(),
+            )
+            if not image_paths:
+                raise ValueError("選到的資料夾內沒有 .jpg / .jpeg 檔案。")
+            lines = [self._parse_import_file(path, context) for path in image_paths]
+            loading.setLabelText("正在交給 AI 輔助解析規格…")
+            QApplication.processEvents()
+            self._apply_ai_resolution_to_import_lines(lines, context)
+            return {
+                "source_folder": context["source_folder"],
+                "customer_name": context["customer_name"],
+                "case_folder": context["case_folder"],
+                "case_name": context["case_name"],
+                "work_number": "",
+                "lines": lines,
+            }
+        finally:
+            loading.close()
+
+    def _parse_import_file(self, file_path: Path, context: dict[str, str]) -> dict[str, object]:
+        stem = unicodedata.normalize("NFKC", file_path.stem)
+        parts = [part.strip() for part in stem.split("-") if part.strip()]
+        production_item = parts[0] if parts else stem
+        size_text = ""
+        rest_parts = parts[1:]
+        if rest_parts and looks_like_size_text(rest_parts[0]):
+            size_text = rest_parts[0]
+            rest_parts = rest_parts[1:]
+        raw_spec_text = "-".join(rest_parts)
+        raw_spec_tokens = [token.strip() for token in raw_spec_text.split("+") if token.strip()]
+        spec_payload = self._resolve_import_spec_tokens(raw_spec_tokens, context)
+        return {
+            "source_file": file_path.name,
+            "production_item": production_item,
+            "size_text": size_text,
+            "raw_spec_text": raw_spec_text,
+            "raw_spec_tokens": raw_spec_tokens,
+            **spec_payload,
+        }
+
+    def _resolve_import_spec_tokens(self, raw_tokens: list[str], context: dict[str, str]) -> dict[str, object]:
+        material = ""
+        lamination = "亮面" if context.get("customer_name") == "冠銘專用" else "霧面"
+        board_type = ""
+        board_thickness = ""
+        extra_materials: list[str] = []
+        ignored_tokens: list[str] = []
+        unresolved_tokens: list[str] = []
+        notes: list[str] = []
+        quantity = 1
+        consumed_indexes: set[int] = set()
+        candidate_extra_materials = self.combo_column_options.get(9, [])
+
+        for index, raw_token in enumerate(raw_tokens):
+            token = unicodedata.normalize("NFKC", raw_token).strip()
+            normalized = normalize_token_text(token)
+            if not normalized:
+                consumed_indexes.add(index)
+                continue
+
+            quantity_match = QUANTITY_TOKEN_PATTERN.fullmatch(normalized)
+            if quantity_match:
+                quantity = max(1, int(quantity_match.group(1)))
+                consumed_indexes.add(index)
+                continue
+
+            if normalized in {"亮面", "霧面"}:
+                lamination = normalized
+                consumed_indexes.add(index)
+                continue
+
+            material_name = MATERIAL_ALIASES.get(normalized)
+            if material_name:
+                material = material_name
+                consumed_indexes.add(index)
+                continue
+
+            board_name = BOARD_TYPE_ALIASES.get(token) or BOARD_TYPE_ALIASES.get(normalized)
+            if board_name:
+                board_type = board_name
+                consumed_indexes.add(index)
+                continue
+
+            if looks_like_thickness_text(token):
+                board_thickness = token
+                consumed_indexes.add(index)
+                continue
+
+            if token.startswith("右折") or token.startswith("左折"):
+                ignored_tokens.append(token)
+                consumed_indexes.add(index)
+                continue
+
+            matched_name, score = match_candidate(token, candidate_extra_materials)
+            if matched_name and score >= 0.58:
+                extra_materials.append(matched_name)
+                if score < 0.85:
+                    notes.append(f"{token} 近似配對為 {matched_name}")
+                consumed_indexes.add(index)
+                continue
+
+        if board_type and not board_thickness:
+            board_thickness = BOARD_TYPE_DEFAULT_THICKNESS.get(board_type, "")
+
+        for index, raw_token in enumerate(raw_tokens):
+            if index not in consumed_indexes:
+                unresolved_tokens.append(unicodedata.normalize("NFKC", raw_token).strip())
+
+        confidence = 0.95
+        if notes:
+            confidence -= 0.12
+        if unresolved_tokens:
+            confidence -= min(0.4, 0.12 * len(unresolved_tokens))
+        confidence = max(0.1, round(confidence, 2))
+
+        return {
+            "material": material,
+            "lamination": lamination,
+            "board_type": board_type,
+            "board_thickness": board_thickness,
+            "extra_materials": extra_materials,
+            "quantity": quantity,
+            "ignored_tokens": ignored_tokens,
+            "unresolved_tokens": unresolved_tokens,
+            "notes": notes,
+            "confidence": confidence,
+        }
+
+    def _apply_ai_resolution_to_import_lines(self, lines: list[dict[str, object]], context: dict[str, str]) -> None:
+        ai_results = self._call_import_ai_for_lines(lines, context)
+        if not ai_results:
+            return
+
+        for index, ai_line in ai_results.items():
+            if index < 0 or index >= len(lines):
+                continue
+            merged = self._merge_ai_line_resolution(lines[index], ai_line)
+            lines[index] = merged
+
+    def _build_import_ai_candidates(self) -> dict[str, list[str]]:
+        return {
+            "materials": sorted({*self.combo_column_options.get(5, []), *MATERIAL_ALIASES.values()}),
+            "laminations": sorted({*self.combo_column_options.get(6, []), "亮面", "霧面"}),
+            "board_types": sorted({*self.combo_column_options.get(7, []), *BOARD_TYPE_DEFAULT_THICKNESS.keys()}),
+            "board_thicknesses": sorted({*self.combo_column_options.get(8, []), *[value for value in BOARD_TYPE_DEFAULT_THICKNESS.values() if value]}),
+            "extra_materials": list(self.combo_column_options.get(9, [])),
+        }
+
+    def _call_import_ai_for_lines(self, lines: list[dict[str, object]], context: dict[str, str]) -> dict[int, dict[str, object]]:
+        if not deepseek_configured() or not lines:
+            return {}
+
+        payload_items = []
+        for index, line in enumerate(lines):
+            payload_items.append(
+                {
+                    "index": index,
+                    "customer_name": context.get("customer_name", ""),
+                    "case_name": context.get("case_name", ""),
+                    "file_name": line.get("source_file", ""),
+                    "production_item": line.get("production_item", ""),
+                    "size_text": line.get("size_text", ""),
+                    "raw_spec_text": line.get("raw_spec_text", ""),
+                    "raw_spec_tokens": line.get("raw_spec_tokens", []),
+                    "current_guess": {
+                        "material": line.get("material", ""),
+                        "lamination": line.get("lamination", ""),
+                        "board_type": line.get("board_type", ""),
+                        "board_thickness": line.get("board_thickness", ""),
+                        "extra_materials": line.get("extra_materials", []),
+                        "ignored_tokens": line.get("ignored_tokens", []),
+                        "unresolved_tokens": line.get("unresolved_tokens", []),
+                        "quantity": line.get("quantity", 1),
+                    },
+                }
+            )
+
+        prompt_payload = {
+            "rules": {
+                "lamination_default": "冠銘專用=亮面，其餘=霧面；若 token 明寫亮面/霧面，以 token 為準",
+                "board_defaults": BOARD_TYPE_DEFAULT_THICKNESS,
+                "ignore_patterns": ["右折*", "左折*"],
+                "notes": [
+                    "你只需要處理 raw_spec_tokens 中較模糊、較像其他備料/加工描述的 token。",
+                    "對於已能從 current_guess 明確判斷的 material / board_type / board_thickness，優先尊重 current_guess。",
+                    "若 token 與既有候選值很像，優先對應到候選值，不要發明新名字。",
+                    "若仍無法判斷，保留在 unresolved_tokens。",
+                ],
+            },
+            "candidates": self._build_import_ai_candidates(),
+            "items": payload_items,
+        }
+        try:
+            response_json = self._chat_complete_import_ai(prompt_payload)
+        except Exception as exc:
+            self._set_status_message(f"AI 解析失敗，改用本地規則：{exc}")
+            return {}
+
+        items = response_json.get("items") if isinstance(response_json, dict) else None
+        if not isinstance(items, list):
+            return {}
+
+        results: dict[int, dict[str, object]] = {}
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            try:
+                index = int(item.get("index"))
+            except (TypeError, ValueError):
+                continue
+            results[index] = item
+        return results
+
+    def _chat_complete_import_ai(self, prompt_payload: dict[str, object]) -> dict[str, object]:
+        system_prompt = (
+            "你是工單檔名解析助手。"
+            "請根據 candidates 與 current_guess，僅補強 raw_spec_tokens 的模糊判讀。"
+            "輸出必須是 JSON 物件，格式為 {\"items\": [...]}。"
+            "每個 item 必須包含 index, extra_materials, ignored_tokens, unresolved_tokens, notes, confidence，"
+            "若需要覆蓋 material/lamination/board_type/board_thickness/quantity 再填入，否則沿用 current_guess。"
+            "不要輸出 markdown，不要輸出額外說明。"
+        )
+        user_prompt = json.dumps(prompt_payload, ensure_ascii=False)
+        api_key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
+        if not api_key:
+            raise RuntimeError("未設定 OPENROUTER_API_KEY 或 DEEPSEEK_API_KEY")
+        api_url = OPENROUTER_API_URL if os.environ.get("OPENROUTER_API_KEY") else DEEPSEEK_API_URL
+        request_body = {
+            "model": IMPORT_AI_MODEL,
+            "temperature": 0.1,
+            "response_format": {"type": "json_object"},
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        }
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        if api_url == OPENROUTER_API_URL:
+            headers["HTTP-Referer"] = "https://github.com/jackey10055206/work-order"
+            headers["X-Title"] = "work-order import"
+
+        request = urllib_request.Request(
+            api_url,
+            data=json.dumps(request_body).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        try:
+            with urllib_request.urlopen(request, timeout=IMPORT_AI_TIMEOUT_SECONDS) as response:
+                body = response.read().decode("utf-8")
+        except urllib_error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace") if exc.fp else str(exc)
+            raise RuntimeError(f"AI HTTP {exc.code}: {detail[:240]}") from exc
+        except urllib_error.URLError as exc:
+            raise RuntimeError(f"AI 連線失敗：{exc.reason}") from exc
+
+        payload = json.loads(body)
+        choices = payload.get("choices") if isinstance(payload, dict) else None
+        if not choices:
+            raise RuntimeError("AI 回傳格式不正確：缺少 choices")
+        message = choices[0].get("message", {})
+        content = message.get("content", "")
+        if isinstance(content, list):
+            content = "".join(str(part.get("text", "")) if isinstance(part, dict) else str(part) for part in content)
+        parsed = json.loads(extract_json_text(str(content)))
+        if not isinstance(parsed, dict):
+            raise RuntimeError("AI JSON 解析失敗：不是物件")
+        return parsed
+
+    def _merge_ai_line_resolution(self, line: dict[str, object], ai_line: dict[str, object]) -> dict[str, object]:
+        merged = dict(line)
+        for key in ("material", "lamination", "board_type", "board_thickness"):
+            ai_value = str(ai_line.get(key) or "").strip()
+            if ai_value:
+                merged[key] = ai_value
+        try:
+            ai_quantity = int(ai_line.get("quantity")) if ai_line.get("quantity") is not None else None
+        except (TypeError, ValueError):
+            ai_quantity = None
+        if ai_quantity and ai_quantity > 0:
+            merged["quantity"] = ai_quantity
+
+        extra_materials = ensure_str_list(merged.get("extra_materials"))
+        for value in ensure_str_list(ai_line.get("extra_materials")):
+            if value not in extra_materials:
+                extra_materials.append(value)
+        merged["extra_materials"] = extra_materials
+
+        ignored_tokens = ensure_str_list(merged.get("ignored_tokens"))
+        for value in ensure_str_list(ai_line.get("ignored_tokens")):
+            if value not in ignored_tokens:
+                ignored_tokens.append(value)
+        merged["ignored_tokens"] = ignored_tokens
+
+        merged["unresolved_tokens"] = ensure_str_list(ai_line.get("unresolved_tokens"))
+
+        notes = ensure_str_list(merged.get("notes"))
+        for value in ensure_str_list(ai_line.get("notes")):
+            if value not in notes:
+                notes.append(value)
+        merged["notes"] = notes
+
+        try:
+            confidence = float(ai_line.get("confidence"))
+        except (TypeError, ValueError):
+            confidence = float(merged.get("confidence") or 0)
+        merged["confidence"] = max(0.1, min(1.0, round(confidence, 2)))
+        return merged
+
+    def _confirm_replace_current_screen_if_needed(self) -> bool:
+        if not self._has_loaded_content_on_screen():
+            return True
+        confirm = QMessageBox.question(
+            self,
+            "覆蓋目前內容",
+            "目前畫面已有資料；導入會覆蓋目前工單內容。\n\n要繼續嗎？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            self._set_status_message("已取消覆蓋目前內容。")
+            return False
+        return True
+
+    def _apply_import_preview_to_screen(self, preview_payload: dict[str, object]) -> None:
+        self._initialize_blank_work_order()
+        customer_name = str(preview_payload.get("customer_name") or "")
+        customer_combo = getattr(self.ui, "cb_customerName", None)
+        if isinstance(customer_combo, QComboBox):
+            customer_index = customer_combo.findText(customer_name)
+            if customer_index >= 0:
+                customer_combo.setCurrentIndex(customer_index)
+            else:
+                customer_combo.setEditText(customer_name)
+
+        field_values = {
+            "le_worknum": str(preview_payload.get("work_number") or ""),
+            "le_caseName": str(preview_payload.get("case_name") or ""),
+        }
+        for attr, value in field_values.items():
+            widget = getattr(self.ui, attr, None)
+            if isinstance(widget, QLineEdit):
+                widget.setText(value)
+
+        table_rows = [self._build_table_row_from_import_line(line) for line in list(preview_payload.get("lines") or [])]
+        while len(table_rows) < DEFAULT_LINE_ITEM_ROW_COUNT:
+            table_rows.append(list(BLANK_LINE_ROW_TEMPLATE))
+        if not table_rows or self._row_values_have_meaningful_content(table_rows[-1]):
+            table_rows.append(list(BLANK_LINE_ROW_TEMPLATE))
+        self._populate_line_items_table_with_rows(table_rows)
+
+    def _build_table_row_from_import_line(self, line: dict[str, object]) -> list[str]:
+        width_text = ""
+        height_text = ""
+        size_text = str(line.get("size_text") or "")
+        if SIZE_TEXT_PATTERN.fullmatch(unicodedata.normalize("NFKC", size_text)):
+            width_text, height_text = re.split(r"[xX]", size_text, maxsplit=1)
+        elif size_text:
+            width_text = size_text
+        return [
+            str(line.get("production_item") or ""),
+            width_text,
+            "x",
+            height_text,
+            str(line.get("quantity") or 1),
+            str(line.get("material") or ""),
+            str(line.get("lamination") or ""),
+            str(line.get("board_type") or ""),
+            str(line.get("board_thickness") or ""),
+            "+".join(line.get("extra_materials") or []),
+            "",
+            "",
+            "",
+            "",
+            "",
+        ]
+
+    def _row_values_have_meaningful_content(self, row_values: list[str]) -> bool:
+        for column in [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]:
+            if column < len(row_values) and str(row_values[column]).strip():
+                return True
+        return False
 
     def save_work_order_with_lines(self) -> tuple[int, int]:
         if pymysql is None:
@@ -2217,8 +3115,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
     def _make_combo_box(self, column: int, current_text: str) -> QComboBox:
         combo = QComboBox()
         combo.addItems(self.combo_column_options[column])
-        combo.setEditable(True)
-        combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        configure_combo_autocomplete(combo)
         combo.setFrame(True)
         combo.setMaxVisibleItems(8)
         combo.setMinimumHeight(28)
@@ -2229,12 +3126,6 @@ class GeneratedUiPreviewWindow(QMainWindow):
             combo.lineEdit().setFont(combo_font)
         if combo.view() is not None:
             combo.view().setFont(combo_font)
-
-        completer = QCompleter(combo.model(), combo)
-        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
-        combo.setCompleter(completer)
 
         current_index = combo.findText(current_text)
         if current_index >= 0:
