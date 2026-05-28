@@ -818,6 +818,24 @@ def default_import_lamination(customer_name: str) -> str:
     return "亮面" if (customer_name or "").strip() == "冠銘專用" else "霧面"
 
 
+class ComboBoxWheelBlocker(QObject):
+    def __init__(self, combo: QComboBox) -> None:
+        super().__init__(combo)
+        self.combo = combo
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Wheel and not self.combo.view().isVisible():
+            event.ignore()
+            return True
+        return super().eventFilter(watched, event)
+
+
+def disable_combobox_mouse_wheel(combo: QComboBox) -> None:
+    blocker = ComboBoxWheelBlocker(combo)
+    combo.installEventFilter(blocker)
+    combo._wheel_blocker = blocker  # type: ignore[attr-defined]
+
+
 def configure_combo_autocomplete(combo: QComboBox) -> None:
     combo.setEditable(True)
     combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
@@ -1186,6 +1204,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if not isinstance(combo, QComboBox):
             return
 
+        disable_combobox_mouse_wheel(combo)
         configure_combo_autocomplete(combo)
         combo.setMaxVisibleItems(8)
         combo.clear()
@@ -2474,7 +2493,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
             marker_widget = table.cellWidget(row_index, 0)
             marker_style = (
-                "QLineEdit {background-color: #ffffff; border: 1px solid #d1d5db; "
+                "QLineEdit {background-color: #fef3c7; border: 1px solid #f59e0b; "
                 f"border-left: 4px solid {marker_color}; border-radius: 4px; padding-left: 6px;"
                 "}"
             )
@@ -3224,6 +3243,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
     def _make_combo_box(self, column: int, current_text: str) -> QComboBox:
         combo = QComboBox()
+        disable_combobox_mouse_wheel(combo)
         combo.addItems(self.combo_column_options[column])
         configure_combo_autocomplete(combo)
         combo.setFrame(True)
