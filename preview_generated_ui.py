@@ -174,7 +174,7 @@ PAGE_LABELS = [
 ]
 IMPORT_ROOT_HINT = r"\\New-super-1682\1682輸出"
 IMPORT_IMAGE_SUFFIXES = {".jpg", ".jpeg"}
-SIZE_TEXT_PATTERN = re.compile(r"^\d+(?:\.\d+)?[xX]\d+(?:\.\d+)?$")
+SIZE_TEXT_PATTERN = re.compile(r"^\d+(?:\.\d+)?(?:mm|cm)?[xX]\d+(?:\.\d+)?(?:mm|cm)?$", re.IGNORECASE)
 PAPER_SIZE_PATTERN = re.compile(r"^A\d+$", re.IGNORECASE)
 THICKNESS_PATTERN = re.compile(r"^\d+(?:\.\d+)?(?:mm|cm)$", re.IGNORECASE)
 CASE_PREFIX_PATTERN = re.compile(r"^\d+-")
@@ -654,6 +654,17 @@ def parse_int_or_none(raw_value: str | None) -> int | None:
     if decimal_value != decimal_value.to_integral_value():
         raise ValueError(f"整數欄位不可輸入小數：{raw_value}")
     return int(decimal_value)
+
+
+def extract_first_int(value: object) -> int | None:
+    text = unicodedata.normalize("NFKC", str(value or "")).strip()
+    if not text:
+        return None
+    direct = parse_int_or_none(text)
+    if direct is not None:
+        return direct
+    match = re.search(r"\d+", text)
+    return int(match.group(0)) if match else None
 
 
 def format_decimal_for_ui(value: object) -> str:
@@ -2017,6 +2028,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
         spec_payload = self._resolve_import_spec_tokens(raw_spec_tokens, context)
         return {
             "source_file": file_path.name,
+            "original_filename": stem,
+            "filename_parts": parts,
             "production_item": production_item,
             "size_text": size_text,
             "raw_spec_text": raw_spec_text,
@@ -2140,7 +2153,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
                     "customer_name": context.get("customer_name", ""),
                     "case_name": context.get("case_name", ""),
                     "file_name": line.get("source_file", ""),
-                    "original_filename": Path(str(line.get("source_file", ""))).stem,
+                    "original_filename": str(line.get("original_filename") or Path(str(line.get("source_file", ""))).stem),
+                    "filename_parts": list(line.get("filename_parts") or []),
                     "production_item": line.get("production_item", ""),
                     "size_text": line.get("size_text", ""),
                     "raw_spec_text": line.get("raw_spec_text", ""),
@@ -2164,8 +2178,10 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 "board_defaults": BOARD_TYPE_DEFAULT_THICKNESS,
                 "ignore_patterns": ["右折*", "左折*"],
                 "notes": [
-                    "請直接根據 customer_name、case_name、original_filename、raw_spec_text、raw_spec_tokens 輸出完整結構化欄位。",
+                    "請直接根據 customer_name、case_name、original_filename、filename_parts、raw_spec_text、raw_spec_tokens 做語意抽取，不要假設第幾段一定是名稱或尺寸。",
                     "current_guess 只是 fallback 參考，不是最終答案；若你更有把握，可以覆蓋 production_item、size_text、material、lamination、board_type、board_thickness、extra_materials、quantity。",
+                    "若檔名某一段混合了名稱與尺寸（例如 頭卡30x20cm），請自行拆出語意，不要原樣照抄到 production_item。",
+                    "若同時出現多個尺寸或數量線索，quantity 只放工單總數；其他像大版尺寸、印幾片、排版資訊，放進 notes，不要硬塞進 quantity。",
                     "若 token 與既有候選值很像，優先對應到候選值，不要發明新名字。",
                     "若仍無法判斷，欄位留空，並把原因寫進 review_reason；不要硬猜。",
                 ],
@@ -2197,9 +2213,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
     def _chat_complete_import_ai(self, prompt_payload: dict[str, object]) -> dict[str, object]:
         system_prompt = (
             "你是工單檔名解析助手。"
-            "請根據 candidates、customer_name、case_name、original_filename 與 current_guess，直接輸出完整工單列解析結果。"
+            "你的工作是從不穩定、格式不固定的檔名中做語意抽取，而不是套固定模板。"
+            "請根據 candidates、customer_name、case_name、original_filename、filename_parts 與 current_guess，直接輸出完整工單列解析結果。"
             "輸出必須是 JSON 物件，格式為 {\"items\": [...]}。"
             "每個 item 必須包含 index, production_item, size_text, material, lamination, board_type, board_thickness, extra_materials, quantity, needs_review, review_reason, unresolved_tokens, notes, confidence。"
+            "quantity 只代表工單總數；其他像大版尺寸、切割尺寸、印幾片、拼版資訊請放在 notes。"
             "能從 candidates 選的就選 candidates；不確定就留空並 needs_review=true。"
             "不要輸出 markdown，不要輸出額外說明。"
         )
@@ -2339,11 +2357,11 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 unknown_extra_materials.append(value)
         finalized["extra_materials"] = normalized_extra_materials
 
-        try:
-            quantity = int(finalized.get("quantity") or 1)
-        except (TypeError, ValueError):
+        quantity = extract_first_int(finalized.get("quantity"))
+        if quantity is None:
             quantity = 1
-            review_reason.append("數量格式有問題，已回退成 1")
+            if finalized.get("quantity") not in (None, "", 1, "1"):
+                review_reason.append("數量格式有問題，已回退成 1")
         finalized["quantity"] = max(1, quantity)
 
         if unknown_extra_materials:
@@ -2435,7 +2453,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
             if not needs_review and not reasons:
                 continue
 
-            tone = QColor("#fde68a") if line.get("production_item") else QColor("#fecaca")
+            is_high_severity = not line.get("production_item") or not line.get("material")
+            marker_color = "#dc2626" if is_high_severity else "#d97706"
             tooltip_parts = [f"來源檔名：{line.get('source_file', '')}"]
             if reasons:
                 tooltip_parts.append("需要確認：" + "；".join(reasons))
@@ -2449,14 +2468,20 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 item = table.item(row_index, column)
                 if item is not None:
                     item.setToolTip(tooltip)
-                    if column != X_COLUMN_INDEX:
-                        item.setBackground(tone)
                 widget = table.cellWidget(row_index, column)
                 if widget is not None:
                     widget.setToolTip(tooltip)
-                    widget.setStyleSheet("background-color: #fff7d6;")
-                    if isinstance(widget, QComboBox) and widget.lineEdit() is not None:
-                        widget.lineEdit().setStyleSheet("background-color: #fff7d6;")
+
+            marker_widget = table.cellWidget(row_index, 0)
+            marker_style = (
+                "QLineEdit {background-color: #ffffff; border: 1px solid #d1d5db; "
+                f"border-left: 4px solid {marker_color}; border-radius: 4px; padding-left: 6px;"
+                "}"
+            )
+            if isinstance(marker_widget, QLineEdit):
+                marker_widget.setStyleSheet(marker_style)
+            elif isinstance(marker_widget, QComboBox) and marker_widget.lineEdit() is not None:
+                marker_widget.lineEdit().setStyleSheet(marker_style)
 
     def _build_table_row_from_import_line(self, line: dict[str, object]) -> list[str]:
         width_text = ""
