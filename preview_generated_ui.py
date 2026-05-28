@@ -803,6 +803,10 @@ def deepseek_configured() -> bool:
     return bool(os.environ.get("OPENROUTER_API_KEY") or os.environ.get("DEEPSEEK_API_KEY"))
 
 
+def default_import_lamination(customer_name: str) -> str:
+    return "亮面" if (customer_name or "").strip() == "冠銘專用" else "霧面"
+
+
 def configure_combo_autocomplete(combo: QComboBox) -> None:
     combo.setEditable(True)
     combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
@@ -1118,6 +1122,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._last_auto_filled_phone = ""
         self._last_auto_filled_address = ""
         self._loaded_work_order_number = ""
+        self._import_review_rows: dict[int, dict[str, object]] = {}
         self.table_tab_navigator: TableCellTabNavigator | None = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -1943,66 +1948,26 @@ class GeneratedUiPreviewWindow(QMainWindow):
             self._set_status_message("已取消導入。")
             return
 
-        initial_context = parse_import_path_context(selected_folder)
-        header_state = {
-            "customer_name": initial_context.get("customer_name", ""),
-            "case_name": initial_context.get("case_name", ""),
-            "work_number": "",
-        }
-
-        while True:
-            try:
-                preview_payload = self._build_import_preview_payload(selected_folder)
-            except Exception as exc:
-                message = str(exc) or exc.__class__.__name__
-                QMessageBox.warning(self, "導入失敗", message)
-                self._set_status_message(f"導入失敗：{message}")
-                return
-
-            header_dialog = ImportHeaderConfirmDialog(preview_payload["source_folder"], header_state, self)
-            if header_dialog.exec() != QDialog.DialogCode.Accepted:
-                self._set_status_message("已取消導入。")
-                return
-
-            header_payload = header_dialog.payload()
-            if header_payload["source_folder"] != selected_folder:
-                selected_folder = header_payload["source_folder"]
-                continue
-
-            preview_payload["customer_name"] = header_payload["customer_name"]
-            preview_payload["case_name"] = header_payload["case_name"]
-            preview_payload["work_number"] = header_payload["work_number"]
-            header_state = {
-                "customer_name": header_payload["customer_name"],
-                "case_name": header_payload["case_name"],
-                "work_number": header_payload["work_number"],
-            }
-
-            lines_dialog = ImportLineItemsConfirmDialog(
-                list(preview_payload.get("lines") or []),
-                {
-                    "material": self.combo_column_options.get(5, []),
-                    "lamination": self.combo_column_options.get(6, []),
-                    "board_type": self.combo_column_options.get(7, []),
-                    "board_thickness": self.combo_column_options.get(8, []),
-                    "extra_materials": self.combo_column_options.get(9, []),
-                },
-                self,
-            )
-            if lines_dialog.exec() != QDialog.DialogCode.Accepted:
-                if lines_dialog.go_back:
-                    continue
-                self._set_status_message("已取消導入。")
-                return
-
-            preview_payload["lines"] = lines_dialog.payload()
-            if not self._confirm_replace_current_screen_if_needed():
-                return
-            self._apply_import_preview_to_screen(preview_payload)
-            imported_count = len(preview_payload["lines"])
-            self._set_status_message(f"已導入 {imported_count} 筆明細。")
-            QMessageBox.information(self, "導入完成", f"已導入 {imported_count} 筆明細到目前工單畫面。")
+        try:
+            preview_payload = self._build_import_preview_payload(selected_folder)
+        except Exception as exc:
+            message = str(exc) or exc.__class__.__name__
+            QMessageBox.warning(self, "導入失敗", message)
+            self._set_status_message(f"導入失敗：{message}")
             return
+
+        if not self._confirm_replace_current_screen_if_needed():
+            return
+
+        self._apply_import_preview_to_screen(preview_payload)
+        imported_count = len(preview_payload["lines"])
+        review_count = sum(1 for line in preview_payload["lines"] if line.get("needs_review"))
+        if review_count:
+            message = f"已導入 {imported_count} 筆明細；其中 {review_count} 筆需要你再看一下。"
+        else:
+            message = f"已導入 {imported_count} 筆明細。"
+        self._set_status_message(message)
+        QMessageBox.information(self, "導入完成", message)
 
     def _build_import_preview_payload(self, selected_folder: str) -> dict[str, object]:
         loading = QProgressDialog("正在讀取資料夾與解析檔名…", None, 0, 0, self)
@@ -2061,7 +2026,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
     def _resolve_import_spec_tokens(self, raw_tokens: list[str], context: dict[str, str]) -> dict[str, object]:
         material = ""
-        lamination = "亮面" if context.get("customer_name") == "冠銘專用" else "霧面"
+        lamination = default_import_lamination(context.get("customer_name", ""))
         board_type = ""
         board_thickness = ""
         extra_materials: list[str] = []
@@ -2149,14 +2114,10 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
     def _apply_ai_resolution_to_import_lines(self, lines: list[dict[str, object]], context: dict[str, str]) -> None:
         ai_results = self._call_import_ai_for_lines(lines, context)
-        if not ai_results:
-            return
-
-        for index, ai_line in ai_results.items():
-            if index < 0 or index >= len(lines):
-                continue
-            merged = self._merge_ai_line_resolution(lines[index], ai_line)
-            lines[index] = merged
+        for index, line in enumerate(lines):
+            ai_line = ai_results.get(index, {})
+            merged = self._merge_ai_line_resolution(line, ai_line)
+            lines[index] = self._finalize_import_line_resolution(merged, context)
 
     def _build_import_ai_candidates(self) -> dict[str, list[str]]:
         return {
@@ -2179,6 +2140,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
                     "customer_name": context.get("customer_name", ""),
                     "case_name": context.get("case_name", ""),
                     "file_name": line.get("source_file", ""),
+                    "original_filename": Path(str(line.get("source_file", ""))).stem,
                     "production_item": line.get("production_item", ""),
                     "size_text": line.get("size_text", ""),
                     "raw_spec_text": line.get("raw_spec_text", ""),
@@ -2202,10 +2164,10 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 "board_defaults": BOARD_TYPE_DEFAULT_THICKNESS,
                 "ignore_patterns": ["右折*", "左折*"],
                 "notes": [
-                    "你只需要處理 raw_spec_tokens 中較模糊、較像其他備料/加工描述的 token。",
-                    "對於已能從 current_guess 明確判斷的 material / board_type / board_thickness，優先尊重 current_guess。",
+                    "請直接根據 customer_name、case_name、original_filename、raw_spec_text、raw_spec_tokens 輸出完整結構化欄位。",
+                    "current_guess 只是 fallback 參考，不是最終答案；若你更有把握，可以覆蓋 production_item、size_text、material、lamination、board_type、board_thickness、extra_materials、quantity。",
                     "若 token 與既有候選值很像，優先對應到候選值，不要發明新名字。",
-                    "若仍無法判斷，保留在 unresolved_tokens。",
+                    "若仍無法判斷，欄位留空，並把原因寫進 review_reason；不要硬猜。",
                 ],
             },
             "candidates": self._build_import_ai_candidates(),
@@ -2235,10 +2197,10 @@ class GeneratedUiPreviewWindow(QMainWindow):
     def _chat_complete_import_ai(self, prompt_payload: dict[str, object]) -> dict[str, object]:
         system_prompt = (
             "你是工單檔名解析助手。"
-            "請根據 candidates 與 current_guess，僅補強 raw_spec_tokens 的模糊判讀。"
+            "請根據 candidates、customer_name、case_name、original_filename 與 current_guess，直接輸出完整工單列解析結果。"
             "輸出必須是 JSON 物件，格式為 {\"items\": [...]}。"
-            "每個 item 必須包含 index, extra_materials, ignored_tokens, unresolved_tokens, notes, confidence，"
-            "若需要覆蓋 material/lamination/board_type/board_thickness/quantity 再填入，否則沿用 current_guess。"
+            "每個 item 必須包含 index, production_item, size_text, material, lamination, board_type, board_thickness, extra_materials, quantity, needs_review, review_reason, unresolved_tokens, notes, confidence。"
+            "能從 candidates 選的就選 candidates；不確定就留空並 needs_review=true。"
             "不要輸出 markdown，不要輸出額外說明。"
         )
         user_prompt = json.dumps(prompt_payload, ensure_ascii=False)
@@ -2293,7 +2255,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
     def _merge_ai_line_resolution(self, line: dict[str, object], ai_line: dict[str, object]) -> dict[str, object]:
         merged = dict(line)
-        for key in ("material", "lamination", "board_type", "board_thickness"):
+        for key in ("production_item", "size_text", "material", "lamination", "board_type", "board_thickness"):
             ai_value = str(ai_line.get(key) or "").strip()
             if ai_value:
                 merged[key] = ai_value
@@ -2317,6 +2279,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
         merged["ignored_tokens"] = ignored_tokens
 
         merged["unresolved_tokens"] = ensure_str_list(ai_line.get("unresolved_tokens"))
+        merged["review_reason"] = ensure_str_list(ai_line.get("review_reason"))
+        merged["needs_review"] = bool(ai_line.get("needs_review"))
 
         notes = ensure_str_list(merged.get("notes"))
         for value in ensure_str_list(ai_line.get("notes")):
@@ -2330,6 +2294,88 @@ class GeneratedUiPreviewWindow(QMainWindow):
             confidence = float(merged.get("confidence") or 0)
         merged["confidence"] = max(0.1, min(1.0, round(confidence, 2)))
         return merged
+
+    def _normalize_import_candidate_value(self, value: object, candidates: list[str]) -> str:
+        text = str(value or "").strip()
+        if not text:
+            return ""
+        if text in candidates:
+            return text
+        matched_name, score = match_candidate(text, candidates)
+        if matched_name and score >= 0.7:
+            return matched_name
+        return ""
+
+    def _finalize_import_line_resolution(self, line: dict[str, object], context: dict[str, str]) -> dict[str, object]:
+        finalized = dict(line)
+        candidates = self._build_import_ai_candidates()
+        review_reason = ensure_str_list(finalized.get("review_reason"))
+        notes = ensure_str_list(finalized.get("notes"))
+        unresolved_tokens = ensure_str_list(finalized.get("unresolved_tokens"))
+
+        finalized["production_item"] = str(finalized.get("production_item") or "").strip()
+        finalized["size_text"] = str(finalized.get("size_text") or "").strip()
+        finalized["material"] = self._normalize_import_candidate_value(finalized.get("material"), candidates["materials"])
+        finalized["lamination"] = self._normalize_import_candidate_value(finalized.get("lamination"), candidates["laminations"])
+        finalized["board_type"] = self._normalize_import_candidate_value(finalized.get("board_type"), candidates["board_types"])
+        finalized["board_thickness"] = self._normalize_import_candidate_value(finalized.get("board_thickness"), candidates["board_thicknesses"])
+
+        if not finalized["lamination"]:
+            finalized["lamination"] = default_import_lamination(context.get("customer_name", ""))
+
+        if finalized["board_type"] and not finalized["board_thickness"]:
+            default_thickness = BOARD_TYPE_DEFAULT_THICKNESS.get(finalized["board_type"], "")
+            if default_thickness:
+                finalized["board_thickness"] = default_thickness
+
+        normalized_extra_materials: list[str] = []
+        unknown_extra_materials: list[str] = []
+        for value in ensure_str_list(finalized.get("extra_materials")):
+            normalized_value = self._normalize_import_candidate_value(value, candidates["extra_materials"])
+            if normalized_value:
+                if normalized_value not in normalized_extra_materials:
+                    normalized_extra_materials.append(normalized_value)
+            elif value not in unknown_extra_materials:
+                unknown_extra_materials.append(value)
+        finalized["extra_materials"] = normalized_extra_materials
+
+        try:
+            quantity = int(finalized.get("quantity") or 1)
+        except (TypeError, ValueError):
+            quantity = 1
+            review_reason.append("數量格式有問題，已回退成 1")
+        finalized["quantity"] = max(1, quantity)
+
+        if unknown_extra_materials:
+            review_reason.append(f"其他備料未完全對上：{'+'.join(unknown_extra_materials)}")
+        if unresolved_tokens:
+            review_reason.append(f"仍有未解規格：{'+'.join(unresolved_tokens)}")
+        if not finalized["production_item"]:
+            review_reason.append("製作項目未判定")
+        if finalized["size_text"] and not looks_like_size_text(finalized["size_text"]):
+            review_reason.append(f"尺寸格式待確認：{finalized['size_text']}")
+        if not finalized["material"]:
+            review_reason.append("材質未判定")
+        if not finalized["board_type"] and finalized["board_thickness"]:
+            review_reason.append("只有板厚、沒有板材")
+
+        unique_review_reason: list[str] = []
+        for value in review_reason:
+            text = str(value).strip()
+            if text and text not in unique_review_reason:
+                unique_review_reason.append(text)
+        finalized["review_reason"] = unique_review_reason
+        finalized["notes"] = ensure_str_list(notes)
+        finalized["needs_review"] = bool(finalized.get("needs_review")) or bool(unique_review_reason)
+
+        try:
+            confidence = float(finalized.get("confidence") or 0)
+        except (TypeError, ValueError):
+            confidence = 0.35
+        if finalized["needs_review"] and confidence > 0.74:
+            confidence = 0.74
+        finalized["confidence"] = max(0.1, min(1.0, round(confidence, 2)))
+        return finalized
 
     def _confirm_replace_current_screen_if_needed(self) -> bool:
         if not self._has_loaded_content_on_screen():
@@ -2348,6 +2394,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
     def _apply_import_preview_to_screen(self, preview_payload: dict[str, object]) -> None:
         self._initialize_blank_work_order()
+        self._import_review_rows = {}
         customer_name = str(preview_payload.get("customer_name") or "")
         customer_combo = getattr(self.ui, "cb_customerName", None)
         if isinstance(customer_combo, QComboBox):
@@ -2372,6 +2419,44 @@ class GeneratedUiPreviewWindow(QMainWindow):
         if not table_rows or self._row_values_have_meaningful_content(table_rows[-1]):
             table_rows.append(list(BLANK_LINE_ROW_TEMPLATE))
         self._populate_line_items_table_with_rows(table_rows)
+        self._apply_import_review_decorations(list(preview_payload.get("lines") or []))
+
+    def _apply_import_review_decorations(self, lines: list[dict[str, object]]) -> None:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return
+
+        self._import_review_rows = {}
+        for row_index, line in enumerate(lines):
+            if row_index >= table.rowCount():
+                break
+            reasons = ensure_str_list(line.get("review_reason"))
+            needs_review = bool(line.get("needs_review"))
+            if not needs_review and not reasons:
+                continue
+
+            tone = QColor("#fde68a") if line.get("production_item") else QColor("#fecaca")
+            tooltip_parts = [f"來源檔名：{line.get('source_file', '')}"]
+            if reasons:
+                tooltip_parts.append("需要確認：" + "；".join(reasons))
+            notes = ensure_str_list(line.get("notes"))
+            if notes:
+                tooltip_parts.append("AI 備註：" + "；".join(notes))
+            tooltip = "\n".join(part for part in tooltip_parts if part)
+            self._import_review_rows[row_index] = {"tooltip": tooltip, "line": line}
+
+            for column in range(table.columnCount()):
+                item = table.item(row_index, column)
+                if item is not None:
+                    item.setToolTip(tooltip)
+                    if column != X_COLUMN_INDEX:
+                        item.setBackground(tone)
+                widget = table.cellWidget(row_index, column)
+                if widget is not None:
+                    widget.setToolTip(tooltip)
+                    widget.setStyleSheet("background-color: #fff7d6;")
+                    if isinstance(widget, QComboBox) and widget.lineEdit() is not None:
+                        widget.lineEdit().setStyleSheet("background-color: #fff7d6;")
 
     def _build_table_row_from_import_line(self, line: dict[str, object]) -> list[str]:
         width_text = ""
