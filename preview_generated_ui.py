@@ -728,6 +728,29 @@ def looks_like_thickness_text(value: str) -> bool:
     return bool(THICKNESS_PATTERN.fullmatch(candidate))
 
 
+def extract_dimension_token_number(value: str) -> Decimal | None:
+    candidate = unicodedata.normalize("NFKC", (value or "").strip())
+    if not candidate:
+        return None
+    match = re.fullmatch(r"(\d+(?:\.\d+)?)(?:mm|cm)?", candidate, re.IGNORECASE)
+    if not match:
+        return None
+    return Decimal(match.group(1))
+
+
+def split_size_text_for_table(size_text: str) -> tuple[str, str]:
+    candidate = unicodedata.normalize("NFKC", (size_text or "").strip())
+    if not SIZE_TEXT_PATTERN.fullmatch(candidate):
+        return (candidate, "") if candidate else ("", "")
+
+    left_raw, right_raw = re.split(r"[xX]", candidate, maxsplit=1)
+    left_value = extract_dimension_token_number(left_raw)
+    right_value = extract_dimension_token_number(right_raw)
+    if left_value is None or right_value is None:
+        return candidate, ""
+    return format_decimal_for_ui(left_value), format_decimal_for_ui(right_value)
+
+
 def strip_case_prefix(case_folder: str) -> str:
     normalized = unicodedata.normalize("NFKC", case_folder or "").strip()
     return CASE_PREFIX_PATTERN.sub("", normalized).strip() or normalized
@@ -2503,13 +2526,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 marker_widget.lineEdit().setStyleSheet(marker_style)
 
     def _build_table_row_from_import_line(self, line: dict[str, object]) -> list[str]:
-        width_text = ""
-        height_text = ""
         size_text = str(line.get("size_text") or "")
-        if SIZE_TEXT_PATTERN.fullmatch(unicodedata.normalize("NFKC", size_text)):
-            width_text, height_text = re.split(r"[xX]", size_text, maxsplit=1)
-        elif size_text:
-            width_text = size_text
+        width_text, height_text = split_size_text_for_table(size_text)
         return [
             str(line.get("production_item") or ""),
             width_text,
