@@ -9,7 +9,7 @@ import subprocess
 import sys
 import unicodedata
 from contextlib import contextmanager
-from decimal import Decimal, InvalidOperation, ROUND_CEILING
+from decimal import Decimal, InvalidOperation, ROUND_CEILING, ROUND_HALF_UP
 from pathlib import Path
 from urllib import error as urllib_error, request as urllib_request
 
@@ -678,6 +678,10 @@ def format_decimal_for_ui(value: object) -> str:
 
 def ceil_decimal(value: Decimal) -> Decimal:
     return value.to_integral_value(rounding=ROUND_CEILING)
+
+
+def round_decimal(value: Decimal) -> Decimal:
+    return value.to_integral_value(rounding=ROUND_HALF_UP)
 
 
 def load_option_item_ids_from_v2() -> dict[str, dict[str, int]]:
@@ -1467,7 +1471,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 production_amount += self._parse_table_decimal(row, 13)
                 production_amount += self._parse_table_decimal(row, 14)
 
-        tax_amount = ceil_decimal(production_amount * Decimal("0.05"))
+        tax_amount = round_decimal(production_amount * Decimal("0.05"))
         total_amount = production_amount + tax_amount
         return {
             "production_amount": production_amount,
