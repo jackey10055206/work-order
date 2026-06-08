@@ -177,6 +177,10 @@ IMPORT_IMAGE_SUFFIXES = {".jpg", ".jpeg"}
 SIZE_TEXT_PATTERN = re.compile(r"^\d+(?:\.\d+)?(?:mm|cm)?[xX]\d+(?:\.\d+)?(?:mm|cm)?$", re.IGNORECASE)
 PAPER_SIZE_PATTERN = re.compile(r"^A\d+$", re.IGNORECASE)
 THICKNESS_PATTERN = re.compile(r"^\d+(?:\.\d+)?(?:mm|cm)$", re.IGNORECASE)
+INLINE_WH_SIZE_PATTERN = re.compile(
+    r"(^|[_\-\s]+)w\s*(\d+(?:\.\d+)?)(mm|cm)?\s*[_\-\s]*h\s*(\d+(?:\.\d+)?)(mm|cm)?(?=$|[_\-\s]+)",
+    re.IGNORECASE,
+)
 CASE_PREFIX_PATTERN = re.compile(r"^\d+-")
 QUANTITY_TOKEN_PATTERN = re.compile(r"^[xX](\d+)$")
 
@@ -730,6 +734,40 @@ def looks_like_size_text(value: str) -> bool:
 def looks_like_thickness_text(value: str) -> bool:
     candidate = unicodedata.normalize("NFKC", (value or "").strip())
     return bool(THICKNESS_PATTERN.fullmatch(candidate))
+
+
+def format_import_dimension(value: str) -> str:
+    number = Decimal(value)
+    return format_decimal_for_ui(number)
+
+
+def extract_inline_wh_size_from_import_stem(stem: str) -> tuple[str, str]:
+    """Extract inline W/H size markers such as w99_h50cm from a filename stem."""
+    normalized = unicodedata.normalize("NFKC", stem or "").strip()
+    match = INLINE_WH_SIZE_PATTERN.search(normalized)
+    if not match:
+        return "", normalized
+
+    width = format_import_dimension(match.group(2))
+    height = format_import_dimension(match.group(4))
+    unit = (match.group(3) or match.group(5) or "").lower()
+    size_text = f"{width}X{height}{unit}"
+    remaining = (normalized[: match.start()] + " " + normalized[match.end() :]).strip(" _-")
+    remaining = re.sub(r"[ _-]+$", "", remaining).strip()
+    return size_text, remaining
+
+
+def extract_inline_material_from_import_text(text: str) -> tuple[str, str]:
+    """Extract material aliases that are glued to the production item, e.g. AC檯面PVC."""
+    remaining = unicodedata.normalize("NFKC", text or "").strip()
+    for alias, material in sorted(MATERIAL_ALIASES.items(), key=lambda item: len(item[0]), reverse=True):
+        pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(alias)}(?![A-Za-z0-9])", re.IGNORECASE)
+        match = pattern.search(remaining)
+        if match:
+            remaining = (remaining[: match.start()] + " " + remaining[match.end() :]).strip(" _-")
+            remaining = re.sub(r"\s{2,}", " ", remaining).strip()
+            return material, remaining
+    return "", remaining
 
 
 def extract_dimension_token_number(value: str) -> Decimal | None:
@@ -2062,16 +2100,19 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
     def _parse_import_file(self, file_path: Path, context: dict[str, str]) -> dict[str, object]:
         stem = unicodedata.normalize("NFKC", file_path.stem)
-        parts = [part.strip() for part in stem.split("-") if part.strip()]
-        production_item = parts[0] if parts else stem
-        size_text = ""
+        size_text, stem_without_inline_size = extract_inline_wh_size_from_import_stem(stem)
+        inline_material, stem_without_inline_material = extract_inline_material_from_import_text(stem_without_inline_size)
+        parts = [part.strip(" _") for part in stem_without_inline_material.split("-") if part.strip(" _")]
+        production_item = parts[0] if parts else stem_without_inline_material.strip(" _-") or stem
         rest_parts = parts[1:]
-        if rest_parts and looks_like_size_text(rest_parts[0]):
+        if not size_text and rest_parts and looks_like_size_text(rest_parts[0]):
             size_text = rest_parts[0]
             rest_parts = rest_parts[1:]
         raw_spec_text = "-".join(rest_parts)
         raw_spec_tokens = [token.strip() for token in raw_spec_text.split("+") if token.strip()]
         spec_payload = self._resolve_import_spec_tokens(raw_spec_tokens, context)
+        if inline_material and not spec_payload.get("material"):
+            spec_payload["material"] = inline_material
         return {
             "source_file": file_path.name,
             "original_filename": stem,
@@ -2091,6 +2132,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         extra_materials: list[str] = []
         ignored_tokens: list[str] = []
         unresolved_tokens: list[str] = []
+        pending_thickness_tokens: list[tuple[int, str]] = []
         notes: list[str] = []
         quantity = 1
         consumed_indexes: set[int] = set()
@@ -2127,8 +2169,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 continue
 
             if looks_like_thickness_text(token):
-                board_thickness = token
-                consumed_indexes.add(index)
+                pending_thickness_tokens.append((index, token))
                 continue
 
             if token.startswith("右折") or token.startswith("左折"):
@@ -2144,8 +2185,13 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 consumed_indexes.add(index)
                 continue
 
-        if board_type and not board_thickness:
-            board_thickness = BOARD_TYPE_DEFAULT_THICKNESS.get(board_type, "")
+        if board_type:
+            for index, token in pending_thickness_tokens:
+                if not board_thickness:
+                    board_thickness = token
+                consumed_indexes.add(index)
+            if not board_thickness:
+                board_thickness = BOARD_TYPE_DEFAULT_THICKNESS.get(board_type, "")
 
         for index, raw_token in enumerate(raw_tokens):
             if index not in consumed_indexes:
@@ -2227,6 +2273,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
                     "請直接根據 customer_name、case_name、original_filename、filename_parts、raw_spec_text、raw_spec_tokens 做語意抽取，不要假設第幾段一定是名稱或尺寸。",
                     "current_guess 只是 fallback 參考，不是最終答案；若你更有把握，可以覆蓋 production_item、size_text、material、lamination、board_type、board_thickness、extra_materials、quantity。",
                     "若檔名某一段混合了名稱與尺寸（例如 頭卡30x20cm），請自行拆出語意，不要原樣照抄到 production_item。",
+                    "板材厚度只能在同一檔名已有板材 token（例如 H、合成板、發泡板、瓦楞板）時才判定；沒有板材就不要把 30MM/5MM 之類解析成 board_thickness，應保留在 production_item 或 notes。",
                     "若同時出現多個尺寸或數量線索，quantity 只放工單總數；其他像大版尺寸、印幾片、排版資訊，放進 notes，不要硬塞進 quantity。",
                     "若 token 與既有候選值很像，優先對應到候選值，不要發明新名字。",
                     "若仍無法判斷，欄位留空，並把原因寫進 review_reason；不要硬猜。",
@@ -2264,6 +2311,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             "輸出必須是 JSON 物件，格式為 {\"items\": [...]}。"
             "每個 item 必須包含 index, production_item, size_text, material, lamination, board_type, board_thickness, extra_materials, quantity, needs_review, review_reason, unresolved_tokens, notes, confidence。"
             "quantity 只代表工單總數；其他像大版尺寸、切割尺寸、印幾片、拼版資訊請放在 notes。"
+            "board_thickness 只有在 board_type 有板材時才可填；沒有 H/合成板/發泡板/瓦楞板等板材線索時，30MM/5MM 應視為名稱內容，不可當板厚。"
             "能從 candidates 選的就選 candidates；不確定就留空並 needs_review=true。"
             "不要輸出 markdown，不要輸出額外說明。"
         )
@@ -2391,6 +2439,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
             default_thickness = BOARD_TYPE_DEFAULT_THICKNESS.get(finalized["board_type"], "")
             if default_thickness:
                 finalized["board_thickness"] = default_thickness
+        if not finalized["board_type"]:
+            finalized["board_thickness"] = ""
 
         normalized_extra_materials: list[str] = []
         unknown_extra_materials: list[str] = []
