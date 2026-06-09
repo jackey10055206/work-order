@@ -173,16 +173,18 @@ PAGE_LABELS = [
     "第十頁",
 ]
 IMPORT_ROOT_HINT = r"\\New-super-1682\1682輸出"
-IMPORT_IMAGE_SUFFIXES = {".jpg", ".jpeg"}
+IMPORT_IMAGE_SUFFIXES = {".jpg"}
 SIZE_TEXT_PATTERN = re.compile(r"^\d+(?:\.\d+)?(?:mm|cm)?[xX]\d+(?:\.\d+)?(?:mm|cm)?$", re.IGNORECASE)
 PAPER_SIZE_PATTERN = re.compile(r"^A\d+$", re.IGNORECASE)
 THICKNESS_PATTERN = re.compile(r"^\d+(?:\.\d+)?(?:mm|cm)$", re.IGNORECASE)
 INLINE_WH_SIZE_PATTERN = re.compile(
-    r"(^|[_\-\s]+)w\s*(\d+(?:\.\d+)?)(mm|cm)?\s*[_\-\s]*h\s*(\d+(?:\.\d+)?)(mm|cm)?(?=$|[_\-\s]+)",
+    r"(^|[_\-\s]+)w\s*(\d+(?:\.\d+)?)(mm|cm)?\s*(?:[xX][_\-\s]*|[_\-\s]+)?h?\s*(\d+(?:\.\d+)?)(mm|cm)?(?=$|[_\-\s]+)",
     re.IGNORECASE,
 )
 CASE_PREFIX_PATTERN = re.compile(r"^\d+-")
 QUANTITY_TOKEN_PATTERN = re.compile(r"^[xX](\d+)$")
+TRAILING_QUANTITY_PATTERN = re.compile(r"^(.+?)[xX](\d+)(?:組|片)?(?:-\d+)?$", re.IGNORECASE)
+NUMBERED_LAYOUT_SUFFIX_PATTERN = re.compile(r"^(.+?)-(\d+)$")
 
 MATERIAL_ALIASES = {
     "PVC": "PVC",
@@ -208,6 +210,25 @@ BOARD_TYPE_DEFAULT_THICKNESS = {
     "發泡板": "2mm",
     "瓦楞板": "5mm",
     "厚磅紙板": "",
+}
+IMPORT_EXTRA_MATERIAL_ALIASES = {
+    "紙腳架": "紙腳架",
+    "150直": "150直鐵腳架",
+    "機切": "機台切型",
+}
+PROCESSING_HINT_PREFIXES = (
+    "前留",
+    "左右折",
+    "左折",
+    "右折",
+    "照記號折",
+    "左右",
+    "上下鋁桿",
+    "上方鋁桿",
+    "下方切型",
+)
+PRODUCT_ITEM_TOKEN_ALIASES = {
+    "掛旗": "掛旗",
 }
 IMPORT_AI_MODEL = os.environ.get("WORK_ORDER_IMPORT_AI_MODEL", "deepseek/deepseek-v4-flash")
 OPENROUTER_API_URL = os.environ.get("OPENROUTER_API_URL", "https://openrouter.ai/api/v1/chat/completions")
@@ -734,6 +755,41 @@ def looks_like_size_text(value: str) -> bool:
 def looks_like_thickness_text(value: str) -> bool:
     candidate = unicodedata.normalize("NFKC", (value or "").strip())
     return bool(THICKNESS_PATTERN.fullmatch(candidate))
+
+
+def split_trailing_quantity_from_token(value: str) -> tuple[str, int | None]:
+    """Split tokens such as 紙腳架X3 / HX2 / PVCX15 into base token and quantity."""
+    candidate = unicodedata.normalize("NFKC", (value or "").strip())
+    if not candidate or looks_like_size_text(candidate):
+        return candidate, None
+    match = TRAILING_QUANTITY_PATTERN.fullmatch(candidate)
+    if not match:
+        return candidate, None
+    base = match.group(1).strip(" _+-")
+    if not base:
+        return candidate, None
+    return base, max(1, int(match.group(2)))
+
+
+def split_numbered_layout_suffix_from_token(value: str) -> tuple[str, str]:
+    """Split layout suffixes such as H-1/H-2; suffix is only an artwork index."""
+    candidate = unicodedata.normalize("NFKC", (value or "").strip())
+    match = NUMBERED_LAYOUT_SUFFIX_PATTERN.fullmatch(candidate)
+    if not match:
+        return candidate, ""
+    base = match.group(1).strip(" _+-")
+    return (base or candidate), match.group(2)
+
+
+def is_processing_hint_token(value: str) -> bool:
+    """Return True for shop-floor-only processing notes that should not enter the work order."""
+    normalized = unicodedata.normalize("NFKC", (value or "").strip()).replace(" ", "")
+    return any(normalized.startswith(prefix) for prefix in PROCESSING_HINT_PREFIXES)
+
+
+def import_line_allows_blank_material(line: dict[str, object]) -> bool:
+    production_item = str(line.get("production_item") or "")
+    return "掛旗" in production_item
 
 
 def format_import_dimension(value: str) -> str:
@@ -2055,14 +2111,29 @@ class GeneratedUiPreviewWindow(QMainWindow):
             return
 
         self._apply_import_preview_to_screen(preview_payload)
-        imported_count = len(preview_payload["lines"])
-        review_count = sum(1 for line in preview_payload["lines"] if line.get("needs_review"))
-        if review_count:
-            message = f"已導入 {imported_count} 筆明細；其中 {review_count} 筆需要你再看一下。"
-        else:
-            message = f"已導入 {imported_count} 筆明細。"
-        self._set_status_message(message)
+        preview_lines = preview_payload.get("lines")
+        message = self._format_import_completion_message(preview_lines if isinstance(preview_lines, list) else [])
+        self._set_status_message(message.splitlines()[0])
         QMessageBox.information(self, "導入完成", message)
+
+    def _format_import_completion_message(self, lines: list[dict[str, object]]) -> str:
+        imported_count = len(lines)
+        review_items = [(index, line) for index, line in enumerate(lines, start=1) if line.get("needs_review")]
+        if not review_items:
+            return f"已導入 {imported_count} 筆明細。"
+
+        message_lines = [f"已導入 {imported_count} 筆明細；其中 {len(review_items)} 筆需要你再看一下："]
+        for row_index, line in review_items[:10]:
+            source_file = str(line.get("source_file") or "").strip()
+            if not source_file:
+                source_files = ensure_str_list(line.get("source_files"))
+                source_file = source_files[0] if source_files else "未命名來源"
+            reasons = ensure_str_list(line.get("review_reason"))
+            reason_text = "；".join(reasons) if reasons else "原因未明"
+            message_lines.append(f"第 {row_index} 行：{source_file} — {reason_text}")
+        if len(review_items) > 10:
+            message_lines.append(f"另外還有 {len(review_items) - 10} 筆，請看黃色標記列。")
+        return "\n".join(message_lines)
 
     def _build_import_preview_payload(self, selected_folder: str) -> dict[str, object]:
         loading = QProgressDialog("正在讀取資料夾與解析檔名…", None, 0, 0, self)
@@ -2082,7 +2153,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 key=lambda p: p.name.lower(),
             )
             if not image_paths:
-                raise ValueError("選到的資料夾內沒有 .jpg / .jpeg 檔案。")
+                raise ValueError("選到的資料夾內沒有 .jpg 檔案。")
             lines = [self._parse_import_file(path, context) for path in image_paths]
             loading.setLabelText("正在交給 AI 輔助解析規格…")
             QApplication.processEvents()
@@ -2103,14 +2174,32 @@ class GeneratedUiPreviewWindow(QMainWindow):
         size_text, stem_without_inline_size = extract_inline_wh_size_from_import_stem(stem)
         inline_material, stem_without_inline_material = extract_inline_material_from_import_text(stem_without_inline_size)
         parts = [part.strip(" _") for part in stem_without_inline_material.split("-") if part.strip(" _")]
-        production_item = parts[0] if parts else stem_without_inline_material.strip(" _-") or stem
-        rest_parts = parts[1:]
-        if not size_text and rest_parts and looks_like_size_text(rest_parts[0]):
-            size_text = rest_parts[0]
-            rest_parts = rest_parts[1:]
+        size_part_index: int | None = None
+        if not size_text:
+            for index in range(len(parts) - 1, -1, -1):
+                if looks_like_size_text(parts[index]):
+                    size_part_index = index
+                    break
+        if size_part_index is not None:
+            production_item = "-".join(parts[:size_part_index]).strip(" _-") or stem_without_inline_material.strip(" _-") or stem
+            size_text = parts[size_part_index]
+            rest_parts = parts[size_part_index + 1 :]
+        else:
+            production_item = parts[0] if parts else stem_without_inline_material.strip(" _-") or stem
+            rest_parts = parts[1:]
+            if not size_text and rest_parts and looks_like_size_text(rest_parts[0]):
+                size_text = rest_parts[0]
+                rest_parts = rest_parts[1:]
         raw_spec_text = "-".join(rest_parts)
         raw_spec_tokens = [token.strip() for token in raw_spec_text.split("+") if token.strip()]
+        production_item, production_item_quantity = split_trailing_quantity_from_token(production_item)
         spec_payload = self._resolve_import_spec_tokens(raw_spec_tokens, context)
+        production_item_hint = str(spec_payload.pop("production_item", "") or "").strip()
+        if production_item_hint:
+            production_item = production_item_hint
+        if production_item_quantity is not None:
+            spec_payload_quantity = extract_first_int(spec_payload.get("quantity")) or 1
+            spec_payload["quantity"] = max(spec_payload_quantity, production_item_quantity)
         if inline_material and not spec_payload.get("material"):
             spec_payload["material"] = inline_material
         return {
@@ -2129,7 +2218,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
         lamination = default_import_lamination(context.get("customer_name", ""))
         board_type = ""
         board_thickness = ""
+        production_item = ""
         extra_materials: list[str] = []
+        extra_material_quantities: dict[str, int] = {}
         ignored_tokens: list[str] = []
         unresolved_tokens: list[str] = []
         pending_thickness_tokens: list[tuple[int, str]] = []
@@ -2140,8 +2231,20 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         for index, raw_token in enumerate(raw_tokens):
             token = unicodedata.normalize("NFKC", raw_token).strip()
+            token, trailing_quantity = split_trailing_quantity_from_token(token)
+            token, layout_suffix = split_numbered_layout_suffix_from_token(token)
+            if trailing_quantity is not None:
+                quantity = max(quantity, trailing_quantity)
             normalized = normalize_token_text(token)
             if not normalized:
+                consumed_indexes.add(index)
+                continue
+
+            if layout_suffix:
+                ignored_tokens.append(f"-{layout_suffix}")
+
+            if is_processing_hint_token(token):
+                ignored_tokens.append(token)
                 consumed_indexes.add(index)
                 continue
 
@@ -2162,6 +2265,21 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 consumed_indexes.add(index)
                 continue
 
+            production_item_name = PRODUCT_ITEM_TOKEN_ALIASES.get(token) or PRODUCT_ITEM_TOKEN_ALIASES.get(normalized)
+            if production_item_name:
+                production_item = production_item_name
+                consumed_indexes.add(index)
+                continue
+
+            extra_material_name = IMPORT_EXTRA_MATERIAL_ALIASES.get(token) or IMPORT_EXTRA_MATERIAL_ALIASES.get(normalized)
+            if extra_material_name:
+                if extra_material_name not in extra_materials:
+                    extra_materials.append(extra_material_name)
+                if trailing_quantity is not None:
+                    extra_material_quantities[extra_material_name] = trailing_quantity
+                consumed_indexes.add(index)
+                continue
+
             board_name = BOARD_TYPE_ALIASES.get(token) or BOARD_TYPE_ALIASES.get(normalized)
             if board_name:
                 board_type = board_name
@@ -2179,7 +2297,10 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
             matched_name, score = match_candidate(token, candidate_extra_materials)
             if matched_name and score >= 0.58:
-                extra_materials.append(matched_name)
+                if matched_name not in extra_materials:
+                    extra_materials.append(matched_name)
+                if trailing_quantity is not None:
+                    extra_material_quantities[matched_name] = trailing_quantity
                 if score < 0.85:
                     notes.append(f"{token} 近似配對為 {matched_name}")
                 consumed_indexes.add(index)
@@ -2209,7 +2330,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
             "lamination": lamination,
             "board_type": board_type,
             "board_thickness": board_thickness,
+            "production_item": production_item,
             "extra_materials": extra_materials,
+            "extra_material_quantities": extra_material_quantities,
             "quantity": quantity,
             "ignored_tokens": ignored_tokens,
             "unresolved_tokens": unresolved_tokens,
@@ -2223,6 +2346,42 @@ class GeneratedUiPreviewWindow(QMainWindow):
             ai_line = ai_results.get(index, {})
             merged = self._merge_ai_line_resolution(line, ai_line)
             lines[index] = self._finalize_import_line_resolution(merged, context)
+        lines[:] = self._summarize_import_lines(lines)
+
+    def _summarize_import_lines(self, lines: list[dict[str, object]]) -> list[dict[str, object]]:
+        summarized: list[dict[str, object]] = []
+        grouped_by_key: dict[tuple[object, ...], dict[str, object]] = {}
+        for line in lines:
+            extra_material_quantities = line.get("extra_material_quantities")
+            if not isinstance(extra_material_quantities, dict):
+                extra_material_quantities = {}
+            key = (
+                str(line.get("production_item") or ""),
+                str(line.get("size_text") or ""),
+                str(line.get("material") or ""),
+                str(line.get("lamination") or ""),
+                str(line.get("board_type") or ""),
+                str(line.get("board_thickness") or ""),
+                tuple(ensure_str_list(line.get("extra_materials"))),
+                tuple(sorted(extra_material_quantities.items())),
+                bool(line.get("needs_review")),
+                tuple(ensure_str_list(line.get("review_reason"))),
+            )
+            existing = grouped_by_key.get(key)
+            if existing is None:
+                grouped_by_key[key] = dict(line)
+                summarized.append(grouped_by_key[key])
+                continue
+            existing["quantity"] = max(1, extract_first_int(existing.get("quantity")) or 1) + max(1, extract_first_int(line.get("quantity")) or 1)
+            sources = ensure_str_list(existing.get("source_files"))
+            source_file = str(line.get("source_file") or "").strip()
+            if source_file and source_file not in sources:
+                sources.append(source_file)
+            existing_source_file = str(existing.get("source_file") or "").strip()
+            if existing_source_file and existing_source_file not in sources:
+                sources.insert(0, existing_source_file)
+            existing["source_files"] = sources
+        return summarized
 
     def _build_import_ai_candidates(self) -> dict[str, list[str]]:
         return {
@@ -2230,7 +2389,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             "laminations": sorted({*self.combo_column_options.get(6, []), "亮面", "霧面"}),
             "board_types": sorted({*self.combo_column_options.get(7, []), *BOARD_TYPE_DEFAULT_THICKNESS.keys()}),
             "board_thicknesses": sorted({*self.combo_column_options.get(8, []), *[value for value in BOARD_TYPE_DEFAULT_THICKNESS.values() if value]}),
-            "extra_materials": list(self.combo_column_options.get(9, [])),
+            "extra_materials": sorted({*self.combo_column_options.get(9, []), *IMPORT_EXTRA_MATERIAL_ALIASES.values()}),
         }
 
     def _call_import_ai_for_lines(self, lines: list[dict[str, object]], context: dict[str, str]) -> dict[int, dict[str, object]]:
@@ -2444,14 +2603,22 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         normalized_extra_materials: list[str] = []
         unknown_extra_materials: list[str] = []
+        source_extra_material_quantities = finalized.get("extra_material_quantities")
+        if not isinstance(source_extra_material_quantities, dict):
+            source_extra_material_quantities = {}
+        normalized_extra_material_quantities: dict[str, int] = {}
         for value in ensure_str_list(finalized.get("extra_materials")):
+            raw_quantity = extract_first_int(source_extra_material_quantities.get(value))
             normalized_value = self._normalize_import_candidate_value(value, candidates["extra_materials"])
             if normalized_value:
                 if normalized_value not in normalized_extra_materials:
                     normalized_extra_materials.append(normalized_value)
+                if raw_quantity is not None:
+                    normalized_extra_material_quantities[normalized_value] = max(1, raw_quantity)
             elif value not in unknown_extra_materials:
                 unknown_extra_materials.append(value)
         finalized["extra_materials"] = normalized_extra_materials
+        finalized["extra_material_quantities"] = normalized_extra_material_quantities
 
         quantity = extract_first_int(finalized.get("quantity"))
         if quantity is None:
@@ -2468,7 +2635,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
             review_reason.append("製作項目未判定")
         if finalized["size_text"] and not looks_like_size_text(finalized["size_text"]):
             review_reason.append(f"尺寸格式待確認：{finalized['size_text']}")
-        if not finalized["material"]:
+        if not finalized["material"] and not import_line_allows_blank_material(finalized):
             review_reason.append("材質未判定")
         if not finalized["board_type"] and finalized["board_thickness"]:
             review_reason.append("只有板厚、沒有板材")
@@ -2582,6 +2749,16 @@ class GeneratedUiPreviewWindow(QMainWindow):
     def _build_table_row_from_import_line(self, line: dict[str, object]) -> list[str]:
         size_text = str(line.get("size_text") or "")
         width_text, height_text = split_size_text_for_table(size_text)
+        extra_materials = ensure_str_list(line.get("extra_materials"))
+        extra_material_quantities = line.get("extra_material_quantities")
+        if not isinstance(extra_material_quantities, dict):
+            extra_material_quantities = {}
+        extra_quantity_values: list[int] = []
+        for value in extra_materials:
+            value_quantity = extract_first_int(extra_material_quantities.get(value))
+            if value_quantity is not None:
+                extra_quantity_values.append(value_quantity)
+        extra_quantity = max(extra_quantity_values) if extra_quantity_values else ""
         return [
             str(line.get("production_item") or ""),
             width_text,
@@ -2592,8 +2769,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
             str(line.get("lamination") or ""),
             str(line.get("board_type") or ""),
             str(line.get("board_thickness") or ""),
-            "+".join(line.get("extra_materials") or []),
-            "",
+            "+".join(extra_materials),
+            str(extra_quantity) if extra_quantity else "",
             "",
             "",
             "",
