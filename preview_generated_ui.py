@@ -160,18 +160,7 @@ TABLE_HEADER_NUMBER_FONT_POINT_SIZE = 15
 BILLING_MAX_ROWS_PER_PAGE = 15
 BILLING_DETAIL_START_ROW = 7
 BILLING_TOTAL_ROW = 22
-PAGE_LABELS = [
-    "第一頁",
-    "第二頁",
-    "第三頁",
-    "第四頁",
-    "第五頁",
-    "第六頁",
-    "第七頁",
-    "第八頁",
-    "第九頁",
-    "第十頁",
-]
+PAGE_LABELS = [f"第{page_number}頁" for page_number in range(1, 11)]
 IMPORT_ROOT_HINT = r"\\New-super-1682\1682輸出"
 IMPORT_IMAGE_SUFFIXES = {".jpg"}
 SIZE_TEXT_PATTERN = re.compile(r"^\d+(?:\.\d+)?(?:mm|cm)?[xX]\d+(?:\.\d+)?(?:mm|cm)?$", re.IGNORECASE)
