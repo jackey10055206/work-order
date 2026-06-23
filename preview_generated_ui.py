@@ -1261,6 +1261,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._last_auto_filled_phone = ""
         self._last_auto_filled_address = ""
         self._loaded_work_order_number = ""
+        self._last_persisted_work_order_snapshot: dict[str, object] | None = None
         self._import_review_rows: dict[int, dict[str, object]] = {}
         self.table_tab_navigator: TableCellTabNavigator | None = None
         self.ui = Ui_MainWindow()
@@ -1405,6 +1406,70 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
     def _set_status_message(self, message: str, timeout_ms: int = 8000) -> None:
         self.statusBar().showMessage(message, timeout_ms)
+
+    def _current_work_order_snapshot(self) -> dict[str, object]:
+        customer_combo = getattr(self.ui, "cb_customerName", None)
+        customer_name = ""
+        if customer_combo is not None and isinstance(customer_combo, QComboBox):
+            customer_name = customer_combo.currentText().strip()
+        return {
+            "header": {
+                "work_number": normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or "",
+                "case_name": normalize_line_edit_value(getattr(self.ui, "le_caseName", None)) or "",
+                "customer_name": customer_name,
+                "phone": normalize_line_edit_value(getattr(self.ui, "le_phone", None)) or "",
+                "contact_name": normalize_line_edit_value(getattr(self.ui, "le_contactName", None)) or "",
+                "start_time": normalize_line_edit_value(getattr(self.ui, "le_startTime", None)) or "",
+                "end_time": normalize_line_edit_value(getattr(self.ui, "le_endTime", None)) or "",
+                "address": normalize_line_edit_value(getattr(self.ui, "lle_address", None)) or "",
+                "production_amount": normalize_line_edit_value(getattr(self.ui, "le_productionAmount", None)) or "",
+                "tax_amount": normalize_line_edit_value(getattr(self.ui, "le_taxAmount", None)) or "",
+                "total_amount": normalize_line_edit_value(getattr(self.ui, "le_totalAmount", None)) or "",
+                "remark": normalize_text_edit_value(getattr(self.ui, "te_remark", None)) or "",
+            },
+            "line_rows": self._meaningful_line_rows_snapshot(),
+        }
+
+    def _meaningful_line_rows_snapshot(self) -> list[list[str]]:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return []
+        rows: list[list[str]] = []
+        for row in range(table.rowCount()):
+            if self._line_row_has_meaningful_data(row):
+                rows.append([self._table_cell_text(row, column) for column in range(table.columnCount())])
+        return rows
+
+    def _mark_current_work_order_persisted(self) -> None:
+        self._last_persisted_work_order_snapshot = self._current_work_order_snapshot()
+
+    def _current_work_order_has_unsaved_changes(self) -> bool:
+        if self._last_persisted_work_order_snapshot is None:
+            return True
+        return self._current_work_order_snapshot() != self._last_persisted_work_order_snapshot
+
+    def _ensure_billing_export_allowed(self) -> bool:
+        work_number = normalize_line_edit_value(getattr(self.ui, "le_worknum", None)) or ""
+        if not work_number:
+            message = "工單號不可為空。請先輸入工單號並儲存後，再匯出請款 Excel。"
+            QMessageBox.warning(self, "請先儲存工單", message)
+            self._set_status_message(message)
+            return False
+
+        existing_work_order_id = self._find_existing_work_order_id(work_number)
+        if existing_work_order_id is None:
+            message = f"工單 {work_number} 尚未儲存到資料庫。請先按「儲存」後，再匯出請款 Excel。"
+            QMessageBox.warning(self, "請先儲存工單", message)
+            self._set_status_message(message)
+            return False
+
+        if self._current_work_order_has_unsaved_changes():
+            message = f"工單 {work_number} 目前有尚未儲存的修改。請先按「儲存」後，再匯出請款 Excel。"
+            QMessageBox.warning(self, "請先儲存工單", message)
+            self._set_status_message(message)
+            return False
+
+        return True
 
     def _header_payload(self) -> dict[str, str | int | None]:
         customer_name = ""
@@ -1697,6 +1762,9 @@ class GeneratedUiPreviewWindow(QMainWindow):
         return exported_paths
 
     def _handle_billing_clicked(self) -> None:
+        if not self._ensure_billing_export_allowed():
+            return
+
         output_dir = resolve_billing_output_dir()
         try:
             exported_paths = self.export_billing_excels(output_dir)
@@ -1986,11 +2054,12 @@ class GeneratedUiPreviewWindow(QMainWindow):
 
         table_rows = self._build_table_rows_from_line_payloads(line_rows)
         self._populate_line_items_table_with_rows(table_rows)
-        if not (field_mappings["le_productionAmount"] and field_mappings["le_taxAmount"] and field_mappings["le_totalAmount"]):
-            self.calculate_document_totals()
         self._last_auto_filled_phone = str(header_row.get("company_phone") or "")
         self._last_auto_filled_address = str(header_row.get("work_address") or "")
         self._loaded_work_order_number = str(header_row.get("work_number") or "").strip()
+        self._mark_current_work_order_persisted()
+        if not (field_mappings["le_productionAmount"] and field_mappings["le_taxAmount"] and field_mappings["le_totalAmount"]):
+            self.calculate_document_totals()
         return int(header_row["id"]), len(line_rows)
 
     def _has_loaded_content_on_screen(self) -> bool:
@@ -2785,6 +2854,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
                 self._replace_work_order_lines(cur, work_order_id, line_payloads)
             conn.commit()
         self._loaded_work_order_number = str(header_payload.get("work_number") or "").strip()
+        self._mark_current_work_order_persisted()
         return work_order_id, len(line_payloads)
 
     def _find_existing_work_order_id(self, work_number: str) -> int | None:
@@ -3716,6 +3786,7 @@ class GeneratedUiPreviewWindow(QMainWindow):
         self._last_auto_filled_phone = ""
         self._last_auto_filled_address = ""
         self._loaded_work_order_number = ""
+        self._last_persisted_work_order_snapshot = None
 
         customer_combo = getattr(self.ui, "cb_customerName", None)
         if isinstance(customer_combo, QComboBox):
