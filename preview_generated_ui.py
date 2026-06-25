@@ -3101,6 +3101,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
             self._last_auto_filled_phone = ""
 
     def _tune_generated_layout(self) -> None:
+        root_container = getattr(self.ui, "widget", None)
+        central_widget = getattr(self.ui, "centralwidget", None)
         main_layout = getattr(self.ui, "verticalLayout_2", None)
         line_items_section = getattr(self.ui, "wdg_lineItems", None)
         line_items_layout = getattr(self.ui, "verticalLayout", None)
@@ -3112,6 +3114,17 @@ class GeneratedUiPreviewWindow(QMainWindow):
         remark_editor = getattr(self.ui, "te_remark", None)
         if bottom_layout is None or remark_group is None or summary_actions is None:
             return
+
+        # Qt Designer generated the root content as an absolute-positioned child
+        # (self.ui.widget.setGeometry(0, 0, 1891, 841)).  On ultrawide monitors the
+        # QMainWindow gets wider, but that child stayed 1891px wide, leaving a large
+        # blank area.  Put the generated root widget under the central widget layout
+        # so it follows the real window size.
+        if central_widget is not None and root_container is not None and central_widget.layout() is None:
+            central_layout = QVBoxLayout(central_widget)
+            central_layout.setContentsMargins(0, 0, 0, 0)
+            central_layout.setSpacing(0)
+            central_layout.addWidget(root_container)
 
         self._tune_line_items_table()
 
@@ -3138,6 +3151,8 @@ class GeneratedUiPreviewWindow(QMainWindow):
             bottom_section.setMaximumHeight(156)
         if bottom_container is not None:
             bottom_container.setGeometry(20, 0, 1481, 156)
+
+        self._sync_generated_absolute_layout_widths()
 
         remark_group.setMaximumWidth(16777215)
         remark_group.setMinimumWidth(600)
@@ -3291,8 +3306,71 @@ class GeneratedUiPreviewWindow(QMainWindow):
         y = max(24, self.ui.grp_remark.height() - self.build_label.sizeHint().height() - label_margin_bottom)
         self.build_label.move(x, y)
 
+    def _sync_generated_absolute_layout_widths(self) -> None:
+        """Resize absolute-positioned Designer helper widgets after window resize.
+
+        The .ui file still contains several anonymous wrapper widgets with fixed
+        geometries.  Their child layouts are useful, but the wrappers themselves
+        must be resized manually or they keep the 1920px/Designer-time width.
+        """
+        central_widget = getattr(self.ui, "centralwidget", None)
+        root_container = getattr(self.ui, "widget", None)
+        if central_widget is not None and root_container is not None and central_widget.layout() is None:
+            root_container.setGeometry(central_widget.rect())
+
+        top_content = getattr(self.ui, "wdg_topContent", None)
+        top_container = getattr(self.ui, "widget1", None)
+        if top_content is not None and top_container is not None:
+            top_container.setGeometry(10, 10, max(0, top_content.width() - 20), max(0, top_content.height() - 20))
+            for outer_name, inner_name in (
+                ("wdg_workNum", "widget2"),
+                ("wdg_customerName", "widget3"),
+                ("wdg_contactName", "widget4"),
+                ("wdg_startTime", "widget5"),
+                ("wdg_caseName", "widget6"),
+                ("wdg_phone", "widget7"),
+                ("wdg_address", "widget8"),
+                ("wdg_endTime", "widget9"),
+            ):
+                outer = getattr(self.ui, outer_name, None)
+                inner = getattr(self.ui, inner_name, None)
+                if outer is not None and inner is not None:
+                    inner.setGeometry(0, 0, outer.width(), outer.height())
+
+        bottom_section = getattr(self.ui, "wdg_bottomSection", None)
+        bottom_container = getattr(self.ui, "widget10", None)
+        if bottom_section is not None and bottom_container is not None:
+            bottom_container.setGeometry(20, 0, max(0, bottom_section.width() - 40), 156)
+
+        self._resize_line_item_columns_to_viewport()
+
+    def _resize_line_item_columns_to_viewport(self) -> None:
+        table = getattr(self.ui, "tbl_lineItems", None)
+        if table is None:
+            return
+
+        viewport_width = table.viewport().width()
+        base_width = sum(TABLE_COLUMN_WIDTHS)
+        if viewport_width <= 0 or base_width <= 0:
+            return
+
+        # Keep the hand-tuned widths on normal/narrow monitors. On wider monitors,
+        # scale proportionally so the grid fills the available table area instead
+        # of leaving a blank region to the right.
+        target_width = max(base_width, viewport_width)
+        assigned_width = 0
+        last_index = len(TABLE_COLUMN_WIDTHS) - 1
+        for index, base_column_width in enumerate(TABLE_COLUMN_WIDTHS):
+            if index == last_index:
+                width = max(28, target_width - assigned_width)
+            else:
+                width = max(28, int(target_width * base_column_width / base_width))
+                assigned_width += width
+            table.setColumnWidth(index, width)
+
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
+        self._sync_generated_absolute_layout_widths()
         self._position_build_label()
 
     def _ordered_focus_widgets(self, names: list[str]) -> list[QWidget]:
